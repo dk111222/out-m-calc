@@ -1,0 +1,50 @@
+feature,area,priority,original,clone,notes
+Grade band K through 5 on the learner,learners,must,no,no,Original apps have no grade. Required for homeschool and classroom
+Parent or teacher manages learners on one device,learners,must,no,no,Buyers are parents and teachers. Local only
+Child starts today task in two taps,today,must,partial,no,速算首页一次点击进竞速。克隆要把学习和限时分成两张今日卡
+Trick lesson with numbered steps and colored digits,learn,must,yes,no,MT-S05. Do not copy their wording or diagrams
+Arrow or equivalent link from step result back to source digits,learn,must,yes,no,MT-S05
+One counterexample where the trick does not apply,learn,must,no,no,Neither original shows a clear not-when example
+Keypad entry for the final answer,drill,must,yes,no,MT-S06 MT-S07. Not multiple choice
+Guided entry of each intermediate step,learn,must,no,no,Original shows the finished steps. Clone asks the child to fill them
+After a wrong final answer locate the first failed step,learn,must,no,no,MT-S08 only shows a checkmark. SS-S05 stores the item without a step
+Immediate advance when the answer is correct,drill,must,yes,no,Play reviews say the app waits after a correct answer at the start
+No ads and no paywall inside a lesson or a drill,session,must,no,no,Both originals advertise or gate. Clone forbids both during practice
+Learning module has no countdown,learn,must,no,no,Math Tricks timers are a complaint. Learning stays untimed
+Speed module with a 3-minute round or a fixed problem count,speed,must,yes,no,SS-S01 is 3 minutes. SS-S02 sets problem count. This is the second core module
+Parent chooses time limit or problem count and digit range,speed,must,yes,no,SS-S02 steppers. Kindergarten defaults to problem count
+Speed round can be paused,speed,must,no,no,Not seen on the originals
+Personal best only,speed,must,yes,no,SS-S01 shows 最高纪录. No public board
+Wrong-problem book grouped by date,review,must,yes,no,SS-S05
+Reviewed-correct items leave the default review queue,review,must,no,no,Original keeps a list. Clone must stop re-asking fixed items
+Resume the same question after the app is killed,session,must,no,no,Not evidenced on store screenshots
+Offline lessons drills and wrong book,session,must,partial,no,速算卖点含离线向的本地练习。Math Tricks 截图无网络状态
+Portrait and landscape keypad,drill,must,yes,no,MT-S07
+Grade preset list of tricks,content,must,no,no,See requirements grade table. K does not start on percentages
+Delete all local data behind a 4-digit parent code,privacy,must,no,no,Child device. Required before any purchase or wipe
+Flutter Android and iOS from one codebase,platform,must,no,no,No web and no Next.js target
+Correct and wrong shown with icon plus word,drill,should,partial,no,MT-S08 uses a large check and cross. Color is not enough
+Mastery at 90 percent of the last 20 final answers,progress,should,partial,no,Original uses 0/100 ticks. Clone uses a shorter fluency rule
+Spaced review on day 3 and day 14 after mastery,review,should,no,no,Original wrong book is date sorted only
+Skip the lesson card on the second practice the same day,learn,should,no,no,
+Same generated set if the round is resumed,session,should,no,no,
+Print trick steps plus 20 problems and an answer page,print,should,yes,no,SS-S03 has a print icon. Output is for parents and teachers
+Weekly local report of days accuracy and missed step,report,should,partial,no,应用宝简介写了周报。截图未见
+One streak skip per week,habit,should,partial,no,Math Tricks changelog added streak protection. Not on these screenshots
+Read the problem aloud,access,should,yes,no,MT-S06 speaker icon
+System dark mode,access,should,yes,no,play-10 is a dark training list
+Haptics on right and wrong can be turned off,access,could,no,no,
+Two children on one device beyond the first,learners,should,no,no,Homeschool siblings. Third learner can wait
+Use my own numbers on a trick,learn,could,no,no,Useful for grade 5 bills. Not the K-2 core
+Checkup of 10 mixed mastered tricks once a week,review,could,no,no,Combines 每日一练 mix with the trick library
+Same-device two player,play,could,yes,no,MT-S03 Two players. Does not write the wrong book
+Placement questions that only change the recommended start,onboarding,could,no,no,Must not grant Mastery
+One-time unlock for print extra tricks and extra learners,pay,should,partial,no,iOS Remove Ads is $4.99. Do not clone the coin price or the monthly VIP
+YouTube lesson videos,content,could,yes,skip,Their videos are not ours to reuse
+Coin lock at 500 coins,pay,could,yes,skip,MT-S04. Do not rebuild the currency
+Public leaderboard,social,could,yes,skip,SS-S04 uses their users
+Online multiplayer,social,could,yes,skip,MT-S01 has the button. No match screen was captured and it needs their network
+Abacus flash and look-mental-math,drill,could,yes,skip,SS-S02. Out of K1-K5 overseas scope
+In-session ads and rewarded ads,pay,must,yes,skip,Present on both originals. Forbidden in the clone
+Web or Next.js client,platform,could,no,skip,Explicitly out of scope
+Account required to start,account,could,no,skip,First version is on-device
