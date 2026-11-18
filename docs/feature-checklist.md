@@ -2,7 +2,7 @@
 
 Status key: `[ ]` not started · `[~]` in progress · `[x]` done
 
-Source of truth: [需求功能书.md](./需求功能书.md)
+Source of truth: [需求功能书.md](./需求功能书.md)（v1.1）
 
 ## Platform & auth
 
@@ -37,11 +37,25 @@ Source of truth: [需求功能书.md](./需求功能书.md)
 - [ ] CSV export of attempts
 - [ ] Delete learner (with confirm); delete account (30-day undo)
 
+## PDF practice sheets (v1.1)
+
+- [ ] Parent entry: Print PDF on home card; Print this skill on skill page
+- [ ] Options: learner, skill source (pinned / learning / single), count 12/20/24, answer-key toggle
+- [ ] Same generators + deterministic seed; US Letter layout
+- [ ] Student page: problems only, answer blanks, optional Work line; no strategy text
+- [ ] Answer-key page: answers + ≤12-word strategy; marked for parent
+- [ ] Browser download; store worksheet id / seed / export time
+- [ ] Does not count as session or change mastery
+- [ ] Cap 10 exports per parent per US-Eastern day
+- [ ] Blocked after trial without paid subscription (same as new sessions)
+- [ ] No camera upload / photo grading / LLM
+
 ## Billing
 
 - [ ] 14-day trial, no card
 - [ ] Paywall only after trial when tapping Start
 - [ ] Annual $59 (primary) / monthly $7.99 (secondary) via web checkout
+- [ ] PDF included in trial and subscription (no add-on SKU)
 - [ ] Cancel renewal; freeze after 30 unpaid days (keep mastery)
 
 ## Explicitly out of v1
