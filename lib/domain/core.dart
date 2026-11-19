@@ -66,11 +66,24 @@ DateTime parseYmd(String value) {
   );
 }
 
-String addDays(String ymd, int days) =>
-    formatYmd(parseYmd(ymd).add(Duration(days: days)));
+DateTime _civil(String ymd) {
+  final parts = ymd.split('-');
+  return DateTime.utc(
+    int.parse(parts[0]),
+    int.parse(parts[1]),
+    int.parse(parts[2]),
+  );
+}
+
+String addDays(String ymd, int days) {
+  final next = _civil(ymd).add(Duration(days: days));
+  final month = next.month.toString().padLeft(2, '0');
+  final day = next.day.toString().padLeft(2, '0');
+  return '${next.year}-$month-$day';
+}
 
 int dayGap(String from, String to) =>
-    parseYmd(to).difference(parseYmd(from)).inDays;
+    _civil(to).difference(_civil(from)).inDays;
 
 String weekKey(DateTime value) {
   final day = dateOnly(value);

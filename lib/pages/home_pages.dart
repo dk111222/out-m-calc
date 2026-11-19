@@ -121,9 +121,11 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
           TextField(
             controller: _name,
             maxLength: 60,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Name',
-              helperText: 'Leave this blank to use Learner and a number.',
+              helperText: widget.guest
+                  ? 'Leave this blank to use Guest.'
+                  : 'Leave this blank to use Learner and a number.',
             ),
           ),
           const SizedBox(height: AppSpace.s16),

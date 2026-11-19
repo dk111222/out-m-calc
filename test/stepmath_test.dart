@@ -75,6 +75,13 @@ void main() {
     expect(reset.consecutive, 0);
   });
 
+  test('a calendar gap stays on dates when the clock springs or falls', () {
+    expect(dayGap('2026-03-07', '2026-03-09'), 2);
+    expect(addDays('2026-03-08', 1), '2026-03-09');
+    expect(addDays('2026-03-07', 2), '2026-03-09');
+    expect(addDays('2026-11-01', 1), '2026-11-02');
+  });
+
   test('a local day counts once and one skip covers a single miss', () {
     final first = completeStreak(
       count: 0,
