@@ -8,6 +8,7 @@ import 'app/providers.dart';
 import 'app/router.dart';
 import 'app/session.dart';
 import 'app/theme.dart';
+import 'data/device_paths.dart';
 import 'data/hive_store.dart';
 import 'domain/catalog.dart';
 
@@ -17,22 +18,55 @@ final routerProvider = Provider<GoRouter>((ref) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final store = HiveAppStore();
-  await store.init();
-  final catalog = Catalog.parse(
-    await rootBundle.loadString('assets/tricks/catalog.json'),
-  );
-  final app = AppController(store: store, catalog: catalog);
-  await app.boot();
-  runApp(
-    ProviderScope(
-      overrides: [
-        storeProvider.overrideWithValue(store),
-        appProvider.overrideWith((ref) => app),
-      ],
-      child: const StepMathApp(),
-    ),
-  );
+  DevicePaths.install();
+  try {
+    final store = HiveAppStore();
+    await store.init();
+    final catalog = Catalog.parse(
+      await rootBundle.loadString('assets/tricks/catalog.json'),
+    );
+    final app = AppController(store: store, catalog: catalog);
+    await app.boot();
+    runApp(
+      ProviderScope(
+        overrides: [
+          storeProvider.overrideWithValue(store),
+          appProvider.overrideWith((ref) => app),
+        ],
+        child: const StepMathApp(),
+      ),
+    );
+  } catch (error, stack) {
+    debugPrint('$error\n$stack');
+    runApp(StartupFailed(message: '$error'));
+  }
+}
+
+class StartupFailed extends StatelessWidget {
+  const StartupFailed({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('StepMath could not open.', style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 16),
+                Text(message),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class StepMathApp extends ConsumerWidget {
