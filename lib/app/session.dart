@@ -65,7 +65,10 @@ class AppController extends ChangeNotifier {
       '/practice',
       '/speed',
       '/review',
+      '/scan',
       '/prefs',
+      '/report',
+      '/export',
     ];
     if (learners.isEmpty) {
       if (loc == '/start' || loc == '/learner/new') return null;
@@ -694,6 +697,18 @@ class PracticeController extends ChangeNotifier {
     if (prompt != null && app.settings.readAloudEnabled) {
       unawaited(app.voice.speak(prompt));
     }
+  }
+
+  Future<void> startScanDrill(List<Problem> items) async {
+    final learner = app.active;
+    if (learner == null || items.isEmpty) return;
+    view = PracticeView.start(
+      learnerId: learner.id,
+      trickId: items.first.trickId,
+      items: items,
+    );
+    await _persist();
+    notifyListeners();
   }
 
   Future<void> startRepair(WrongItem item) async {

@@ -47,6 +47,10 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>StepMath reads a printed math page on this device. The photo is not uploaded.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>StepMath reads a printed math page from your photos on this device. The photo is not uploaded.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

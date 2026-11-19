@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stepmath/data/hive_store.dart';
 import 'package:stepmath/domain/catalog.dart';
+import 'package:stepmath/domain/scan.dart';
 import 'package:stepmath/domain/core.dart';
 import 'package:stepmath/domain/engine.dart';
 import 'package:stepmath/domain/machines.dart';
@@ -225,6 +226,24 @@ void main() {
     expect(await store.readLearners(), isEmpty);
     expect((await store.readSettings()).telemetryEnabled, isFalse);
     await directory.delete(recursive: true);
+  });
+
+  test('a photographed page counts wrong answers and drills that operation', () {
+    const page = '8 + 7 = 15\n9 + 6 = 14 x\n12 − 5 = 7\n6 × 4 = 22';
+    final facts = parseWorksheet(page);
+    expect(facts, hasLength(4));
+    expect(facts[0].countedWrong, isFalse);
+    expect(facts[1].countedWrong, isTrue);
+    expect(facts[1].computed, '15');
+    expect(facts[3].countedWrong, isTrue);
+    expect(facts[3].operation, 'multiplication');
+    final tally = tallyFacts(facts);
+    expect(tally.counts['addition'], 1);
+    expect(tally.counts['multiplication'], 1);
+    expect(tally.focus, 'addition');
+    final drill = targetedProblems(facts, rng: Random(1));
+    expect(drill, hasLength(5));
+    expect(drill.every((problem) => problem.prompt.contains('+')), isTrue);
   });
 
   test('speed problems stay inside the kindergarten cap', () {
