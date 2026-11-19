@@ -1,6 +1,7 @@
 -- Logical contract for StepMath Hive boxes.
 -- Do not run this against Postgres, Supabase, or any server.
--- The app store is Hive on device. Type ids live in replica/architecture.md.
+-- The app stores these rows as primitive maps in named Hive boxes.
+-- It does not register type adapters. Type ids in architecture.md stay reserved.
 -- UUID defaults below mean "the domain generates a string id before put".
 
 -- learners
@@ -10,6 +11,14 @@ create table learners (
   id text primary key,
   display_name text not null default 'Learner',
   grade text not null check (grade in ('K','1','2','3','4','5')),
+  is_guest boolean not null default false,
+  streak_count integer not null default 0,
+  last_practice_date text,
+  streak_skip_week text,
+  streak_skip_used boolean not null default false,
+  favorites text not null default '[]',
+  seen_lessons text not null default '[]',
+  streak_notice text,
   created_at timestamptz not null,
   updated_at timestamptz not null
 );
@@ -20,8 +29,15 @@ create table device_settings (
   parent_pin_hash text,
   telemetry_enabled boolean not null default false,
   active_learner_id text references learners(id) on delete set null,
-  extra_learners_unlocked boolean not null default false,
-  print_unlocked boolean not null default false,
+  pin_salt text,
+  pin_fail_count integer not null default 0,
+  pin_locked_until timestamptz,
+  extra_learners_unlocked boolean not null default true,
+  print_unlocked boolean not null default true,
+  theme_mode text not null default 'system' check (theme_mode in ('system','light','dark')),
+  text_scale text not null default 'medium' check (text_scale in ('small','medium','large')),
+  sound_enabled boolean not null default true,
+  read_aloud_enabled boolean not null default false,
   created_at timestamptz not null,
   updated_at timestamptz not null
 );
@@ -46,7 +62,11 @@ create table wrong_items (
   learner_id text not null references learners(id) on delete cascade,
   attempt_id text not null references attempts(id) on delete cascade,
   trick_id text not null,
+  prompt text not null,
+  user_answer text not null,
+  correct_answer text not null,
   failed_step integer,
+  steps_json text not null default '[]',
   reviewed_ok boolean not null default false,
   created_at timestamptz not null,
   updated_at timestamptz not null
@@ -73,6 +93,10 @@ create table mastery (
   last_20_correct_rate numeric not null default 0,
   mastered boolean not null default false,
   mastered_at timestamptz,
+  mastered_on text,
+  consecutive integer not null default 0,
+  review_3_done boolean not null default false,
+  review_14_done boolean not null default false,
   created_at timestamptz not null,
   updated_at timestamptz not null,
   primary key (learner_id, trick_id)
@@ -97,9 +121,8 @@ create table session_snapshots (
   learner_id text primary key references learners(id) on delete cascade,
   module text not null check (module in ('learn','speed')),
   trick_id text,
-  prompt_list text not null,
-  index_in_round integer not null default 0,
-  draft_input text not null default '',
+  local_date text not null,
+  payload text not null,
   updated_at timestamptz not null
 );
 
