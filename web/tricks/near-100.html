@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="n100.title">Near 100 — StepMath</title>
+  <meta name="description" data-i18n-content="n100.description" content="Add two numbers from 91 to 99. Find each gap to 100, then subtract the gaps from 200.">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="wordmark" href="../index.html">StepMath</a>
+      <div class="header-end">
+        <nav class="site-nav" aria-label="Main" data-i18n-aria="nav.main">
+          <a href="../tricks.html" aria-current="page" data-i18n="nav.tricks">Tricks</a>
+          <a href="../practice.html" data-i18n="nav.try">Try</a>
+          <div class="lang" data-lang-slot></div>
+        </nav>
+        <div class="store-row header-stores">
+          <a class="store is-pending" data-store="appStore" href="#stores">
+            <span class="store-name">App Store</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <a class="store is-pending" data-store="googlePlay" href="#stores">
+            <span class="store-name">Google Play</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <p class="store-note" hidden></p>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main id="main">
+    <article class="lesson">
+      <p class="kicker" data-i18n="n100.kicker">Intermediate · Addition</p>
+      <h1 data-i18n="n100.h1">Near 100</h1>
+      <p class="lede" data-i18n="n100.lede">Both numbers are from 91 to 99.</p>
+      <p class="not" data-i18n="n100.not">Skip this for 80 + 70.</p>
+      <div class="diagram">
+        <p class="equation"><span class="c1">97</span> + <span class="c2">96</span> = 193</p>
+        <div class="gaps">
+          <div><span class="note" data-i18n="n100.g1">97 to 100</span><strong class="c1" data-i18n="n100.g1v">gap 3</strong></div>
+          <div><span class="note" data-i18n="n100.g2">96 to 100</span><strong class="c2" data-i18n="n100.g2v">gap 4</strong></div>
+        </div>
+        <p class="chain" style="margin-top:16px"><span>3 + 4 = 7</span><span>200 − 7 = 193</span></p>
+        <ol class="steps">
+          <li><span class="step-no c1">1</span><div><strong data-i18n="n100.s1">First gap</strong><p data-i18n="n100.s1p">97 is 3 under 100.</p></div></li>
+          <li><span class="step-no c2">2</span><div><strong data-i18n="n100.s2">Second gap</strong><p data-i18n="n100.s2p">96 is 4 under 100.</p></div></li>
+          <li><span class="step-no c3">3</span><div><strong data-i18n="n100.s3">Add the gaps</strong><p data-i18n="n100.s3p">3 + 4 = 7.</p></div></li>
+          <li><span class="step-no c4">4</span><div><strong data-i18n="n100.s4">Subtract from 200</strong><p data-i18n="n100.s4p">200 − 7 = 193.</p></div></li>
+        </ol>
+      </div>
+      <form class="try" data-answer="195">
+        <h2 data-i18n="try.title">Try one</h2>
+        <p class="equation">98 + 97</p>
+        <div class="try-row">
+          <label for="near-answer" data-i18n="try.answer">Your answer</label>
+          <input id="near-answer" class="digits" inputmode="numeric" maxlength="8" autocomplete="off">
+          <button class="button" type="submit" data-i18n="try.submit">Submit</button>
+        </div>
+        <p class="try-msg" role="status" hidden></p>
+        <ol class="try-steps" hidden>
+          <li data-i18n="n100.t1">98 is 2 under 100.</li>
+          <li data-i18n="n100.t2">97 is 3 under 100.</li>
+          <li data-i18n="n100.t3">2 + 3 = 5.</li>
+          <li data-i18n="n100.t4">200 − 5 = 195.</li>
+        </ol>
+      </form>
+      <div class="actions">
+        <a class="button" href="../practice.html?set=near100" data-i18n="n100.practice">10 Near 100 problems</a>
+      </div>
+      <nav class="pager" aria-label="More tricks" data-i18n-aria="pager.nav">
+        <a href="make-10.html" data-i18n="n100.prev">Previous: Make 10</a>
+        <a href="times-5.html" data-i18n="n100.next">Next: Times 5</a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-bar">
+      <a class="wordmark" href="../index.html">StepMath</a>
+      <nav class="footer-nav" aria-label="Footer" data-i18n-aria="nav.footer">
+        <a href="../tricks.html" data-i18n="nav.tricks">Tricks</a>
+        <a href="../practice.html" data-i18n="nav.try">Try</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/site.js"></script>
+</body>
+</html>

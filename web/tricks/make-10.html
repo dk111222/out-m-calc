@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="m10.title">Make 10 — StepMath</title>
+  <meta name="description" data-i18n-content="m10.description" content="When two digits add up to more than 10, make 10 first, then add what is left.">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="wordmark" href="../index.html">StepMath</a>
+      <div class="header-end">
+        <nav class="site-nav" aria-label="Main" data-i18n-aria="nav.main">
+          <a href="../tricks.html" aria-current="page" data-i18n="nav.tricks">Tricks</a>
+          <a href="../practice.html" data-i18n="nav.try">Try</a>
+          <div class="lang" data-lang-slot></div>
+        </nav>
+        <div class="store-row header-stores">
+          <a class="store is-pending" data-store="appStore" href="#stores">
+            <span class="store-name">App Store</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <a class="store is-pending" data-store="googlePlay" href="#stores">
+            <span class="store-name">Google Play</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <p class="store-note" hidden></p>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main id="main">
+    <article class="lesson">
+      <p class="kicker" data-i18n="m10.kicker">Beginner · Addition</p>
+      <h1 data-i18n="m10.h1">Make 10</h1>
+      <p class="lede" data-i18n="m10.lede">The sum is over 10. Make 10 first.</p>
+      <p class="not" data-i18n="m10.not">4 + 5 you just add.</p>
+      <div class="diagram">
+        <p class="equation"><span class="c1">8</span> + <span class="c2">7</span> = <span class="c3">15</span></p>
+        <div class="split" aria-hidden="true">
+          <span class="a">8</span>
+          <span class="gap">2</span>
+          <span class="left">5</span>
+        </div>
+        <ol class="steps">
+          <li>
+            <span class="step-no c1">1</span>
+            <div><strong data-i18n="m10.s1">Make 10</strong><p data-i18n="m10.s1p">8 needs 2.</p></div>
+          </li>
+          <li>
+            <span class="step-no c2">2</span>
+            <div><strong data-i18n="m10.s2">Split the other number</strong><p data-i18n="m10.s2p">Take 2 from 7. 5 is left.</p></div>
+          </li>
+          <li>
+            <span class="step-no c3">3</span>
+            <div><strong data-i18n="m10.s3">Add what is left</strong><p data-i18n="m10.s3p">10 + 5 = 15.</p></div>
+          </li>
+        </ol>
+      </div>
+      <form class="try" data-answer="15">
+        <h2 data-i18n="try.title">Try one</h2>
+        <p class="equation">9 + 6</p>
+        <div class="try-row">
+          <label for="make10-answer" data-i18n="try.answer">Your answer</label>
+          <input id="make10-answer" class="digits" inputmode="numeric" maxlength="8" autocomplete="off">
+          <button class="button" type="submit" data-i18n="try.submit">Submit</button>
+        </div>
+        <p class="try-msg" role="status" hidden></p>
+        <ol class="try-steps" hidden>
+          <li data-i18n="m10.t1">9 needs 1.</li>
+          <li data-i18n="m10.t2">Take 1 from 6. 5 is left.</li>
+          <li data-i18n="m10.t3">10 + 5 = 15.</li>
+        </ol>
+      </form>
+      <div class="actions">
+        <a class="button" href="../practice.html?set=make10" data-i18n="m10.practice">10 Make 10 problems</a>
+      </div>
+      <nav class="pager" aria-label="More tricks" data-i18n-aria="pager.nav">
+        <a href="../tricks.html#beginner" data-i18n="m10.back">Back to Beginner</a>
+        <a href="near-100.html" data-i18n="m10.next">Next: Near 100</a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-bar">
+      <a class="wordmark" href="../index.html">StepMath</a>
+      <nav class="footer-nav" aria-label="Footer" data-i18n-aria="nav.footer">
+        <a href="../tricks.html" data-i18n="nav.tricks">Tricks</a>
+        <a href="../practice.html" data-i18n="nav.try">Try</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/site.js"></script>
+</body>
+</html>

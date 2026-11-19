@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="home.title">StepMath</title>
+  <meta name="description" data-i18n-content="home.description" content="Mental math in three levels. See the steps, then do 10 problems.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="wordmark" href="index.html">StepMath</a>
+      <div class="header-end">
+        <nav class="site-nav" aria-label="Main" data-i18n-aria="nav.main">
+          <a href="tricks.html" data-i18n="nav.tricks">Tricks</a>
+          <a href="practice.html" data-i18n="nav.try">Try</a>
+          <div class="lang" data-lang-slot></div>
+        </nav>
+        <div class="store-row header-stores">
+          <a class="store is-pending" data-store="appStore" href="#stores">
+            <span class="store-name">App Store</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <a class="store is-pending" data-store="googlePlay" href="#stores">
+            <span class="store-name">Google Play</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <p class="store-note" hidden></p>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap hero">
+      <div>
+        <p class="kicker" data-i18n="home.kicker">Beginner · Intermediate · Advanced</p>
+        <h1><span data-i18n="home.h1a">See the steps,</span><span class="break" data-i18n="home.h1b">then do 10.</span></h1>
+        <ul class="cores">
+          <li><b data-i18n="home.learn">Learn a trick</b> <span data-i18n="home.learnRest">Fill in each step.</span></li>
+          <li><b data-i18n="home.drill">Do 10</b> <span data-i18n="home.drillRest">Answer only.</span></li>
+        </ul>
+        <div class="actions">
+          <a class="button" href="practice.html" data-i18n="home.try">Try 10 problems</a>
+          <a class="button secondary" href="tricks/make-10.html" data-i18n="home.see">See Make 10</a>
+        </div>
+      </div>
+      <div class="stage">
+        <figure class="shot">
+          <div class="device" aria-hidden="true">
+            <div class="device-screen">
+              <div class="device-top">
+                <span>‹</span>
+                <span>1 / 10</span>
+              </div>
+              <div class="device-body">
+                <p class="device-eq"><span class="c1">9</span> + <span class="c2">6</span></p>
+                <p class="device-meta" data-i18n="home.stepMeta">Step 1 of 3</p>
+                <p class="device-ask" data-i18n="home.stepAsk">How many does 9 need to make 10?</p>
+                <div class="device-field" data-i18n="home.answer">Answer</div>
+                <div class="device-pad">
+                  <span>1</span><span>2</span><span>3</span>
+                  <span>4</span><span>5</span><span>6</span>
+                  <span>7</span><span>8</span><span>9</span>
+                  <span>.</span><span>0</span><span class="device-del" data-i18n="home.delete">Del</span>
+                </div>
+                <div class="device-go" data-i18n="try.submit">Submit</div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b data-i18n="home.learn">Learn a trick</b></figcaption>
+        </figure>
+        <figure class="shot">
+          <div class="device" aria-hidden="true">
+            <div class="device-screen">
+              <div class="device-top">
+                <span>‹</span>
+                <span>4 / 10</span>
+                <span class="device-time">01:24</span>
+              </div>
+              <div class="device-body">
+                <p class="device-eq">48 × 5</p>
+                <p class="device-meta" data-i18n="home.answerOnly">Answer only</p>
+                <div class="device-field" data-i18n="home.answer">Answer</div>
+                <div class="device-pad">
+                  <span>1</span><span>2</span><span>3</span>
+                  <span>4</span><span>5</span><span>6</span>
+                  <span>7</span><span>8</span><span>9</span>
+                  <span>.</span><span>0</span><span class="device-del" data-i18n="home.delete">Del</span>
+                </div>
+                <div class="device-go" data-i18n="try.submit">Submit</div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b data-i18n="home.drill">Do 10</b></figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="wrap">
+        <h2 class="block-title" data-i18n="home.levels">Levels</h2>
+        <ol class="grade-line">
+          <li><a href="tricks.html#beginner"><b data-i18n="level.beginner">Beginner</b><span data-i18n="trick.make10">Make 10</span><em>8 + 7</em></a></li>
+          <li><a href="tricks.html#intermediate"><b data-i18n="level.intermediate">Intermediate</b><span data-i18n="trick.times5">Times 5</span><em>48 × 5</em></a></li>
+          <li><a href="tricks.html#advanced"><b data-i18n="level.advanced">Advanced</b><span data-i18n="trick.p10">10%</span><em data-i18n="money.80to8">$80 → $8</em></a></li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-bar">
+      <a class="wordmark" href="index.html">StepMath</a>
+      <nav class="footer-nav" aria-label="Footer" data-i18n-aria="nav.footer">
+        <a href="tricks.html" data-i18n="nav.tricks">Tricks</a>
+        <a href="practice.html" data-i18n="nav.try">Try</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="js/i18n.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

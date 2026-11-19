@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="practice.title">10 problems — StepMath</title>
+  <meta name="description" data-i18n-content="practice.description" content="Do 10 mental-math problems in the browser. Enter the final answer only.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="wordmark" href="index.html">StepMath</a>
+      <div class="header-end">
+        <nav class="site-nav" aria-label="Main" data-i18n-aria="nav.main">
+          <a href="tricks.html" data-i18n="nav.tricks">Tricks</a>
+          <a href="practice.html" aria-current="page" data-i18n="nav.try">Try</a>
+          <div class="lang" data-lang-slot></div>
+        </nav>
+        <div class="store-row header-stores">
+          <a class="store is-pending" data-store="appStore" href="#stores">
+            <span class="store-name">App Store</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <a class="store is-pending" data-store="googlePlay" href="#stores">
+            <span class="store-name">Google Play</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <p class="store-note" hidden></p>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main id="main">
+    <div class="drill">
+      <section id="gate">
+        <h1 data-i18n="practice.h1">10 problems</h1>
+        <p class="lede" data-i18n="practice.lede">Answer only.</p>
+        <fieldset class="choices">
+          <legend data-i18n="practice.pick">Pick a set</legend>
+          <label class="choice"><input type="radio" name="set" value="make10" checked> <span data-i18n="trick.make10">Make 10</span></label>
+          <label class="choice"><input type="radio" name="set" value="near100"> <span data-i18n="trick.near100">Near 100</span></label>
+          <label class="choice"><input type="radio" name="set" value="times5"> <span data-i18n="trick.times5">Times 5</span></label>
+          <label class="choice"><input type="radio" name="set" value="times11"> <span data-i18n="trick.times11">Times 11</span></label>
+        </fieldset>
+        <p id="set-blurb" class="note"></p>
+        <div class="actions">
+          <button class="button" id="start" type="button" data-i18n="practice.start">Start 10</button>
+          <a class="button secondary" href="tricks.html" data-i18n="practice.stepsFirst">See the steps</a>
+        </div>
+      </section>
+
+      <section id="round" hidden>
+        <div class="ticks" id="ticks" aria-hidden="true"></div>
+        <p id="progress" class="note"></p>
+        <p id="prompt" class="equation"></p>
+        <label for="answer" data-i18n="try.answer">Your answer</label>
+        <input id="answer" class="answer digits" inputmode="none" maxlength="8" autocomplete="off" autocapitalize="off" enterkeyhint="done">
+        <div id="pad" class="pad"></div>
+        <button class="button submit" id="submit" type="button" disabled data-i18n="try.submit">Submit</button>
+        <button class="button submit secondary" id="next" type="button" hidden>Next</button>
+        <p id="feedback" class="feedback" role="status"></p>
+      </section>
+
+      <section id="done" hidden>
+        <p class="kicker" data-i18n="practice.doneKicker">Done</p>
+        <p id="score" class="score"></p>
+        <p id="best"></p>
+        <div class="actions">
+          <button class="button" id="again" type="button" data-i18n="practice.again">10 more</button>
+          <button class="button secondary" id="change-set" type="button" data-i18n="practice.change">Change set</button>
+        </div>
+        <p class="note" style="margin-top:16px"><a id="done-lesson" href="tricks.html">See the steps</a></p>
+      </section>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-bar">
+      <a class="wordmark" href="index.html">StepMath</a>
+      <nav class="footer-nav" aria-label="Footer" data-i18n-aria="nav.footer">
+        <a href="tricks.html" data-i18n="nav.tricks">Tricks</a>
+        <a href="practice.html" data-i18n="nav.try">Try</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="js/i18n.js"></script>
+  <script src="js/site.js"></script>
+  <script src="js/practice.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="tricks.title">Tricks — StepMath</title>
+  <meta name="description" data-i18n-content="tricks.description" content="Mental-math tricks in three levels. Open one to see the steps.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="wordmark" href="index.html">StepMath</a>
+      <div class="header-end">
+        <nav class="site-nav" aria-label="Main" data-i18n-aria="nav.main">
+          <a href="tricks.html" aria-current="page" data-i18n="nav.tricks">Tricks</a>
+          <a href="practice.html" data-i18n="nav.try">Try</a>
+          <div class="lang" data-lang-slot></div>
+        </nav>
+        <div class="store-row header-stores">
+          <a class="store is-pending" data-store="appStore" href="#stores">
+            <span class="store-name">App Store</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <a class="store is-pending" data-store="googlePlay" href="#stores">
+            <span class="store-name">Google Play</span>
+            <span class="soon" data-i18n="store.soon">Soon</span>
+          </a>
+          <p class="store-note" hidden></p>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      <div class="page-intro">
+        <h1 data-i18n="nav.tricks">Tricks</h1>
+      </div>
+
+      <section class="grade-block" id="beginner">
+        <h2 data-i18n="level.beginner">Beginner</h2>
+        <div class="rows">
+          <div class="trick-row"><span class="name" data-i18n="trick.pairs">Pairs to 10</span><span class="eq">3 + 7 = 10</span></div>
+          <a class="trick-row" href="tricks/make-10.html"><span class="name" data-i18n="trick.make10">Make 10</span><span class="eq">8 + 7 = 15</span><span class="go" data-i18n="ui.steps">Steps</span></a>
+          <div class="trick-row"><span class="name" data-i18n="trick.within20">Within 20</span><span class="eq">9 + 6 = 15</span></div>
+        </div>
+      </section>
+
+      <section class="grade-block" id="intermediate">
+        <h2 data-i18n="level.intermediate">Intermediate</h2>
+        <div class="rows">
+          <a class="trick-row" href="tricks/near-100.html"><span class="name" data-i18n="trick.near100">Near 100</span><span class="eq">97 + 96 = 193</span><span class="go" data-i18n="ui.steps">Steps</span></a>
+          <div class="trick-row"><span class="name" data-i18n="trick.subNear">Subtract near 100</span><span class="eq">150 − 97 = 53</span></div>
+          <a class="trick-row" href="tricks/times-5.html"><span class="name" data-i18n="trick.times5">Times 5</span><span class="eq">48 × 5 = 240</span><span class="go" data-i18n="ui.steps">Steps</span></a>
+          <a class="trick-row" href="tricks/times-11.html"><span class="name" data-i18n="trick.times11">Times 11</span><span class="eq">35 × 11 = 385</span><span class="go" data-i18n="ui.steps">Steps</span></a>
+          <div class="trick-row"><span class="name" data-i18n="trick.div5">Divide by 5</span><span class="eq">35 ÷ 5 = 7</span></div>
+        </div>
+      </section>
+
+      <section class="grade-block" id="advanced">
+        <h2 data-i18n="level.advanced">Advanced</h2>
+        <div class="rows">
+          <div class="trick-row"><span class="name" data-i18n="trick.times11carry">Times 11, with carry</span><span class="eq">48 × 11 = 528</span></div>
+          <div class="trick-row"><span class="name" data-i18n="trick.ones10">Ones digits make 10</span><span class="eq">26 × 24 = 624</span></div>
+          <a class="trick-row" href="tricks/square-5.html"><span class="name" data-i18n="trick.square5">Square ending in 5</span><span class="eq">45² = 2025</span><span class="go" data-i18n="ui.steps">Steps</span></a>
+          <div class="trick-row"><span class="name" data-i18n="trick.div25">Divide by 25</span><span class="eq">75 ÷ 25 = 3</span></div>
+          <a class="trick-row" href="tricks/ten-percent.html"><span class="name" data-i18n="trick.p10">10%</span><span class="eq" data-i18n="money.80to8">$80 → $8</span><span class="go" data-i18n="ui.steps">Steps</span></a>
+          <div class="trick-row"><span class="name" data-i18n="trick.p5">5%</span><span class="eq" data-i18n="money.80to4">$80 → $4</span></div>
+          <div class="trick-row"><span class="name" data-i18n="trick.p1">1%</span><span class="eq" data-i18n="money.200to2">$200 → $2</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-bar">
+      <a class="wordmark" href="index.html">StepMath</a>
+      <nav class="footer-nav" aria-label="Footer" data-i18n-aria="nav.footer">
+        <a href="tricks.html" data-i18n="nav.tricks">Tricks</a>
+        <a href="practice.html" data-i18n="nav.try">Try</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="js/i18n.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>
