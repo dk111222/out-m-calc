@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../pages/extra_pages.dart';
+import '../pages/scan_page.dart';
 import '../pages/home_pages.dart';
 import '../pages/learn_pages.dart';
 import '../pages/speed_pages.dart';
@@ -51,6 +52,7 @@ GoRouter buildRouter(AppController app) {
       GoRoute(path: '/speed/run', builder: (_, _) => const SpeedRunPage()),
       GoRoute(path: '/speed/done', builder: (_, _) => const SpeedDonePage()),
       GoRoute(path: '/review', builder: (_, _) => const ReviewPage()),
+      GoRoute(path: '/scan', builder: (_, _) => const ScanPage()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
       GoRoute(
         path: '/settings/privacy',

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../app/providers.dart';
 import '../app/theme.dart';
 import '../domain/core.dart';
+import '../ui/child_nav.dart';
 import '../ui/gates.dart';
 import '../ui/kit.dart';
 import 'speed_pages.dart';
@@ -220,6 +221,12 @@ class AdultHomePage extends ConsumerWidget {
                   secondary: true,
                   onPressed: () => context.go('/learner/new?guest=1'),
                 ),
+                const SizedBox(height: AppSpace.s12),
+                AppButton(
+                  label: 'Scan a paper',
+                  secondary: true,
+                  onPressed: app.active == null ? null : () => context.go('/scan'),
+                ),
               ],
             ),
     );
@@ -315,39 +322,41 @@ class ChildHomePage extends ConsumerWidget {
         : null;
     final speed = assignment?.kind == 'speed' ? assignment?.parsedSpeed : null;
     final seen = learnTrick != null && learner.seenLessons[learnTrick.id] == app.clock.today;
+    final drills = factDrills(learner.grade);
+    final mine = app.catalog.forGrade(learner.grade).where((trick) => trick.ready).take(3);
+    final colors = AppColors.of(context);
     return PageFrame(
       title: "Today's practice",
       banner: app.banner,
-      actions: [
-        IconButton(
-          tooltip: 'Text size and sound',
-          onPressed: () => context.go('/prefs'),
-          icon: const Icon(Icons.text_fields),
-        ),
-        IconButton(
-          tooltip: 'Leave',
-          onPressed: () async {
-            final ok = await requireParentCode(
-              context,
-              app,
-              title: 'Parent code',
-              body: app.settings.parentPinHash == null
-                  ? 'Set a four-digit code before leaving practice.'
-                  : 'Enter the parent code to leave practice.',
-              action: (pin, again) => app.leaveChild(pin, again: again),
-            );
-            if (ok && context.mounted) context.go('/adult');
-          },
-          icon: const Icon(Icons.logout),
-        ),
-      ],
+      bottom: const ChildNavBar(index: 0),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(learner.displayName, style: Theme.of(context).textTheme.titleMedium),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  learner.displayName,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.s12,
+                  vertical: AppSpace.s8,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(AppSpace.rPill),
+                  border: Border.all(color: colors.border),
+                ),
+                child: Text(gradeLabel(learner.grade)),
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpace.s4),
           Text(
-            '${gradeLabel(learner.grade)} · ${learner.streakCount} day streak',
+            '${learner.streakCount} day streak',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           if (learner.isGuest) ...[
@@ -373,32 +382,57 @@ class ChildHomePage extends ConsumerWidget {
                 onPressed: () => _continue(context, ref),
               ),
             ),
-          TrickCard(
-            title: 'Math Tricks',
-            caption: learnTrick?.title ??
-                (assignment == null
-                    ? 'Ask a parent to assign today'
-                    : 'Not assigned today'),
-            onPressed: () => _openLearn(context, ref, learnTrick, seen),
+          _DailyCard(
+            learnerId: learner.id,
+            onStart: () => _startDaily(context, ref, learnTrick, seen, speed, learner.grade),
           ),
-          TrickCard(
-            title: 'Speed Drill',
-            caption: speed?.summary ??
-                (assignment == null
-                    ? 'Ask a parent to assign today'
-                    : 'Not assigned today'),
-            onPressed: () => _openSpeed(context, ref, speed, learner.grade),
+          const SizedBox(height: AppSpace.s16),
+          _SpeedHomeCard(
+            summary: speed?.summary ?? speedDefault(learner.grade).summary,
+            samples: drills.take(2).map((drill) => drill.sample).toList(),
+            onSettings: () => context.go('/speed/setup'),
+            onWorksheet: () {
+              final trick = learnTrick ??
+                  app.catalog.forGrade(learner.grade).where((item) => item.ready).firstOrNull;
+              if (trick == null) return;
+              context.go('/export/worksheet?trickId=${trick.id}');
+            },
+            onStart: () => _openSpeed(context, ref, speed, learner.grade),
           ),
-          AppButton(
-            label: 'Wrong problems',
-            secondary: true,
+          const SizedBox(height: AppSpace.s16),
+          InkWell(
+            onTap: () => _openLearn(context, ref, learnTrick, seen),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpace.s8),
+              child: Text('Math Tricks', style: Theme.of(context).textTheme.titleMedium),
+            ),
+          ),
+          for (final trick in mine)
+            TrickCard(
+              title: trick.title,
+              caption: trick.example.prompt,
+              onPressed: () => context.go('/tricks/${trick.id}'),
+            ),
+          InkWell(
+            onTap: () => context.go('/tricks?tab=facts'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpace.s8),
+              child: Text('Facts', style: Theme.of(context).textTheme.titleMedium),
+            ),
+          ),
+          for (final drill in drills.take(2))
+            TrickCard(
+              title: drill.title,
+              caption: drill.sample,
+              onPressed: () => _startDrill(context, ref, drill.config),
+            ),
+          TextButton(
             onPressed: () => context.go('/review'),
+            child: const Text('Wrong problems'),
           ),
-          const SizedBox(height: AppSpace.s12),
-          AppButton(
-            label: 'Trick library',
-            secondary: true,
-            onPressed: () => context.go('/tricks'),
+          TextButton(
+            onPressed: () => context.go('/scan'),
+            child: const Text('Scan a paper'),
           ),
         ],
       ),
@@ -454,6 +488,96 @@ class ChildHomePage extends ConsumerWidget {
     }
     await ref.read(speedProvider).start(config);
     if (context.mounted) context.go('/speed/run');
+  }
+
+  Future<void> _startDaily(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic trick,
+    bool seen,
+    SpeedConfig? speed,
+    String grade,
+  ) async {
+    final app = ref.read(appProvider);
+    if (app.snapshot != null && app.snapshot!.localDate == app.clock.today) {
+      await _continue(context, ref);
+      return;
+    }
+    if (trick != null) {
+      await _openLearn(context, ref, trick, seen);
+      return;
+    }
+    if (speed != null) {
+      await _openSpeed(context, ref, speed, grade);
+      return;
+    }
+    await ref.read(speedProvider).start(dailyPractice(grade));
+    if (context.mounted) context.go('/speed/run');
+  }
+
+  Future<void> _startDrill(
+    BuildContext context,
+    WidgetRef ref,
+    SpeedConfig config,
+  ) async {
+    await ref.read(speedProvider).start(config);
+    if (context.mounted) context.go('/speed/run');
+  }
+}
+
+class _DailyCard extends StatelessWidget {
+  const _DailyCard({required this.learnerId, required this.onStart});
+
+  final String learnerId;
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    return TrickCard(
+      key: ValueKey(learnerId),
+      title: 'Daily practice',
+      caption: 'Ten problems for this grade.',
+      onPressed: onStart,
+    );
+  }
+}
+
+class _SpeedHomeCard extends StatelessWidget {
+  const _SpeedHomeCard({
+    required this.summary,
+    required this.samples,
+    required this.onSettings,
+    required this.onWorksheet,
+    required this.onStart,
+  });
+
+  final String summary;
+  final List<String> samples;
+  final VoidCallback onSettings;
+  final VoidCallback onWorksheet;
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TrickCard(
+          title: 'Speed Drill',
+          caption: summary,
+          onPressed: onStart,
+        ),
+        for (final sample in samples)
+          Text(sample, style: Theme.of(context).textTheme.bodySmall),
+        Wrap(
+          spacing: AppSpace.s8,
+          children: [
+            TextButton(onPressed: onSettings, child: const Text('Settings')),
+            TextButton(onPressed: onWorksheet, child: const Text('Worksheet')),
+          ],
+        ),
+      ],
+    );
   }
 }
 

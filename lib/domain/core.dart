@@ -394,6 +394,145 @@ SpeedConfig speedDefault(String grade) {
   }
 }
 
+class FactDrill {
+  const FactDrill({
+    required this.title,
+    required this.sample,
+    required this.config,
+  });
+
+  final String title;
+  final String sample;
+  final SpeedConfig config;
+}
+
+SpeedConfig dailyPractice(String grade) {
+  return speedDefault(grade).copyWith(limitMode: 'count', limitValue: 10);
+}
+
+List<FactDrill> factDrills(String grade) {
+  SpeedConfig drill(
+    String operation, {
+    int digits = 1,
+    String mode = 'count',
+    int limit = 10,
+  }) {
+    return SpeedConfig(
+      operation: operation,
+      digitMin: 1,
+      digitMax: digits,
+      limitMode: mode,
+      limitValue: limit,
+    );
+  }
+
+  switch (grade) {
+    case 'K':
+      return [
+        FactDrill(
+          title: 'Adding within 10',
+          sample: '4 + 3 = ?',
+          config: drill('addition'),
+        ),
+        FactDrill(
+          title: 'Subtracting within 10',
+          sample: '10 − 6 = ?',
+          config: drill('subtraction'),
+        ),
+        FactDrill(
+          title: 'Mixed within 10',
+          sample: '8 + 2 = ?',
+          config: drill('mixed'),
+        ),
+      ];
+    case '1':
+      return [
+        FactDrill(
+          title: 'Adding within 20',
+          sample: '9 + 6 = ?',
+          config: drill('addition', digits: 2),
+        ),
+        FactDrill(
+          title: 'Subtracting within 20',
+          sample: '15 − 7 = ?',
+          config: drill('subtraction', digits: 2),
+        ),
+        FactDrill(
+          title: 'Mixed within 20',
+          sample: '13 − 5 = ?',
+          config: drill('mixed', digits: 2),
+        ),
+      ];
+    case '2':
+      return [
+        FactDrill(
+          title: 'Adding within 100',
+          sample: '27 + 16 = ?',
+          config: drill('addition', digits: 2, mode: 'time', limit: 120),
+        ),
+        FactDrill(
+          title: 'Subtracting within 100',
+          sample: '53 − 18 = ?',
+          config: drill('subtraction', digits: 2, mode: 'time', limit: 120),
+        ),
+        FactDrill(
+          title: 'Mixed within 100',
+          sample: '40 + 25 = ?',
+          config: drill('mixed', digits: 2, mode: 'time', limit: 120),
+        ),
+      ];
+    case '3':
+      return [
+        FactDrill(
+          title: 'Multiplication facts',
+          sample: '6 × 5 = ?',
+          config: drill('multiplication', mode: 'time', limit: 180),
+        ),
+        FactDrill(
+          title: 'Division facts',
+          sample: '35 ÷ 5 = ?',
+          config: drill('division', mode: 'time', limit: 180),
+        ),
+        FactDrill(
+          title: 'Mixed facts',
+          sample: '8 × 4 = ?',
+          config: drill('mixed', mode: 'time', limit: 180),
+        ),
+      ];
+    case '4':
+      return [
+        FactDrill(
+          title: 'Two-digit multiplication',
+          sample: '26 × 4 = ?',
+          config: drill('multiplication', digits: 2, mode: 'time', limit: 180),
+        ),
+        FactDrill(
+          title: 'Division',
+          sample: '72 ÷ 8 = ?',
+          config: drill('division', digits: 2, mode: 'time', limit: 180),
+        ),
+        FactDrill(
+          title: 'Mixed within 100',
+          sample: '36 + 48 = ?',
+          config: drill('mixed', digits: 2, mode: 'time', limit: 180),
+        ),
+      ];
+    default:
+      return [
+        FactDrill(
+          title: '10%, 5%, and 1%',
+          sample: '10% of \$80 = ?',
+          config: drill('percent', digits: 3, mode: 'time', limit: 180),
+        ),
+        FactDrill(
+          title: 'Mixed review',
+          sample: '5% of \$40 = ?',
+          config: drill('percent', digits: 3, mode: 'time', limit: 180),
+        ),
+      ];
+  }
+}
+
 int personalBest(Iterable<int> scores) {
   var best = 0;
   for (final score in scores) {
