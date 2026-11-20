@@ -15,6 +15,140 @@ import '../export/pdfs.dart';
 import '../ui/gates.dart';
 import '../ui/kit.dart';
 
+class ErrorTrainingGate extends ConsumerStatefulWidget {
+  const ErrorTrainingGate({super.key});
+
+  @override
+  ConsumerState<ErrorTrainingGate> createState() => _ErrorTrainingGateState();
+}
+
+class _ErrorTrainingGateState extends ConsumerState<ErrorTrainingGate> {
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _again = TextEditingController();
+  String? _error;
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    _again.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final app = ref.watch(appProvider);
+    if (app.childMode) {
+      return const Text(
+        'Wrong-problem practice needs a parent sign-in and a subscription. Ask a parent to turn it on in Settings.',
+      );
+    }
+    if (app.settings.signedIn && !app.settings.subscriptionActive) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Signed in as ${app.settings.accountEmail}.',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpace.s8),
+          const Text(
+            'Wrong-problem practice is a subscription. Lessons and speed drills stay available without it. The subscription is recorded on this device.',
+          ),
+          const SizedBox(height: AppSpace.s16),
+          AppButton(
+            label: 'Subscribe',
+            busy: _busy,
+            onPressed: () async {
+              setState(() {
+                _busy = true;
+                _error = null;
+              });
+              final error = await app.subscribe();
+              if (!mounted) return;
+              setState(() {
+                _busy = false;
+                _error = error;
+              });
+            },
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: AppSpace.s12),
+            Text(_error!, style: TextStyle(color: AppColors.of(context).danger)),
+          ],
+        ],
+      );
+    }
+    final creating = app.settings.accountEmail == null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          creating ? 'Create a parent account' : 'Sign in',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: AppSpace.s8),
+        const Text(
+          'Wrong-problem practice needs this sign-in and a subscription. The email and password stay on this device.',
+        ),
+        const SizedBox(height: AppSpace.s16),
+        TextField(
+          controller: _email,
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          decoration: const InputDecoration(labelText: 'Email'),
+        ),
+        const SizedBox(height: AppSpace.s12),
+        TextField(
+          controller: _password,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'Password'),
+        ),
+        if (creating) ...[
+          const SizedBox(height: AppSpace.s12),
+          TextField(
+            controller: _again,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'Repeat password'),
+          ),
+        ],
+        if (_error != null) ...[
+          const SizedBox(height: AppSpace.s12),
+          Text(_error!, style: TextStyle(color: AppColors.of(context).danger)),
+        ],
+        const SizedBox(height: AppSpace.s16),
+        AppButton(
+          label: creating ? 'Create account' : 'Sign in',
+          busy: _busy,
+          onPressed: () async {
+            setState(() {
+              _busy = true;
+              _error = null;
+            });
+            final error = creating
+                ? await app.createAccount(
+                    email: _email.text,
+                    password: _password.text,
+                    again: _again.text,
+                  )
+                : await app.signIn(
+                    email: _email.text,
+                    password: _password.text,
+                  );
+            if (!mounted) return;
+            setState(() {
+              _busy = false;
+              _error = error;
+            });
+          },
+        ),
+      ],
+    );
+  }
+}
+
 class ReviewPage extends ConsumerStatefulWidget {
   const ReviewPage({super.key});
 
@@ -60,6 +194,18 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
   @override
   Widget build(BuildContext context) {
     final app = ref.watch(appProvider);
+    if (!app.errorTrainingOpen) {
+      return PageFrame(
+        title: 'Wrong problems',
+        banner: app.banner,
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () => context.go(app.childMode ? '/child' : '/adult'),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        body: const ErrorTrainingGate(),
+      );
+    }
     final open = _items.where((item) => !item.reviewedOk).toList();
     final filtered = _trickId == null
         ? open
@@ -256,6 +402,42 @@ class SettingsPage extends ConsumerWidget {
                 );
               },
             ),
+            const SizedBox(height: AppSpace.s16),
+            Text(
+              'Wrong-problem practice',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpace.s8),
+            Text(
+              settings.signedIn
+                  ? 'Signed in as ${settings.accountEmail}.'
+                  : 'Not signed in.',
+            ),
+            Text(
+              settings.subscriptionActive
+                  ? 'Subscription is on for this account.'
+                  : 'A subscription is required before a child can practice missed problems.',
+            ),
+            const SizedBox(height: AppSpace.s12),
+            if (!settings.signedIn)
+              AppButton(
+                label: settings.accountEmail == null ? 'Create account' : 'Sign in',
+                onPressed: () => context.go('/review'),
+              )
+            else ...[
+              if (!settings.subscriptionActive)
+                AppButton(
+                  label: 'Subscribe',
+                  onPressed: () => app.subscribe(),
+                ),
+              const SizedBox(height: AppSpace.s8),
+              AppButton(
+                label: 'Sign out',
+                secondary: true,
+                onPressed: () => app.signOut(),
+              ),
+            ],
+            const SizedBox(height: AppSpace.s16),
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Privacy policy'),
@@ -312,7 +494,7 @@ class PrivacyPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'StepMath stores practice on this device. We do not ask for an account, an email address, or a precise location.',
+            'StepMath stores practice on this device. Lessons and speed drills do not ask for an account. Wrong-problem practice asks a parent to sign in. That email and password stay on this device.',
           ),
           SizedBox(height: AppSpace.s12),
           Text(

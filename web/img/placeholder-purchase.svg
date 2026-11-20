@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520" role="img">
+  <rect width="800" height="520" fill="#f3f1ec"/>
+  <rect x="36" y="36" width="220" height="448" rx="24" fill="#ffffff"/>
+  <rect x="60" y="68" width="90" height="10" rx="5" fill="#4772b8" opacity=".5"/>
+  <rect x="60" y="96" width="150" height="14" rx="5" fill="#2c333a" opacity=".16"/>
+  <rect x="60" y="140" width="172" height="56" rx="12" fill="#fafaf8"/>
+  <rect x="60" y="212" width="172" height="56" rx="12" fill="#fafaf8"/>
+  <rect x="60" y="284" width="172" height="56" rx="12" fill="#68a888" opacity=".2"/>
+  <rect x="284" y="36" width="480" height="448" rx="24" fill="#ffffff"/>
+  <rect x="316" y="72" width="180" height="16" rx="6" fill="#2c333a" opacity=".16"/>
+  <rect x="316" y="108" width="380" height="12" rx="5" fill="#2c333a" opacity=".1"/>
+  <rect x="316" y="132" width="300" height="12" rx="5" fill="#2c333a" opacity=".1"/>
+  <rect x="316" y="180" width="416" height="140" rx="16" fill="#fafaf8"/>
+  <rect x="340" y="212" width="120" height="12" rx="4" fill="#4772b8" opacity=".55"/>
+  <rect x="340" y="240" width="250" height="10" rx="4" fill="#2c333a" opacity=".12"/>
+  <rect x="316" y="348" width="130" height="36" rx="10" fill="#4772b8" opacity=".85"/>
+  <text x="524" y="430" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="20" font-weight="600" fill="#2c333a">One-time purchase</text>
+  <text x="524" y="458" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="14" fill="#5c6570">Replace with a screenshot</text>
+</svg>

@@ -216,6 +216,15 @@ void main() {
 
   testWidgets('F05-H1 a repaired miss leaves the open queue', (tester) async {
     final app = await boot();
+    expect(
+      await app.createAccount(
+        email: 'parent@example.com',
+        password: 'password1',
+        again: 'password1',
+      ),
+      isNull,
+    );
+    expect(await app.subscribe(), isNull);
     await app.createLearner(name: 'Ava', grade: '1');
     await app.createLearner(name: 'Ben', grade: '2');
     final ava = app.learners.firstWhere((learner) => learner.displayName == 'Ava');

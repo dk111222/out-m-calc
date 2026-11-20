@@ -12,6 +12,20 @@ import 'package:stepmath/domain/machines.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('wrong-problem practice needs a signed-in subscription', () {
+    expect(accountEmailError('parent@example.com'), isNull);
+    expect(accountEmailError('parent'), 'Enter an email address.');
+    expect(newPasswordError('short', 'short'), 'Use at least 8 characters.');
+    expect(
+      newPasswordError('password1', 'password2'),
+      'Those passwords do not match.',
+    );
+    expect(newPasswordError('password1', 'password1'), isNull);
+    expect(errorTrainingAllowed(signedIn: true, subscribed: true), isTrue);
+    expect(errorTrainingAllowed(signedIn: true, subscribed: false), isFalse);
+    expect(errorTrainingAllowed(signedIn: false, subscribed: true), isFalse);
+  });
+
   test('fixed tricks match the worked examples', () {
     expect(makeTen(8, 7).steps.map((step) => step.answer), ['2', '5', '15']);
     expect(makeTen(8, 7).finalAnswer, '15');

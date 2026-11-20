@@ -51,6 +51,11 @@ class AppController extends ChangeNotifier {
 
   Learner? get active => learnerById(activeLearnerId);
 
+  bool get errorTrainingOpen => errorTrainingAllowed(
+    signedIn: settings.signedIn,
+    subscribed: settings.subscriptionActive,
+  );
+
   void _session() {
     store.setSession(childMode: childMode, learnerId: activeLearnerId);
   }
@@ -268,6 +273,85 @@ class AppController extends ChangeNotifier {
     await store.saveSettings(settings);
     notifyListeners();
     return verdict.ok;
+  }
+
+  Future<String?> createAccount({
+    required String email,
+    required String password,
+    required String again,
+  }) async {
+    final normalized = email.trim().toLowerCase();
+    final emailError = accountEmailError(normalized);
+    if (emailError != null) return emailError;
+    final passwordError = newPasswordError(password, again);
+    if (passwordError != null) return passwordError;
+    if (settings.accountEmail != null) {
+      return 'This device already has an account.';
+    }
+    final salt = newSalt();
+    settings = settings.copyWith(
+      accountEmail: normalized,
+      accountPasswordHash: hashPin(password, salt),
+      accountSalt: salt,
+      signedIn: true,
+      updatedAt: clock.now().toUtc(),
+    );
+    try {
+      await store.saveSettings(settings);
+      banner = null;
+    } catch (_) {
+      banner = 'Could not save. Try again.';
+      notifyListeners();
+      return banner;
+    }
+    notifyListeners();
+    return null;
+  }
+
+  Future<String?> signIn({
+    required String email,
+    required String password,
+  }) async {
+    final normalized = email.trim().toLowerCase();
+    final emailError = accountEmailError(normalized);
+    if (emailError != null) return emailError;
+    if (settings.accountEmail == null) return 'Create an account first.';
+    if (normalized != settings.accountEmail) {
+      return 'That email is not the account on this device.';
+    }
+    if (settings.accountSalt == null ||
+        hashPin(password, settings.accountSalt!) !=
+            settings.accountPasswordHash) {
+      return 'That password does not match.';
+    }
+    settings = settings.copyWith(
+      signedIn: true,
+      updatedAt: clock.now().toUtc(),
+    );
+    await store.saveSettings(settings);
+    notifyListeners();
+    return null;
+  }
+
+  Future<void> signOut() async {
+    if (!settings.signedIn) return;
+    settings = settings.copyWith(
+      signedIn: false,
+      updatedAt: clock.now().toUtc(),
+    );
+    await store.saveSettings(settings);
+    notifyListeners();
+  }
+
+  Future<String?> subscribe() async {
+    if (!settings.signedIn) return 'Sign in first.';
+    settings = settings.copyWith(
+      subscriptionActive: true,
+      updatedAt: clock.now().toUtc(),
+    );
+    await store.saveSettings(settings);
+    notifyListeners();
+    return null;
   }
 
   /// Replaces a code that was already checked. A mismatched repeat keeps the old code.
@@ -697,6 +781,7 @@ class PracticeController extends ChangeNotifier {
   }
 
   Future<void> startRepair(WrongItem item) async {
+    if (!app.errorTrainingOpen) return;
     final learner = app.active;
     if (learner == null) return;
     final steps = (jsonDecode(item.stepsJson) as List)
@@ -726,6 +811,11 @@ class PracticeController extends ChangeNotifier {
   Future<void> resume(SessionSnapshot snapshot) async {
     final decoded = jsonDecode(snapshot.payload) as Map<String, dynamic>;
     view = PracticeView.fromJson(decoded);
+    if (view!.repairWrongId != null && !app.errorTrainingOpen) {
+      view = null;
+      notifyListeners();
+      return;
+    }
     if (view!.pending != null) {
       view = practiceAdvance(view!).view;
       if (view!.phase == 'done') {

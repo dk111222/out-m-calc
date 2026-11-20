@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — StepMath</title>
+  <meta name="description" content="StepMath stores practice on your device. We do not upload student data. This policy covers COPPA, GDPR, local storage, and this website.">
+  <meta name="theme-color" content="#fafaf8">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- CONTACT_EMAIL: replace hello@example.com before you publish. Colors live in tailwind.config. -->
+  <style>
+    @font-face {
+      font-family: Inter;
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: swap;
+      src: url("fonts/inter-variable.woff2") format("woff2");
+    }
+    body {
+      margin: 0;
+      background: #fafaf8;
+      color: #2c333a;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+    #mobile-menu.is-closed { display: none; }
+    @media (min-width: 1024px) {
+      #mobile-menu { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+  <script src="vendor/tailwind-3.4.17.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: "#4772b8", dark: "#3c64a4" },
+            sage: "#68a888",
+            paper: "#fafaf8",
+            ink: { DEFAULT: "#2c333a", soft: "#5c6570" }
+          },
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]
+          },
+          boxShadow: {
+            soft: "0 12px 32px -18px rgba(44, 51, 58, 0.28)"
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-paper font-sans text-ink antialiased leading-relaxed">
+  <a class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:shadow-soft" href="#main">Skip to content</a>
+
+  <header class="sticky top-0 z-40 border-b border-ink/10 bg-paper/90 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-6">
+      <a href="index.html" class="inline-flex items-center gap-2.5 font-semibold tracking-tight text-ink">
+        <img src="favicon.svg" alt="" width="28" height="28">
+        StepMath
+      </a>
+      <nav class="hidden items-center gap-6 text-sm text-ink-soft lg:flex" aria-label="Main">
+        <a class="hover:text-ink" href="index.html#features">Features</a>
+        <a class="hover:text-ink" href="index.html#screenshots">Screenshots</a>
+        <a class="hover:text-ink" href="index.html#pricing">Pricing</a>
+        <a class="font-medium text-ink" href="privacy.html" aria-current="page">Privacy Policy</a>
+        <a class="hover:text-ink" href="index.html#contact">Contact</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <!-- STORE_URL -->
+        <a class="inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-white px-3 text-sm font-medium text-ink hover:border-brand/40" href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.72c-.03-2.35 1.92-3.48 2.01-3.53-1.1-1.6-2.8-1.82-3.4-1.84-1.45-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.81-1.58.02-3.05.92-3.86 2.34-1.65 2.86-.42 7.1 1.18 9.42.79 1.14 1.72 2.41 2.95 2.37 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.74 1.27-.02 2.08-1.16 2.86-2.3.9-1.31 1.27-2.58 1.29-2.64-.03-.01-2.47-.95-2.5-3.84zM14.3 6.3c.65-.79 1.09-1.88.97-2.97-.94.04-2.08.63-2.75 1.41-.6.7-1.13 1.82-.99 2.89 1.05.08 2.12-.53 2.77-1.33z"/></svg>
+          <span class="hidden sm:inline">App Store</span>
+        </a>
+        <!-- STORE_URL -->
+        <a class="inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-white px-3 text-sm font-medium text-ink hover:border-brand/40" href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11.14-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14z"/></svg>
+          <span class="hidden sm:inline">Google Play</span>
+        </a>
+        <button id="menu-btn" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-white lg:hidden" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+            <path stroke-linecap="round" d="M5 7h14M5 12h14M5 17h14"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="is-closed border-t border-ink/10 bg-paper lg:hidden">
+      <nav class="mx-auto flex max-w-6xl flex-col px-5 py-3 text-base sm:px-6" aria-label="Mobile">
+        <a class="border-b border-ink/10 py-3" href="index.html#features">Features</a>
+        <a class="border-b border-ink/10 py-3" href="index.html#screenshots">Screenshots</a>
+        <a class="border-b border-ink/10 py-3" href="index.html#pricing">Pricing</a>
+        <a class="border-b border-ink/10 py-3 font-medium" href="privacy.html" aria-current="page">Privacy Policy</a>
+        <a class="py-3" href="index.html#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <article class="mx-auto max-w-3xl px-5 py-14 sm:px-6 lg:py-20">
+      <p class="text-sm font-medium text-brand">StepMath</p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-tight">Privacy Policy</h1>
+      <p class="mt-3 text-sm text-ink-soft">Last updated November 20, 2026</p>
+
+      <div class="mt-8 rounded-2xl border border-ink/10 bg-white p-5 shadow-soft">
+        <h2 class="text-lg font-semibold">The short version</h2>
+        <ul class="mt-3 space-y-2 text-ink-soft">
+          <li>Practice stays on the phone or tablet you own.</li>
+          <li>We do not upload student names, answers, or scores.</li>
+          <li>We do not show ads or build an advertising profile of a child.</li>
+          <li>You can delete a child's profile, or erase all local data, in the app.</li>
+        </ul>
+      </div>
+
+      <div class="mt-10 space-y-10">
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">Who this covers</h2>
+          <p class="mt-3 text-ink-soft">This policy covers the StepMath app for iOS and Android, and this website. StepMath is an offline mental math app for grades K–5. A parent or teacher sets it up. A child uses it to practice.</p>
+          <p class="mt-3 text-ink-soft">Lessons and speed drills do not require an account. There is no child login and no class cloud. Wrong-problem practice asks the parent to sign in on the device. That email and password are stored locally and are not uploaded.</p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">Information stored on your device</h2>
+          <p class="mt-3 text-ink-soft">If you add a learner, the app saves that information in local storage on the device:</p>
+          <ul class="mt-3 list-disc space-y-2 pl-5 text-ink-soft">
+            <li>The name and grade you enter for each child</li>
+            <li>Which trick or drill you assigned</li>
+            <li>Answers, scores, missed problems, and mastery on that device</li>
+            <li>Settings, such as whether a drill uses a timer</li>
+          </ul>
+          <p class="mt-3 text-ink-soft">That information is not uploaded to StepMath. We do not operate a server that receives student records. Uninstalling the app, deleting a profile, or using Erase all data removes it from the device.</p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">What we do not collect</h2>
+          <ul class="mt-3 list-disc space-y-2 pl-5 text-ink-soft">
+            <li>We do not collect precise location, contacts, photos, or the device microphone for practice.</li>
+            <li>We do not sell personal information.</li>
+            <li>We do not share student work with advertisers, schools we do not know, or data brokers.</li>
+            <li>We do not use a third-party analytics SDK to profile how a child practices.</li>
+            <li>The app does not show third-party ads.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">Children's privacy and COPPA</h2>
+          <p class="mt-3 text-ink-soft">The Children's Online Privacy Protection Act (COPPA) applies to operators of online services directed to children under 13 that collect personal information from those children. StepMath is built so that a parent or teacher is the person who sets up the app, and so that practice data is not collected online.</p>
+          <ul class="mt-3 list-disc space-y-2 pl-5 text-ink-soft">
+            <li>We do not knowingly collect personal information from children over the internet.</li>
+            <li>A child does not create an account, type an email address, or chat with anyone inside the app.</li>
+            <li>Names and grades that an adult types stay in local storage. They are not transmitted to us.</li>
+            <li>We do not use children's information for behavioral advertising, profiling, or sale.</li>
+            <li>A parent or teacher can delete one learner, or erase all local data, without emailing us. Erasing data asks for the adult's 4-digit code. A child in practice mode cannot erase the device data.</li>
+          </ul>
+          <p class="mt-3 text-ink-soft">This website is written for adults. It does not ask a child to submit a name, a photo, or an email address. If you believe a child has sent us personal information, email us and we will delete it from our inbox.</p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">GDPR and UK GDPR</h2>
+          <p class="mt-3 text-ink-soft">If you are in the European Economic Area or the United Kingdom, this is how the roles fall.</p>
+          <p class="mt-3 text-ink-soft">Practice records never leave your device, so StepMath does not receive them and does not act as a controller or a processor of a student database. You, the parent or teacher, decide what is stored on the device you control. You can review it in the app and delete it there.</p>
+          <p class="mt-3 text-ink-soft">If you email us, we are the controller of that message. We use it only to reply, or to handle the request you made, such as a privacy question. The legal basis is the request you sent us (steps taken at your request before a contract, or our legitimate interest in answering you). We keep the thread only as long as we need it to finish that conversation, then delete it. We do not use it to market to a child.</p>
+          <p class="mt-3 text-ink-soft">Because we do not hold student records, we do not transfer them outside your device, and we do not make an automated decision about a child. Where a privacy law gives you a right of access, correction, deletion, restriction, or objection, use the in-app delete controls for data on the device. For an email you sent us, contact the address below and we will honor the request. You may also lodge a complaint with your local data protection authority. We would like the chance to help first.</p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">Purchases</h2>
+          <p class="mt-3 text-ink-soft">The full library is a one-time purchase. Apple or Google processes the payment. StepMath does not receive your card number. Their privacy policy covers the payment. The store may tell the app that the purchase is active so the unlock can turn on. That receipt is not a student record.</p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">This website</h2>
+          <p class="mt-3 text-ink-soft">The site is a set of static pages. It has no account, no form, and no analytics cookie. The typeface and the stylesheet are files on this site. Opening a page does not create a profile.</p>
+          <p class="mt-3 text-ink-soft">The email link opens your own mail app. We receive only what you choose to write and send. Store buttons leave this site for Apple or Google.</p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">How to delete information</h2>
+          <ul class="mt-3 list-disc space-y-2 pl-5 text-ink-soft">
+            <li>In the app, delete one learner to remove that child's name, progress, and error bank from the device.</li>
+            <li>Use Erase all data to clear every learner and return to the start. This asks for the adult's 4-digit code.</li>
+            <li>Uninstalling the app removes its local storage from the device, subject to your phone's backup settings. If you do not want a backup to keep the data, turn off backup for StepMath in the device settings before you delete it.</li>
+            <li>To delete an email you sent us, write to the address below and ask.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">Changes</h2>
+          <p class="mt-3 text-ink-soft">If this policy changes, we will update the date at the top of this page. If a future version of the app starts uploading student data, we will say so here before that version does it, and we will not do it in the background of an install that was offline-only.</p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold tracking-tight">Contact</h2>
+          <p class="mt-3 text-ink-soft">Questions about a child's information, this policy, or a deletion request:</p>
+          <p class="mt-3">
+            <!-- CONTACT_EMAIL -->
+            <a class="font-medium text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand" href="mailto:hello@example.com">hello@example.com</a>
+          </p>
+        </section>
+      </div>
+    </article>
+  </main>
+
+  <footer class="border-t border-ink/10">
+    <div class="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 sm:px-6 md:flex-row md:items-start md:justify-between">
+      <div>
+        <a href="index.html" class="inline-flex items-center gap-2.5 font-semibold text-ink">
+          <img src="favicon.svg" alt="" width="28" height="28">
+          StepMath
+        </a>
+        <p class="mt-3 max-w-sm text-sm text-ink-soft">Offline mental math for grades K–5. For homeschool parents and elementary teachers.</p>
+        <p class="mt-4 text-sm">
+          <!-- CONTACT_EMAIL -->
+          <a class="font-medium text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand" href="mailto:hello@example.com">hello@example.com</a>
+        </p>
+      </div>
+      <div class="flex flex-col items-start gap-4">
+        <nav class="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft" aria-label="Footer">
+          <a class="hover:text-ink" href="privacy.html" aria-current="page">Privacy Policy</a>
+          <a class="hover:text-ink" href="index.html#features">Features</a>
+          <a class="hover:text-ink" href="index.html#pricing">Pricing</a>
+        </nav>
+        <div class="flex gap-2">
+          <!-- STORE_URL -->
+          <a class="inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-white px-3 text-sm font-medium hover:border-brand/40" href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.72c-.03-2.35 1.92-3.48 2.01-3.53-1.1-1.6-2.8-1.82-3.4-1.84-1.45-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.81-1.58.02-3.05.92-3.86 2.34-1.65 2.86-.42 7.1 1.18 9.42.79 1.14 1.72 2.41 2.95 2.37 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.74 1.27-.02 2.08-1.16 2.86-2.3.9-1.31 1.27-2.58 1.29-2.64-.03-.01-2.47-.95-2.5-3.84zM14.3 6.3c.65-.79 1.09-1.88.97-2.97-.94.04-2.08.63-2.75 1.41-.6.7-1.13 1.82-.99 2.89 1.05.08 2.12-.53 2.77-1.33z"/></svg>
+            App Store
+          </a>
+          <!-- STORE_URL -->
+          <a class="inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-white px-3 text-sm font-medium hover:border-brand/40" href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11.14-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14z"/></svg>
+            Google Play
+          </a>
+        </div>
+        <p class="text-sm text-ink-soft">© 2026 StepMath</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var btn = document.getElementById("menu-btn");
+      var menu = document.getElementById("mobile-menu");
+      if (!btn || !menu) return;
+      function setOpen(open) {
+        menu.classList.toggle("is-closed", !open);
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+      }
+      btn.addEventListener("click", function () {
+        setOpen(btn.getAttribute("aria-expanded") !== "true");
+      });
+      menu.addEventListener("click", function (event) {
+        if (event.target.closest("a")) setOpen(false);
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") setOpen(false);
+      });
+    })();
+  </script>
+</body>
+</html>

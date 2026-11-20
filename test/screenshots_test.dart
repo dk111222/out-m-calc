@@ -107,6 +107,15 @@ void main() {
     await _settle(tester);
     await _shoot(tester, 'P13-pause');
 
+    expect(
+      await app.createAccount(
+        email: 'parent@example.com',
+        password: 'password1',
+        again: 'password1',
+      ),
+      isNull,
+    );
+    expect(await app.subscribe(), isNull);
     await _go(tester, '/review');
     await _shoot(tester, 'P15');
     await _go(tester, '/export/worksheet?trickId=g1-make-10');

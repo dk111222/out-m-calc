@@ -1,129 +1,453 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title data-i18n="home.title">StepMath</title>
-  <meta name="description" data-i18n-content="home.description" content="Mental math in three levels. See the steps, then do 10 problems.">
+  <title>StepMath — Mental Math Tricks and Speed Drill</title>
+  <meta name="description" content="Learn mental math shortcuts, timed speed drills, and track progress for multiple children. Offline first, COPPA compliant. Wrong-problem practice needs a parent sign-in and a subscription.">
+  <meta name="theme-color" content="#fafaf8">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/site.css">
+
+  <!--
+    Edit before you publish
+    1. Store links: search for STORE_URL (App Store and Google Play).
+    2. Contact email: search for CONTACT_EMAIL.
+    3. Screenshots: each image has an IMAGE comment. Replace src and keep the alt text.
+    Colors and type live in the tailwind.config block below.
+    Tailwind CSS v3.4.17 is the local browser build (vendor/tailwind-3.4.17.js).
+    Change utility classes in this file and refresh. No build step.
+  -->
+
+  <style>
+    @font-face {
+      font-family: Inter;
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: swap;
+      src: url("fonts/inter-variable.woff2") format("woff2");
+    }
+    body {
+      margin: 0;
+      background: #fafaf8;
+      color: #2c333a;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+    /* Closed by default, including before Tailwind runs. Desktop never shows it. */
+    #mobile-menu.is-closed { display: none; }
+    @media (min-width: 1024px) {
+      #mobile-menu { display: none; }
+    }
+    summary::-webkit-details-marker { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        transition: none !important;
+      }
+    }
+  </style>
+  <script src="vendor/tailwind-3.4.17.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: "#4772b8", dark: "#3c64a4" },
+            sage: "#68a888",
+            paper: "#fafaf8",
+            ink: { DEFAULT: "#2c333a", soft: "#5c6570" }
+          },
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]
+          },
+          boxShadow: {
+            soft: "0 12px 32px -18px rgba(44, 51, 58, 0.28)"
+          }
+        }
+      }
+    };
+  </script>
 </head>
-<body>
-  <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="wordmark" href="index.html">StepMath</a>
-      <div class="header-end">
-        <nav class="site-nav" aria-label="Main" data-i18n-aria="nav.main">
-          <a href="tricks.html" data-i18n="nav.tricks">Tricks</a>
-          <a href="practice.html" data-i18n="nav.try">Try</a>
-          <div class="lang" data-lang-slot></div>
-        </nav>
-        <div class="store-row header-stores">
-          <a class="store is-pending" data-store="appStore" href="#stores">
-            <span class="store-name">App Store</span>
-            <span class="soon" data-i18n="store.soon">Soon</span>
-          </a>
-          <a class="store is-pending" data-store="googlePlay" href="#stores">
-            <span class="store-name">Google Play</span>
-            <span class="soon" data-i18n="store.soon">Soon</span>
-          </a>
-          <p class="store-note" hidden></p>
-        </div>
-      </div>
-    </div>
-  </header>
-  <main id="main">
-    <div class="wrap hero">
-      <div>
-        <p class="kicker" data-i18n="home.kicker">Beginner · Intermediate · Advanced</p>
-        <h1><span data-i18n="home.h1a">See the steps,</span><span class="break" data-i18n="home.h1b">then do 10.</span></h1>
-        <ul class="cores">
-          <li><b data-i18n="home.learn">Learn a trick</b> <span data-i18n="home.learnRest">Fill in each step.</span></li>
-          <li><b data-i18n="home.drill">Do 10</b> <span data-i18n="home.drillRest">Answer only.</span></li>
-        </ul>
-        <div class="actions">
-          <a class="button" href="practice.html" data-i18n="home.try">Try 10 problems</a>
-          <a class="button secondary" href="tricks/make-10.html" data-i18n="home.see">See Make 10</a>
-        </div>
-      </div>
-      <div class="stage">
-        <figure class="shot">
-          <div class="device" aria-hidden="true">
-            <div class="device-screen">
-              <div class="device-top">
-                <span>‹</span>
-                <span>1 / 10</span>
-              </div>
-              <div class="device-body">
-                <p class="device-eq"><span class="c1">9</span> + <span class="c2">6</span></p>
-                <p class="device-meta" data-i18n="home.stepMeta">Step 1 of 3</p>
-                <p class="device-ask" data-i18n="home.stepAsk">How many does 9 need to make 10?</p>
-                <div class="device-field" data-i18n="home.answer">Answer</div>
-                <div class="device-pad">
-                  <span>1</span><span>2</span><span>3</span>
-                  <span>4</span><span>5</span><span>6</span>
-                  <span>7</span><span>8</span><span>9</span>
-                  <span>.</span><span>0</span><span class="device-del" data-i18n="home.delete">Del</span>
-                </div>
-                <div class="device-go" data-i18n="try.submit">Submit</div>
-              </div>
-            </div>
-          </div>
-          <figcaption><b data-i18n="home.learn">Learn a trick</b></figcaption>
-        </figure>
-        <figure class="shot">
-          <div class="device" aria-hidden="true">
-            <div class="device-screen">
-              <div class="device-top">
-                <span>‹</span>
-                <span>4 / 10</span>
-                <span class="device-time">01:24</span>
-              </div>
-              <div class="device-body">
-                <p class="device-eq">48 × 5</p>
-                <p class="device-meta" data-i18n="home.answerOnly">Answer only</p>
-                <div class="device-field" data-i18n="home.answer">Answer</div>
-                <div class="device-pad">
-                  <span>1</span><span>2</span><span>3</span>
-                  <span>4</span><span>5</span><span>6</span>
-                  <span>7</span><span>8</span><span>9</span>
-                  <span>.</span><span>0</span><span class="device-del" data-i18n="home.delete">Del</span>
-                </div>
-                <div class="device-go" data-i18n="try.submit">Submit</div>
-              </div>
-            </div>
-          </div>
-          <figcaption><b data-i18n="home.drill">Do 10</b></figcaption>
-        </figure>
+<body class="bg-paper font-sans text-ink antialiased leading-relaxed">
+  <a class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:shadow-soft" href="#main">Skip to content</a>
+
+  <header class="sticky top-0 z-40 border-b border-ink/10 bg-paper/90 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-6">
+      <a href="index.html" class="inline-flex items-center gap-2.5 font-semibold tracking-tight text-ink">
+        <img src="favicon.svg" alt="" width="28" height="28">
+        StepMath
+      </a>
+
+      <nav class="hidden items-center gap-6 text-sm text-ink-soft lg:flex" aria-label="Main">
+        <a class="hover:text-ink" href="#features">Features</a>
+        <a class="hover:text-ink" href="#screenshots">Screenshots</a>
+        <a class="hover:text-ink" href="#pricing">Pricing</a>
+        <a class="hover:text-ink" href="privacy.html">Privacy Policy</a>
+        <a class="hover:text-ink" href="#contact">Contact</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <!-- STORE_URL: replace with the StepMath App Store product link -->
+        <a class="inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-white px-3 text-sm font-medium text-ink hover:border-brand/40" href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.72c-.03-2.35 1.92-3.48 2.01-3.53-1.1-1.6-2.8-1.82-3.4-1.84-1.45-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.81-1.58.02-3.05.92-3.86 2.34-1.65 2.86-.42 7.1 1.18 9.42.79 1.14 1.72 2.41 2.95 2.37 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.74 1.27-.02 2.08-1.16 2.86-2.3.9-1.31 1.27-2.58 1.29-2.64-.03-.01-2.47-.95-2.5-3.84zM14.3 6.3c.65-.79 1.09-1.88.97-2.97-.94.04-2.08.63-2.75 1.41-.6.7-1.13 1.82-.99 2.89 1.05.08 2.12-.53 2.77-1.33z"/></svg>
+          <span class="hidden sm:inline">App Store</span>
+        </a>
+        <!-- STORE_URL: replace with the StepMath Google Play product link -->
+        <a class="inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-white px-3 text-sm font-medium text-ink hover:border-brand/40" href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11.14-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14z"/></svg>
+          <span class="hidden sm:inline">Google Play</span>
+        </a>
+        <button id="menu-btn" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-white lg:hidden" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+            <path stroke-linecap="round" d="M5 7h14M5 12h14M5 17h14"/>
+          </svg>
+        </button>
       </div>
     </div>
 
-    <section class="section">
-      <div class="wrap">
-        <h2 class="block-title" data-i18n="home.levels">Levels</h2>
-        <ol class="grade-line">
-          <li><a href="tricks.html#beginner"><b data-i18n="level.beginner">Beginner</b><span data-i18n="trick.make10">Make 10</span><em>8 + 7</em></a></li>
-          <li><a href="tricks.html#intermediate"><b data-i18n="level.intermediate">Intermediate</b><span data-i18n="trick.times5">Times 5</span><em>48 × 5</em></a></li>
-          <li><a href="tricks.html#advanced"><b data-i18n="level.advanced">Advanced</b><span data-i18n="trick.p10">10%</span><em data-i18n="money.80to8">$80 → $8</em></a></li>
-        </ol>
+    <div id="mobile-menu" class="is-closed border-t border-ink/10 bg-paper lg:hidden">
+      <nav class="mx-auto flex max-w-6xl flex-col px-5 py-3 text-base sm:px-6" aria-label="Mobile">
+        <a class="border-b border-ink/10 py-3" href="#features">Features</a>
+        <a class="border-b border-ink/10 py-3" href="#screenshots">Screenshots</a>
+        <a class="border-b border-ink/10 py-3" href="#pricing">Pricing</a>
+        <a class="border-b border-ink/10 py-3" href="privacy.html">Privacy Policy</a>
+        <a class="py-3" href="#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-14 sm:px-6 lg:grid-cols-2 lg:py-20">
+      <div>
+        <p class="text-sm font-medium text-brand">For homeschool families and elementary teachers</p>
+        <h1 class="mt-4 text-[2rem] font-semibold !leading-[1.2] tracking-tight sm:text-5xl">Math Tricks &amp; Speed Drill&nbsp;— Offline Mental Math Practice for Kids</h1>
+        <p class="mt-5 max-w-xl text-lg text-ink-soft">Learn mental math shortcuts, timed speed drills, track progress for multiple children. Offline first, COPPA compliant. Wrong-problem practice needs a parent sign-in and a subscription.</p>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+          <!-- STORE_URL -->
+          <a class="inline-flex items-center justify-center gap-3 rounded-xl bg-ink px-4 py-3 text-white hover:bg-ink/90" href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.72c-.03-2.35 1.92-3.48 2.01-3.53-1.1-1.6-2.8-1.82-3.4-1.84-1.45-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.81-1.58.02-3.05.92-3.86 2.34-1.65 2.86-.42 7.1 1.18 9.42.79 1.14 1.72 2.41 2.95 2.37 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.74 1.27-.02 2.08-1.16 2.86-2.3.9-1.31 1.27-2.58 1.29-2.64-.03-.01-2.47-.95-2.5-3.84zM14.3 6.3c.65-.79 1.09-1.88.97-2.97-.94.04-2.08.63-2.75 1.41-.6.7-1.13 1.82-.99 2.89 1.05.08 2.12-.53 2.77-1.33z"/></svg>
+            <span class="text-left leading-tight"><span class="block text-[11px] text-white/70">Download on the</span><span class="block text-sm font-semibold">App Store</span></span>
+          </a>
+          <!-- STORE_URL -->
+          <a class="inline-flex items-center justify-center gap-3 rounded-xl bg-brand px-4 py-3 text-white hover:bg-brand-dark" href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11.14-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14z"/></svg>
+            <span class="text-left leading-tight"><span class="block text-[11px] text-white/80">Get it on</span><span class="block text-sm font-semibold">Google Play</span></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="mx-auto w-full max-w-[320px]">
+        <div class="rounded-[1.75rem] border border-ink/10 bg-white p-2 shadow-soft">
+          <!-- IMAGE: hero app preview. Replace src. Suggested 390×844. Keep the alt. -->
+          <img src="img/placeholder-hero.svg" alt="StepMath on a phone, showing a mental math shortcut and a place to enter the answer" width="390" height="844" fetchpriority="high" class="aspect-[390/844] w-full rounded-[1.35rem] bg-[#f3f1ec]">
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="scroll-mt-24 border-t border-ink/10">
+      <div class="mx-auto max-w-6xl px-5 py-16 sm:px-6 lg:py-24">
+        <h2 class="text-3xl font-semibold tracking-tight">Practice that stays on the device</h2>
+        <p class="mt-3 max-w-2xl text-ink-soft">Two jobs, kept separate. A child learns the steps of a trick, then answers a speed drill. You see progress for each child.</p>
+        <div class="mt-10 grid gap-5 md:grid-cols-3">
+          <article class="rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand" aria-hidden="true">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
+            </div>
+            <h3 class="mt-5 text-lg font-semibold">Mental Math Tricks</h3>
+            <p class="mt-2 text-ink-soft">Step-by-step math shortcut tutorials for multiplication, squaring, and percentage.</p>
+          </article>
+          <article class="rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-sage/15 text-brand" aria-hidden="true">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 10v4l2 1M9 3h6"/></svg>
+            </div>
+            <h3 class="mt-5 text-lg font-semibold">Custom Speed Drills</h3>
+            <p class="mt-2 text-ink-soft">Toggle the timer on or off, and set a custom number range.</p>
+          </article>
+          <article class="rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand" aria-hidden="true">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="9" cy="8" r="2.4"/><circle cx="16.5" cy="9" r="2"/><path d="M4.2 18.5c.6-2.5 2.5-3.7 4.8-3.7s4.2 1.2 4.8 3.7M13.2 14.8c.7-.4 1.7-.6 2.8-.6 1.9 0 3.4.9 4 3"/></svg>
+            </div>
+            <h3 class="mt-5 text-lg font-semibold">Multi-child Profiles</h3>
+            <p class="mt-2 text-ink-soft">Separate progress and an independent error bank for each child. Profiles do not share data.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="screenshots" class="scroll-mt-24 border-t border-ink/10">
+      <div class="mx-auto max-w-6xl px-5 py-16 sm:px-6 lg:py-24">
+        <div class="flex items-end justify-between gap-6">
+          <div>
+            <h2 class="text-3xl font-semibold tracking-tight">Inside the app</h2>
+            <p class="mt-3 max-w-2xl text-ink-soft">Trick list, speed drill, progress, and the PDF you can hand to a child. Swipe sideways on a phone.</p>
+          </div>
+        </div>
+        <div class="mt-8 flex gap-5 overflow-x-auto overscroll-x-contain py-3 snap-x snap-mandatory" tabindex="0" aria-label="App screenshots">
+          <figure class="w-[220px] shrink-0 snap-start sm:w-[250px]">
+            <div class="rounded-[1.6rem] border border-ink/10 bg-white p-2 shadow-soft">
+              <!-- IMAGE: trick list. Replace src. Suggested 390×844. -->
+              <img src="img/placeholder-tricks.svg" alt="Trick list in StepMath, with shortcuts grouped for a child's grade" width="390" height="844" loading="lazy" class="aspect-[390/844] w-full rounded-[1.2rem] bg-[#f3f1ec]">
+            </div>
+            <figcaption class="mt-3 text-center text-sm font-medium">Trick list</figcaption>
+          </figure>
+          <figure class="w-[220px] shrink-0 snap-start sm:w-[250px]">
+            <div class="rounded-[1.6rem] border border-ink/10 bg-white p-2 shadow-soft">
+              <!-- IMAGE: speed drill. Replace src. Suggested 390×844. -->
+              <img src="img/placeholder-speed.svg" alt="Speed drill in StepMath, with a timer and a custom number keyboard" width="390" height="844" loading="lazy" class="aspect-[390/844] w-full rounded-[1.2rem] bg-[#f3f1ec]">
+            </div>
+            <figcaption class="mt-3 text-center text-sm font-medium">Speed drill</figcaption>
+          </figure>
+          <figure class="w-[220px] shrink-0 snap-start sm:w-[250px]">
+            <div class="rounded-[1.6rem] border border-ink/10 bg-white p-2 shadow-soft">
+              <!-- IMAGE: progress report. Replace src. Suggested 390×844. -->
+              <img src="img/placeholder-report.svg" alt="Progress report in StepMath, with accuracy and days practiced for one child" width="390" height="844" loading="lazy" class="aspect-[390/844] w-full rounded-[1.2rem] bg-[#f3f1ec]">
+            </div>
+            <figcaption class="mt-3 text-center text-sm font-medium">Progress report</figcaption>
+          </figure>
+          <figure class="w-[220px] shrink-0 snap-start sm:w-[250px]">
+            <div class="rounded-[1.6rem] border border-ink/10 bg-white p-2 shadow-soft">
+              <!-- IMAGE: PDF export. Replace src. Suggested 390×844. -->
+              <img src="img/placeholder-pdf.svg" alt="PDF worksheet and certificate export in StepMath" width="390" height="844" loading="lazy" class="aspect-[390/844] w-full rounded-[1.2rem] bg-[#f3f1ec]">
+            </div>
+            <figcaption class="mt-3 text-center text-sm font-medium">PDF export</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-t border-ink/10" aria-labelledby="details-title">
+      <div class="mx-auto max-w-6xl px-5 py-16 sm:px-6 lg:py-24">
+        <h2 id="details-title" class="text-3xl font-semibold tracking-tight">Made for a school day at home</h2>
+        <div class="mt-12 space-y-16 lg:space-y-24">
+          <article class="grid items-center gap-8 lg:grid-cols-2">
+            <div>
+              <h3 class="text-2xl font-semibold tracking-tight">Available offline</h3>
+              <p class="mt-3 text-ink-soft">Lessons, drills, and missed problems stay on the device. Practice still works in the car, at the park, or anywhere the signal drops. A connection is needed only to install the app or to buy the unlock.</p>
+            </div>
+            <div class="rounded-2xl border border-ink/10 bg-white p-3 shadow-soft">
+              <!-- IMAGE: offline practice. Replace src. Suggested 800×520. -->
+              <img src="img/placeholder-offline.svg" alt="StepMath open on a lesson with no connection required" width="800" height="520" loading="lazy" class="w-full rounded-xl bg-[#f3f1ec]">
+            </div>
+          </article>
+
+          <article class="grid items-center gap-8 lg:grid-cols-2">
+            <div class="lg:order-2">
+              <h3 class="text-2xl font-semibold tracking-tight">PDF worksheets and certificates</h3>
+              <p class="mt-3 text-ink-soft">Export a worksheet with the steps, a set of problems, and an answer page. Export a certificate when a child masters a trick. The file is made on the device, so you can print it or save it without sending student work to a server.</p>
+            </div>
+            <div class="rounded-2xl border border-ink/10 bg-white p-3 shadow-soft lg:order-1">
+              <!-- IMAGE: worksheet and certificate. Replace src. Suggested 800×520. -->
+              <img src="img/placeholder-worksheet.svg" alt="A StepMath worksheet and certificate ready to export as a PDF" width="800" height="520" loading="lazy" class="w-full rounded-xl bg-[#f3f1ec]">
+            </div>
+          </article>
+
+          <article class="grid items-center gap-8 lg:grid-cols-2">
+            <div>
+              <h3 class="text-2xl font-semibold tracking-tight">A keyboard built for arithmetic</h3>
+              <p class="mt-3 text-ink-soft">Children answer on a large number pad: digits, a decimal point, delete, and submit. Letters never get in the way, and an empty answer cannot be sent.</p>
+            </div>
+            <div class="rounded-2xl border border-ink/10 bg-white p-3 shadow-soft">
+              <!-- IMAGE: custom number keyboard. Replace src. Suggested 800×520. -->
+              <img src="img/placeholder-keyboard.svg" alt="The StepMath number keyboard under a multiplication problem" width="800" height="520" loading="lazy" class="w-full rounded-xl bg-[#f3f1ec]">
+            </div>
+          </article>
+
+          <article class="grid items-center gap-8 lg:grid-cols-2">
+            <div class="lg:order-2">
+              <h3 class="text-2xl font-semibold tracking-tight">No account required</h3>
+              <p class="mt-3 text-ink-soft">Add a child and start. There is no sign-up wall and no password for the child. A 4-digit code, set by the adult, guards purchases, deleting a profile, and erasing data.</p>
+            </div>
+            <div class="rounded-2xl border border-ink/10 bg-white p-3 shadow-soft lg:order-1">
+              <!-- IMAGE: no login. Replace src. Suggested 800×520. -->
+              <img src="img/placeholder-nologin.svg" alt="StepMath ready to add a child, with no sign-in form" width="800" height="520" loading="lazy" class="w-full rounded-xl bg-[#f3f1ec]">
+            </div>
+          </article>
+
+          <article class="grid items-center gap-8 lg:grid-cols-2">
+            <div>
+              <h3 class="text-2xl font-semibold tracking-tight">No ads</h3>
+              <p class="mt-3 text-ink-soft">Lessons and drills are not interrupted by ads. A child never has to watch a video to continue, and nothing in the practice is sold as an ad placement.</p>
+            </div>
+            <div class="rounded-2xl border border-ink/10 bg-white p-3 shadow-soft">
+              <!-- IMAGE: a drill with no ads. Replace src. Suggested 800×520. -->
+              <img src="img/placeholder-noads.svg" alt="A StepMath drill with no advertisements on the screen" width="800" height="520" loading="lazy" class="w-full rounded-xl bg-[#f3f1ec]">
+            </div>
+          </article>
+
+          <article class="grid items-center gap-8 lg:grid-cols-2">
+            <div class="lg:order-2">
+              <h3 class="text-2xl font-semibold tracking-tight">One-time purchase</h3>
+              <p class="mt-3 text-ink-soft">The full library is a single purchase in the App Store or Google Play. There is no monthly plan, no renewal, and no price that changes after a trial week.</p>
+            </div>
+            <div class="rounded-2xl border border-ink/10 bg-white p-3 shadow-soft lg:order-1">
+              <!-- IMAGE: purchase screen. Replace src. Suggested 800×520. -->
+              <img src="img/placeholder-purchase.svg" alt="The StepMath screen for a one-time purchase" width="800" height="520" loading="lazy" class="w-full rounded-xl bg-[#f3f1ec]">
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="scroll-mt-24 border-t border-ink/10">
+      <div class="mx-auto max-w-6xl px-5 py-16 sm:px-6 lg:py-24">
+        <h2 class="text-3xl font-semibold tracking-tight">Pricing</h2>
+        <p class="mt-3 max-w-2xl text-ink-soft">Lessons and drills are a one-time purchase. Wrong-problem practice is a subscription. The store shows the price before you confirm.</p>
+        <article class="mx-auto mt-10 max-w-xl rounded-2xl border border-ink/10 bg-white p-6 shadow-soft sm:p-8">
+          <p class="inline-flex rounded-full bg-sage/20 px-3 py-1 text-sm font-medium text-ink">Lessons and drills: pay once</p>
+          <h3 class="mt-4 text-2xl font-semibold tracking-tight">One-Time Purchase</h3>
+          <p class="mt-2 text-ink-soft">Unlock the full lesson library in the App Store or Google Play. You will not be billed again next month. Wrong-problem practice is separate: a parent signs in and subscribes. Missed problems stay on the device.</p>
+
+          <div class="mt-6 rounded-xl border border-ink/10 bg-paper p-4">
+            <h4 class="text-sm font-semibold">Free version</h4>
+            <ul class="mt-2 space-y-1 text-sm text-ink-soft">
+              <li>Limited tricks</li>
+              <li>Limited drills</li>
+              <li>One child profile</li>
+            </ul>
+          </div>
+
+          <h4 class="mt-6 text-sm font-semibold">The purchase adds</h4>
+          <ul class="mt-3 space-y-2 text-ink-soft">
+            <li class="flex gap-2"><span class="mt-1 text-brand" aria-hidden="true">✓</span><span>The full trick library, including multiplication, squaring, and percentage</span></li>
+            <li class="flex gap-2"><span class="mt-1 text-brand" aria-hidden="true">✓</span><span>The full speed-drill range, with a custom number range</span></li>
+            <li class="flex gap-2"><span class="mt-1 text-brand" aria-hidden="true">✓</span><span>A separate profile and error bank for each child</span></li>
+            <li class="flex gap-2"><span class="mt-1 text-brand" aria-hidden="true">✓</span><span>PDF worksheets and certificates</span></li>
+          </ul>
+
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <!-- STORE_URL -->
+            <a class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-white hover:bg-ink/90" href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer">Download on the App Store</a>
+            <!-- STORE_URL -->
+            <a class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-dark" href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer">Get it on Google Play</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="border-t border-ink/10" aria-labelledby="trust-title">
+      <div class="mx-auto max-w-6xl px-5 py-16 sm:px-6 lg:py-24">
+        <h2 id="trust-title" class="text-3xl font-semibold tracking-tight">Privacy you can check</h2>
+        <p class="mt-3 max-w-2xl text-ink-soft">Parents set the app up. Children practice. Student work does not leave the device. Read the <a class="font-medium text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand" href="privacy.html">privacy policy</a>.</p>
+        <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <article class="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft">
+            <h3 class="font-semibold">COPPA Compliant</h3>
+            <p class="mt-2 text-sm text-ink-soft">We do not collect personal information from children over the internet, and we do not use it for advertising.</p>
+          </article>
+          <article class="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft">
+            <h3 class="font-semibold">Offline Computing</h3>
+            <p class="mt-2 text-sm text-ink-soft">Lessons and drills run on the phone or tablet. A missing connection does not stop practice.</p>
+          </article>
+          <article class="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft">
+            <h3 class="font-semibold">No tracking</h3>
+            <p class="mt-2 text-sm text-ink-soft">No advertising profile, no tracker on student activity, and no sale of personal information.</p>
+          </article>
+          <article class="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft">
+            <h3 class="font-semibold">Local data storage</h3>
+            <p class="mt-2 text-sm text-ink-soft">Names, progress, and missed problems stay in local storage on your device. They are not uploaded.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-t border-ink/10" aria-labelledby="faq-title">
+      <div class="mx-auto max-w-3xl px-5 py-16 sm:px-6 lg:py-24">
+        <h2 id="faq-title" class="text-3xl font-semibold tracking-tight">Questions parents ask</h2>
+        <div class="mt-8 divide-y divide-ink/10 border-y border-ink/10">
+          <details class="group">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-medium">
+              Does StepMath need an internet connection?
+              <span class="text-xl leading-none text-brand transition-transform duration-150 group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <p class="pb-5 text-ink-soft">No. After the app is installed, lessons, speed drills, progress, and the error bank work offline. A connection is used only to download the app and to complete a purchase in the App Store or Google Play.</p>
+          </details>
+          <details class="group">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-medium">
+              Can I turn the timer off?
+              <span class="text-xl leading-none text-brand transition-transform duration-150 group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <p class="pb-5 text-ink-soft">Yes. A speed drill can end on a timer or after a set number of problems, and you can pause a timed round. Lessons, where a child fills in each step, are not timed.</p>
+          </details>
+          <details class="group">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-medium">
+              How does it work with more than one child?
+              <span class="text-xl leading-none text-brand transition-transform duration-150 group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <p class="pb-5 text-ink-soft">Add a profile for each child. Each profile keeps its own grade, progress, and error bank. One child's missed problems are not mixed into another child's review. The free version includes one child. The one-time purchase adds more profiles.</p>
+          </details>
+          <details class="group">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-medium">
+              Are there ads?
+              <span class="text-xl leading-none text-brand transition-transform duration-150 group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <p class="pb-5 text-ink-soft">No. There are no ads in lessons or drills, and a child never has to watch an ad to continue.</p>
+          </details>
+          <details class="group">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-medium">
+              Do you collect children's data?
+              <span class="text-xl leading-none text-brand transition-transform duration-150 group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <p class="pb-5 text-ink-soft">No. A child's name, grade, answers, and scores stay on the device. StepMath does not upload student data and does not sell or share personal information. A child does not get an account. Wrong-problem practice asks the parent to sign in on the device; that email and password stay there. You can delete one profile or erase all local data in the app. The <a class="font-medium text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand" href="privacy.html">privacy policy</a> has the details.</p>
+          </details>
+        </div>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap footer-bar">
-      <a class="wordmark" href="index.html">StepMath</a>
-      <nav class="footer-nav" aria-label="Footer" data-i18n-aria="nav.footer">
-        <a href="tricks.html" data-i18n="nav.tricks">Tricks</a>
-        <a href="practice.html" data-i18n="nav.try">Try</a>
-      </nav>
+  <footer id="contact" class="scroll-mt-24 border-t border-ink/10">
+    <div class="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 sm:px-6 md:flex-row md:items-start md:justify-between">
+      <div>
+        <a href="index.html" class="inline-flex items-center gap-2.5 font-semibold text-ink">
+          <img src="favicon.svg" alt="" width="28" height="28">
+          StepMath
+        </a>
+        <p class="mt-3 max-w-sm text-sm text-ink-soft">Offline mental math for grades K–5. For homeschool parents and elementary teachers.</p>
+        <p class="mt-4 text-sm">
+          <!-- CONTACT_EMAIL: replace this address before you publish -->
+          <a class="font-medium text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand" href="mailto:hello@example.com">hello@example.com</a>
+        </p>
+      </div>
+      <div class="flex flex-col items-start gap-4">
+        <nav class="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft" aria-label="Footer">
+          <a class="hover:text-ink" href="privacy.html">Privacy Policy</a>
+          <a class="hover:text-ink" href="#features">Features</a>
+          <a class="hover:text-ink" href="#pricing">Pricing</a>
+        </nav>
+        <div class="flex gap-2">
+          <!-- STORE_URL -->
+          <a class="inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-white px-3 text-sm font-medium hover:border-brand/40" href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.72c-.03-2.35 1.92-3.48 2.01-3.53-1.1-1.6-2.8-1.82-3.4-1.84-1.45-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.81-1.58.02-3.05.92-3.86 2.34-1.65 2.86-.42 7.1 1.18 9.42.79 1.14 1.72 2.41 2.95 2.37 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.74 1.27-.02 2.08-1.16 2.86-2.3.9-1.31 1.27-2.58 1.29-2.64-.03-.01-2.47-.95-2.5-3.84zM14.3 6.3c.65-.79 1.09-1.88.97-2.97-.94.04-2.08.63-2.75 1.41-.6.7-1.13 1.82-.99 2.89 1.05.08 2.12-.53 2.77-1.33z"/></svg>
+            App Store
+          </a>
+          <!-- STORE_URL -->
+          <a class="inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-white px-3 text-sm font-medium hover:border-brand/40" href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11.14-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14z"/></svg>
+            Google Play
+          </a>
+        </div>
+        <p class="text-sm text-ink-soft">© 2026 StepMath</p>
+      </div>
     </div>
   </footer>
-  <script src="js/i18n.js"></script>
-  <script src="js/site.js"></script>
+
+  <script>
+    (function () {
+      var btn = document.getElementById("menu-btn");
+      var menu = document.getElementById("mobile-menu");
+      if (!btn || !menu) return;
+      function setOpen(open) {
+        menu.classList.toggle("is-closed", !open);
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+      }
+      btn.addEventListener("click", function () {
+        setOpen(btn.getAttribute("aria-expanded") !== "true");
+      });
+      menu.addEventListener("click", function (event) {
+        if (event.target.closest("a")) setOpen(false);
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") setOpen(false);
+      });
+    })();
+  </script>
 </body>
 </html>

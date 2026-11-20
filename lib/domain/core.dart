@@ -496,6 +496,26 @@ WeeklyReport buildWeeklyReport({
 String hashPin(String pin, String salt) =>
     sha256.convert(utf8.encode('$salt:$pin')).toString();
 
+final _accountEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+String? accountEmailError(String email) {
+  if (!_accountEmail.hasMatch(email.trim().toLowerCase())) {
+    return 'Enter an email address.';
+  }
+  return null;
+}
+
+String? newPasswordError(String password, String again) {
+  if (password.length < 8) return 'Use at least 8 characters.';
+  if (password != again) return 'Those passwords do not match.';
+  return null;
+}
+
+/// Wrong-problem practice stays closed until a parent is signed in and subscribed.
+bool errorTrainingAllowed({required bool signedIn, required bool subscribed}) {
+  return signedIn && subscribed;
+}
+
 String newSalt([Random? random]) {
   final source = random ?? Random.secure();
   return List.generate(
@@ -645,6 +665,11 @@ class DeviceSettings {
     required this.activeLearnerId,
     required this.extraLearnersUnlocked,
     required this.printUnlocked,
+    required this.accountEmail,
+    required this.accountPasswordHash,
+    required this.accountSalt,
+    required this.signedIn,
+    required this.subscriptionActive,
     required this.themeMode,
     required this.textScale,
     required this.soundEnabled,
@@ -661,6 +686,11 @@ class DeviceSettings {
   final String? activeLearnerId;
   final bool extraLearnersUnlocked;
   final bool printUnlocked;
+  final String? accountEmail;
+  final String? accountPasswordHash;
+  final String? accountSalt;
+  final bool signedIn;
+  final bool subscriptionActive;
   final String themeMode;
   final String textScale;
   final bool soundEnabled;
@@ -690,6 +720,11 @@ class DeviceSettings {
       activeLearnerId: null,
       extraLearnersUnlocked: true,
       printUnlocked: true,
+      accountEmail: null,
+      accountPasswordHash: null,
+      accountSalt: null,
+      signedIn: false,
+      subscriptionActive: false,
       themeMode: 'system',
       textScale: 'medium',
       soundEnabled: true,
@@ -709,6 +744,11 @@ class DeviceSettings {
     bool clearActive = false,
     bool? extraLearnersUnlocked,
     bool? printUnlocked,
+    String? accountEmail,
+    String? accountPasswordHash,
+    String? accountSalt,
+    bool? signedIn,
+    bool? subscriptionActive,
     String? themeMode,
     String? textScale,
     bool? soundEnabled,
@@ -728,6 +768,11 @@ class DeviceSettings {
       extraLearnersUnlocked:
           extraLearnersUnlocked ?? this.extraLearnersUnlocked,
       printUnlocked: printUnlocked ?? this.printUnlocked,
+      accountEmail: accountEmail ?? this.accountEmail,
+      accountPasswordHash: accountPasswordHash ?? this.accountPasswordHash,
+      accountSalt: accountSalt ?? this.accountSalt,
+      signedIn: signedIn ?? this.signedIn,
+      subscriptionActive: subscriptionActive ?? this.subscriptionActive,
       themeMode: themeMode ?? this.themeMode,
       textScale: textScale ?? this.textScale,
       soundEnabled: soundEnabled ?? this.soundEnabled,
