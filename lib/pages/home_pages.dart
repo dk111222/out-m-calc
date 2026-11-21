@@ -7,7 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../app/providers.dart';
 import '../app/theme.dart';
 import '../domain/core.dart';
-import '../ui/child_nav.dart';
+import '../l10n/copy.dart';
+import '../l10n/trick_zh.dart';
 import '../ui/gates.dart';
 import '../ui/kit.dart';
 import 'speed_pages.dart';
@@ -18,13 +19,14 @@ class LoadingPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final app = ref.watch(appProvider);
+    final t = Copy.of(context);
     return PageFrame(
       title: 'StepMath',
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            app.bootError ?? 'Opening practice on this device.',
+            app.bootError ?? t.opening,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: AppSpace.s16),
@@ -33,7 +35,7 @@ class LoadingPage extends ConsumerWidget {
           const SkeletonBlock(height: 16),
           if (app.bootError != null) ...[
             const SizedBox(height: AppSpace.s24),
-            AppButton(label: 'Try again', onPressed: () => app.boot()),
+            AppButton(label: t.tryAgain, onPressed: () => app.boot()),
           ],
         ],
       ),
@@ -46,28 +48,23 @@ class StartPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = Copy.of(context);
     return PageFrame(
       title: 'StepMath',
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Who is using this device?',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text(t.whoUses, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpace.s8),
-          Text(
-            'A parent or teacher sets up learners. A guest can practice without a name.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text(t.whoUsesBody, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: AppSpace.s24),
           AppButton(
-            label: 'Parent or teacher',
+            label: t.parentOrTeacher,
             onPressed: () => context.go('/learner/new'),
           ),
           const SizedBox(height: AppSpace.s12),
           AppButton(
-            label: 'Try as a guest',
+            label: t.tryAsGuest,
             secondary: true,
             onPressed: () => context.go('/learner/new?guest=1'),
           ),
@@ -92,10 +89,12 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
   String? _error;
   bool _busy = false;
 
+  bool _seededName = false;
+
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController(text: widget.guest ? 'Guest' : '');
+    _name = TextEditingController();
     if (widget.guest) _grade = '1';
   }
 
@@ -108,12 +107,17 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
   @override
   Widget build(BuildContext context) {
     final app = ref.watch(appProvider);
+    final t = Copy.of(context);
+    if (widget.guest && !_seededName) {
+      _seededName = true;
+      _name.text = t.guest;
+    }
     return PageFrame(
-      title: widget.guest ? 'Guest' : 'Add a learner',
+      title: widget.guest ? t.guest : t.addLearner,
       banner: app.banner,
       leading: IconButton(
-        tooltip: 'Back',
-        onPressed: () => app.learners.isEmpty ? context.go('/start') : context.go('/adult'),
+        tooltip: t.back,
+        onPressed: () => context.go('/prefs'),
         icon: const Icon(Icons.arrow_back),
       ),
       body: Column(
@@ -123,14 +127,12 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
             controller: _name,
             maxLength: 60,
             decoration: InputDecoration(
-              labelText: 'Name',
-              helperText: widget.guest
-                  ? 'Leave this blank to use Guest.'
-                  : 'Leave this blank to use Learner and a number.',
+              labelText: t.name,
+              helperText: widget.guest ? t.guestNameHint : t.learnerNameHint,
             ),
           ),
           const SizedBox(height: AppSpace.s16),
-          Text('Grade', style: Theme.of(context).textTheme.titleMedium),
+          Text(t.gradeWord, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpace.s8),
           RadioGroup<String>(
             groupValue: _grade,
@@ -140,17 +142,20 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
                 for (final grade in grades)
                   RadioListTile<String>(
                     value: grade,
-                    title: Text(gradeLabel(grade)),
+                    title: Text(t.grade(grade)),
                     contentPadding: EdgeInsets.zero,
                   ),
               ],
             ),
           ),
           if (_error != null)
-            Text(_error!, style: TextStyle(color: AppColors.of(context).danger)),
+            Text(
+              _error!,
+              style: TextStyle(color: AppColors.of(context).danger),
+            ),
           const SizedBox(height: AppSpace.s16),
           AppButton(
-            label: 'Save',
+            label: t.save,
             busy: _busy,
             onPressed: _grade == null
                 ? null
@@ -178,7 +183,7 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
                       if (!context.mounted) return;
                       context.go('/child');
                     } else {
-                      context.go('/adult');
+                      context.go('/prefs');
                     }
                   },
           ),
@@ -194,12 +199,13 @@ class AdultHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final app = ref.watch(appProvider);
+    final t = Copy.of(context);
     return PageFrame(
-      title: 'Learners',
+      title: t.learners,
       banner: app.banner,
       actions: [
         IconButton(
-          tooltip: 'Settings',
+          tooltip: t.settings,
           onPressed: () => context.go('/settings'),
           icon: const Icon(Icons.settings),
         ),
@@ -212,20 +218,22 @@ class AdultHomePage extends ConsumerWidget {
                 for (final learner in app.learners)
                   _LearnerRow(learner: learner),
                 AppButton(
-                  label: 'Add a learner',
+                  label: t.addLearner,
                   onPressed: () => context.go('/learner/new'),
                 ),
                 const SizedBox(height: AppSpace.s12),
                 AppButton(
-                  label: 'Try as a guest',
+                  label: t.tryAsGuest,
                   secondary: true,
                   onPressed: () => context.go('/learner/new?guest=1'),
                 ),
                 const SizedBox(height: AppSpace.s12),
                 AppButton(
-                  label: 'Scan a paper',
+                  label: t.scanPaper,
                   secondary: true,
-                  onPressed: app.active == null ? null : () => context.go('/scan'),
+                  onPressed: app.active == null
+                      ? null
+                      : () => context.go('/scan'),
                 ),
               ],
             ),
@@ -233,21 +241,94 @@ class AdultHomePage extends ConsumerWidget {
   }
 
   Widget _empty(BuildContext context) {
+    final t = Copy.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Add a learner to start.',
+          t.addLearnerToStart,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: AppSpace.s16),
         AppButton(
-          label: 'Add a learner',
+          label: t.addLearner,
           onPressed: () => context.go('/learner/new'),
         ),
       ],
     );
   }
+}
+
+class LearnerHub extends ConsumerWidget {
+  const LearnerHub({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final app = ref.watch(appProvider);
+    final t = Copy.of(context);
+    final empty = app.learners.isEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t.learners, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: AppSpace.s8),
+        if (empty) ...[
+          Text(t.whoUsesBody, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: AppSpace.s16),
+        ] else
+          for (final learner in app.learners) _LearnerRow(learner: learner),
+        AppButton(
+          label: empty ? t.parentOrTeacher : t.addLearner,
+          onPressed: () => openLearnerForm(context, ref, guest: false),
+        ),
+        const SizedBox(height: AppSpace.s12),
+        AppButton(
+          label: t.tryAsGuest,
+          secondary: true,
+          onPressed: () => openLearnerForm(context, ref, guest: true),
+        ),
+      ],
+    );
+  }
+}
+
+Future<void> openLearnerForm(
+  BuildContext context,
+  WidgetRef ref, {
+  required bool guest,
+}) async {
+  final app = ref.read(appProvider);
+  if (app.childMode) {
+    final ok = await requireParentCode(
+      context,
+      app,
+      title: app.copy.parentCode,
+      body: app.copy.pick(
+        '请输入家长密码，再管理孩子。',
+        'Enter the parent code to manage learners.',
+      ),
+      action: (pin, again) => app.leaveChild(pin, again: again),
+    );
+    if (!ok || !context.mounted) return;
+  }
+  if (!context.mounted) return;
+  context.go(guest ? '/learner/new?guest=1' : '/learner/new');
+}
+
+Future<void> _openLearner(
+  BuildContext context,
+  WidgetRef ref,
+  String loc,
+) async {
+  final app = ref.read(appProvider);
+  final learnerId = loc.split('/').last.split('?').first;
+  final id = loc.contains('learner=')
+      ? Uri.parse(loc).queryParameters['learner']
+      : learnerId;
+  if (app.childMode && id != null && app.activeLearnerId != id) {
+    await app.enterChild(id);
+  }
+  if (context.mounted) context.go(loc);
 }
 
 class _LearnerRow extends ConsumerWidget {
@@ -258,12 +339,18 @@ class _LearnerRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final app = ref.watch(appProvider);
+    final t = Copy.of(context);
     final assignment = app.today[learner.id];
+    final assigned = assignment == null
+        ? null
+        : app.catalog.byId(assignment.trickId ?? '');
     final task = assignment == null
-        ? 'Nothing assigned today'
+        ? t.nothingAssigned
         : assignment.kind == 'learn'
-        ? (app.catalog.byId(assignment.trickId ?? '')?.title ?? 'Learn a trick')
-        : (assignment.parsedSpeed?.summary ?? 'Speed drill');
+        ? (assigned == null ? t.learnATrick : localizeTrick(assigned, t).title)
+        : (assignment.parsedSpeed?.summary(language: t.language) ??
+              t.speedDrill);
+    final guest = learner.isGuest ? '${t.guest} · ' : '';
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpace.s16),
       child: Column(
@@ -272,7 +359,7 @@ class _LearnerRow extends ConsumerWidget {
           TrickCard(
             title: learner.displayName,
             caption:
-                '${learner.isGuest ? 'Guest · ' : ''}${gradeLabel(learner.grade)} · ${learner.streakCount} day streak · $task',
+                '$guest${t.grade(learner.grade)} · ${t.dayStreak(learner.streakCount)} · $task',
             onPressed: () async {
               await app.enterChild(learner.id);
               if (context.mounted) context.go('/child');
@@ -283,16 +370,19 @@ class _LearnerRow extends ConsumerWidget {
             runSpacing: AppSpace.s8,
             children: [
               OutlinedButton(
-                onPressed: () => context.go('/assign/${learner.id}'),
-                child: const Text('Assign'),
+                onPressed: () =>
+                    _openLearner(context, ref, '/assign/${learner.id}'),
+                child: Text(t.assign),
               ),
               OutlinedButton(
-                onPressed: () => context.go('/report/${learner.id}'),
-                child: const Text('Report'),
+                onPressed: () =>
+                    _openLearner(context, ref, '/report/${learner.id}'),
+                child: Text(t.report),
               ),
               OutlinedButton(
-                onPressed: () => context.go('/tricks?learner=${learner.id}'),
-                child: const Text('Trick library'),
+                onPressed: () =>
+                    _openLearner(context, ref, '/tricks?learner=${learner.id}'),
+                child: Text(t.trickLibrary),
               ),
             ],
           ),
@@ -310,10 +400,11 @@ class ChildHomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final app = ref.watch(appProvider);
     final learner = app.active;
+    final t = Copy.of(context);
     if (learner == null) {
-      return const PageFrame(
-        title: "Today's practice",
-        body: Text('Add a learner first.'),
+      return PageFrame(
+        title: t.todayPractice,
+        body: Text(t.addLearnerFirst),
       );
     }
     final assignment = app.today[learner.id];
@@ -321,14 +412,18 @@ class ChildHomePage extends ConsumerWidget {
         ? app.catalog.byId(assignment?.trickId ?? '')
         : null;
     final speed = assignment?.kind == 'speed' ? assignment?.parsedSpeed : null;
-    final seen = learnTrick != null && learner.seenLessons[learnTrick.id] == app.clock.today;
+    final seen =
+        learnTrick != null &&
+        learner.seenLessons[learnTrick.id] == app.clock.today;
     final drills = factDrills(learner.grade);
-    final mine = app.catalog.forGrade(learner.grade).where((trick) => trick.ready).take(3);
+    final mine = app.catalog
+        .forGrade(learner.grade)
+        .where((trick) => trick.ready)
+        .take(3);
     final colors = AppColors.of(context);
     return PageFrame(
-      title: "Today's practice",
+      title: t.todayPractice,
       banner: app.banner,
-      bottom: const ChildNavBar(index: 0),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -350,50 +445,62 @@ class ChildHomePage extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppSpace.rPill),
                   border: Border.all(color: colors.border),
                 ),
-                child: Text(gradeLabel(learner.grade)),
+                child: Text(t.grade(learner.grade)),
               ),
             ],
           ),
           const SizedBox(height: AppSpace.s4),
           Text(
-            '${learner.streakCount} day streak',
+            t.dayStreak(learner.streakCount),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           if (learner.isGuest) ...[
             const SizedBox(height: AppSpace.s8),
-            const Text(
-              'Guest profile on this device. Progress stays here until a parent deletes it.',
-            ),
+            Text(t.guestProfile),
           ],
           if (learner.streakNotice == 'held') ...[
             const SizedBox(height: AppSpace.s8),
-            const Text("This week's skip kept the streak."),
+            Text(t.skipKept),
           ],
           if (learner.streakNotice == 'reset') ...[
             const SizedBox(height: AppSpace.s8),
-            const Text('The streak started over.'),
+            Text(t.streakReset),
           ],
           const SizedBox(height: AppSpace.s16),
-          if (app.snapshot != null && app.snapshot!.localDate == app.clock.today)
+          if (app.snapshot != null &&
+              app.snapshot!.localDate == app.clock.today)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpace.s16),
               child: AppButton(
-                label: 'Continue',
+                label: t.continueLabel,
                 onPressed: () => _continue(context, ref),
               ),
             ),
           _DailyCard(
             learnerId: learner.id,
-            onStart: () => _startDaily(context, ref, learnTrick, seen, speed, learner.grade),
+            onStart: () => _startDaily(
+              context,
+              ref,
+              learnTrick,
+              seen,
+              speed,
+              learner.grade,
+            ),
           ),
           const SizedBox(height: AppSpace.s16),
           _SpeedHomeCard(
-            summary: speed?.summary ?? speedDefault(learner.grade).summary,
+            summary:
+                speed?.summary(language: t.language) ??
+                speedDefault(learner.grade).summary(language: t.language),
             samples: drills.take(2).map((drill) => drill.sample).toList(),
             onSettings: () => context.go('/speed/setup'),
             onWorksheet: () {
-              final trick = learnTrick ??
-                  app.catalog.forGrade(learner.grade).where((item) => item.ready).firstOrNull;
+              final trick =
+                  learnTrick ??
+                  app.catalog
+                      .forGrade(learner.grade)
+                      .where((item) => item.ready)
+                      .firstOrNull;
               if (trick == null) return;
               context.go('/export/worksheet?trickId=${trick.id}');
             },
@@ -404,12 +511,15 @@ class ChildHomePage extends ConsumerWidget {
             onTap: () => _openLearn(context, ref, learnTrick, seen),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpace.s8),
-              child: Text('Math Tricks', style: Theme.of(context).textTheme.titleMedium),
+              child: Text(
+                t.mathTricks,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
           ),
           for (final trick in mine)
             TrickCard(
-              title: trick.title,
+              title: localizeTrick(trick, t).title,
               caption: trick.example.prompt,
               onPressed: () => context.go('/tricks/${trick.id}'),
             ),
@@ -417,22 +527,25 @@ class ChildHomePage extends ConsumerWidget {
             onTap: () => context.go('/tricks?tab=facts'),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpace.s8),
-              child: Text('Facts', style: Theme.of(context).textTheme.titleMedium),
+              child: Text(
+                t.facts,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
           ),
           for (final drill in drills.take(2))
             TrickCard(
-              title: drill.title,
+              title: t.factTitle(drill.title),
               caption: drill.sample,
               onPressed: () => _startDrill(context, ref, drill.config),
             ),
           TextButton(
             onPressed: () => context.go('/review'),
-            child: const Text('Wrong problems'),
+            child: Text(t.wrongProblems),
           ),
           TextButton(
             onPressed: () => context.go('/scan'),
-            child: const Text('Scan a paper'),
+            child: Text(t.scanPaper),
           ),
         ],
       ),
@@ -533,10 +646,11 @@ class _DailyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Copy.of(context);
     return TrickCard(
       key: ValueKey(learnerId),
-      title: 'Daily practice',
-      caption: 'Ten problems for this grade.',
+      title: t.dailyPractice,
+      caption: t.tenProblems,
       onPressed: onStart,
     );
   }
@@ -559,21 +673,18 @@ class _SpeedHomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Copy.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TrickCard(
-          title: 'Speed Drill',
-          caption: summary,
-          onPressed: onStart,
-        ),
+        TrickCard(title: t.speedDrill, caption: summary, onPressed: onStart),
         for (final sample in samples)
           Text(sample, style: Theme.of(context).textTheme.bodySmall),
         Wrap(
           spacing: AppSpace.s8,
           children: [
-            TextButton(onPressed: onSettings, child: const Text('Settings')),
-            TextButton(onPressed: onWorksheet, child: const Text('Worksheet')),
+            TextButton(onPressed: onSettings, child: Text(t.settings)),
+            TextButton(onPressed: onWorksheet, child: Text(t.worksheet)),
           ],
         ),
       ],
@@ -609,46 +720,60 @@ class _AssignPageState extends ConsumerState<AssignPage> {
   Widget build(BuildContext context) {
     final app = ref.watch(appProvider);
     final learner = app.learnerById(widget.learnerId);
+    final t = Copy.of(context);
     if (!_ready || learner == null) {
-      return const PageFrame(title: 'Assign', body: SkeletonBlock());
+      return PageFrame(title: t.assign, body: const SkeletonBlock());
     }
     final mine = app.catalog.forGrade(learner.grade);
-    final later = app.catalog.tricks.where((trick) => trick.grade != learner.grade);
+    final later = app.catalog.tricks.where(
+      (trick) => trick.grade != learner.grade,
+    );
     return PageFrame(
-      title: 'Assign',
+      title: t.assign,
       banner: app.banner,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: t.back,
         onPressed: () => context.go('/adult'),
         icon: const Icon(Icons.arrow_back),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(learner.displayName, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            learner.displayName,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: AppSpace.s12),
           TrickCard(
-            title: 'Learn a trick',
-            caption: 'Steps, then a short quiz.',
+            title: t.learnATrick,
+            caption: t.pick('先看步骤，再做几道题。', 'Steps, then a short quiz.'),
             onPressed: () => setState(() => _kind = 'learn'),
           ),
           TrickCard(
-            title: 'Speed drill',
-            caption: _speed.summary,
+            title: t.speedDrill,
+            caption: _speed.summary(language: t.language),
             onPressed: () => setState(() => _kind = 'speed'),
           ),
           if (_kind == 'learn') ...[
-            Text('This grade', style: Theme.of(context).textTheme.titleMedium),
+            Text(t.thisGrade, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: AppSpace.s8),
             for (final trick in mine)
-              _pick(trick.id, trick.title, trick.id == _trickId),
+              _pick(
+                trick.id,
+                localizeTrick(trick, t).title,
+                trick.id == _trickId,
+              ),
             ExpansionTile(
-              title: const Text('Later grades'),
+              title: Text(t.laterGrades),
               initiallyExpanded: _later,
               onExpansionChanged: (value) => setState(() => _later = value),
               children: [
                 for (final trick in later)
-                  _pick(trick.id, '${trick.title} · ${gradeLabel(trick.grade)}', trick.id == _trickId),
+                  _pick(
+                    trick.id,
+                    '${localizeTrick(trick, t).title} · ${t.grade(trick.grade)}',
+                    trick.id == _trickId,
+                  ),
               ],
             ),
           ] else
@@ -658,7 +783,7 @@ class _AssignPageState extends ConsumerState<AssignPage> {
             ),
           const SizedBox(height: AppSpace.s16),
           AppButton(
-            label: 'Save today',
+            label: t.saveToday,
             onPressed: _kind == 'learn' && _trickId == null
                 ? null
                 : () async {
@@ -678,7 +803,8 @@ class _AssignPageState extends ConsumerState<AssignPage> {
                         updatedAt: now,
                       ),
                     );
-                    if (context.mounted && app.banner == null) context.go('/adult');
+                    if (context.mounted && app.banner == null)
+                      context.go('/adult');
                   },
           ),
         ],
@@ -690,7 +816,9 @@ class _AssignPageState extends ConsumerState<AssignPage> {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(title),
-      leading: Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off),
+      leading: Icon(
+        selected ? Icons.radio_button_checked : Icons.radio_button_off,
+      ),
       onTap: () => setState(() => _trickId = id),
     );
   }

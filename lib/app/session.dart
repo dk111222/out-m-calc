@@ -9,6 +9,8 @@ import '../domain/core.dart';
 import '../domain/engine.dart';
 import '../domain/machines.dart';
 import '../domain/store.dart';
+import '../l10n/copy.dart';
+import '../l10n/trick_zh.dart';
 import 'voice.dart';
 
 class AppClock {
@@ -36,6 +38,7 @@ class AppController extends ChangeNotifier {
   bool childMode = false;
   String? activeLearnerId;
   DeviceSettings settings = DeviceSettings.fresh();
+  Copy get copy => Copy(settings.language);
   List<Learner> learners = [];
   final Map<String, Assignment?> today = {};
   SessionSnapshot? snapshot;
@@ -74,10 +77,15 @@ class AppController extends ChangeNotifier {
       '/prefs',
       '/report',
       '/export',
+      '/assign',
+      '/learner/new',
     ];
     if (learners.isEmpty) {
-      if (loc == '/start' || loc == '/learner/new') return null;
-      return '/start';
+      const open = ['/child', '/prefs', '/learner/new', '/settings'];
+      final allowed = open.any(
+        (prefix) => loc == prefix || loc.startsWith('$prefix/'),
+      );
+      return allowed ? null : '/child';
     }
     if (childMode) {
       final allowed = childOk.any(
@@ -106,9 +114,15 @@ class AppController extends ChangeNotifier {
       await _roll();
       await refreshToday();
       await refreshSnapshot();
+      if (activeLearnerId != null) {
+        childMode = true;
+        _session();
+        await refreshToday();
+        await refreshSnapshot();
+      }
       ready = true;
     } catch (_) {
-      bootError = 'Could not save. Try again.';
+      bootError = copy.couldNotSave;
       ready = true;
     }
     notifyListeners();
@@ -178,7 +192,7 @@ class AppController extends ChangeNotifier {
   }
 
   String _nextName({required bool guest}) {
-    final stem = guest ? 'Guest' : 'Learner';
+    final stem = guest ? copy.guest : copy.learnerStem;
     final taken = learners.map((learner) => learner.displayName).toSet();
     if (!taken.contains(stem)) return stem;
     var n = 2;
@@ -193,10 +207,10 @@ class AppController extends ChangeNotifier {
     required String grade,
     bool guest = false,
   }) async {
-    if (childMode) return 'A parent needs to open this.';
-    if (!grades.contains(grade)) return 'Choose a grade.';
+    if (childMode) return copy.parentNeedsThis;
+    if (!grades.contains(grade)) return copy.chooseGrade;
     if (learners.isNotEmpty && !settings.extraLearnersUnlocked) {
-      return 'Another learner can be added when profiles are included on this device.';
+      return copy.anotherLearner;
     }
     final trimmed = name.trim();
     final display = trimmed.isEmpty
@@ -229,7 +243,7 @@ class AppController extends ChangeNotifier {
       notifyListeners();
       return null;
     } catch (_) {
-      banner = 'Could not save. Try again.';
+      banner = copy.couldNotSave;
       notifyListeners();
       return banner;
     }
@@ -249,7 +263,7 @@ class AppController extends ChangeNotifier {
       await refreshSnapshot();
       banner = null;
     } catch (_) {
-      banner = 'Could not save. Try again.';
+      banner = copy.couldNotSave;
     }
     notifyListeners();
   }
@@ -303,7 +317,7 @@ class AppController extends ChangeNotifier {
       await store.saveSettings(settings);
       banner = null;
     } catch (_) {
-      banner = 'Could not save. Try again.';
+      banner = copy.couldNotSave;
       notifyListeners();
       return banner;
     }
@@ -412,7 +426,7 @@ class AppController extends ChangeNotifier {
       await store.saveSettings(settings);
       banner = null;
     } catch (_) {
-      banner = 'Could not save. Try again.';
+      banner = copy.couldNotSave;
     }
     notifyListeners();
   }
@@ -443,7 +457,7 @@ class AppController extends ChangeNotifier {
       _replace(next);
       banner = null;
     } catch (_) {
-      banner = 'Could not save. Try again.';
+      banner = copy.couldNotSave;
     }
     notifyListeners();
   }
@@ -456,7 +470,7 @@ class AppController extends ChangeNotifier {
           : today[assignment.learnerId];
       banner = null;
     } catch (_) {
-      banner = 'Could not save. Try again.';
+      banner = copy.couldNotSave;
     }
     notifyListeners();
   }
@@ -511,7 +525,7 @@ class AppController extends ChangeNotifier {
       if (value.learnerId == activeLearnerId) snapshot = value;
       banner = null;
     } catch (_) {
-      banner = 'Could not save. Try again.';
+      banner = copy.couldNotSave;
       notifyListeners();
     }
   }
@@ -546,7 +560,9 @@ class AppController extends ChangeNotifier {
           userAnswer: draft.userAnswer,
           correctAnswer: draft.correctAnswer,
           failedStep: draft.failedStep,
-          stepsJson: jsonEncode(draft.steps.map((step) => step.toJson()).toList()),
+          stepsJson: jsonEncode(
+            draft.steps.map((step) => step.toJson()).toList(),
+          ),
           reviewedOk: false,
           createdAt: now,
           updatedAt: now,
@@ -623,7 +639,11 @@ class AppController extends ChangeNotifier {
           kind: 'trick',
           trickId: draft.trickId,
           speedRoundId: null,
-          title: 'Mastered ${trick?.title ?? 'a trick'}',
+          title: copy.masteredTitle(
+            trick == null
+                ? copy.pick('一个技巧', 'a trick')
+                : localizeTrick(trick, copy).title,
+          ),
           issuedAt: now,
         ),
       );
@@ -715,7 +735,7 @@ class AppController extends ChangeNotifier {
           kind: 'speed',
           trickId: null,
           speedRoundId: round.id,
-          title: 'Speed Drill personal best: ${view.correct} correct',
+          title: copy.speedBestTitle(view.correct),
           issuedAt: now,
         ),
       );
@@ -866,7 +886,7 @@ class PracticeController extends ChangeNotifier {
       await _persist();
     } catch (_) {
       view = current;
-      app.banner = 'Could not save. Try again.';
+      app.banner = app.copy.couldNotSave;
       app.notifyListeners();
       notifyListeners();
       return;
@@ -936,12 +956,15 @@ class SpeedController extends ChangeNotifier {
   Future<void> start(SpeedConfig config) async {
     final learner = app.active;
     if (learner == null) return;
-    final items = buildSpeedQueue(config, learner.grade, _rng);
-    final best = await app.bestFor(learner.id, config);
+    final counted = config.limitMode == 'time'
+        ? config.copyWith(limitMode: 'count', limitValue: 10)
+        : config;
+    final items = buildSpeedQueue(counted, learner.grade, _rng);
+    final best = await app.bestFor(learner.id, counted);
     view = SpeedView.start(
       learnerId: learner.id,
       grade: learner.grade,
-      config: config,
+      config: counted,
       items: items,
       previousBest: best,
     );
@@ -989,7 +1012,7 @@ class SpeedController extends ChangeNotifier {
       await _persist();
     } catch (_) {
       view = current;
-      app.banner = 'Could not save. Try again.';
+      app.banner = app.copy.couldNotSave;
       app.notifyListeners();
       notifyListeners();
       return;
@@ -1043,7 +1066,10 @@ class SpeedController extends ChangeNotifier {
   }
 
   void _ensureTicker() {
-    _ticker ??= Timer.periodic(const Duration(milliseconds: 200), (_) => _tick());
+    _ticker ??= Timer.periodic(
+      const Duration(milliseconds: 200),
+      (_) => _tick(),
+    );
   }
 
   void _tick() {
@@ -1087,7 +1113,7 @@ class SpeedController extends ChangeNotifier {
     try {
       await app.finishSpeed(view!, durationMs: _bankedMs);
     } catch (_) {
-      app.banner = 'Could not save. Try again.';
+      app.banner = app.copy.couldNotSave;
       app.notifyListeners();
     }
     notifyListeners();

@@ -686,3 +686,128 @@ List<String> _integerClips(int value) {
   }
   return value.toString().split('').map((digit) => 'n$digit').toList();
 }
+
+/// Spoken form of a problem. `language` is `zh` or `en`.
+String spokenPrompt(String prompt, {String language = 'zh'}) {
+  final zh = language != 'en';
+  final percentOf = RegExp(r'^(\d+)% of \$(\d+)$').firstMatch(prompt.trim());
+  if (percentOf != null) {
+    final percent = int.parse(percentOf.group(1)!);
+    final dollars = int.parse(percentOf.group(2)!);
+    return zh
+        ? '${_zhInt(dollars)}美元的百分之${_zhInt(percent)}'
+        : '${_enInt(percent)} percent of ${_enInt(dollars)} dollars';
+  }
+  final withPercent = prompt.replaceAllMapped(
+    RegExp(r'(\d+(?:\.\d+)?)%'),
+    (match) => zh
+        ? '百分之${_spokenNumber(match.group(1)!, true)}'
+        : '${_spokenNumber(match.group(1)!, false)} percent',
+  );
+  final withMoney = withPercent.replaceAllMapped(
+    RegExp(r'\$(\d+(?:\.\d+)?)'),
+    (match) => zh
+        ? '${_spokenNumber(match.group(1)!, true)}美元'
+        : '${_spokenNumber(match.group(1)!, false)} dollars',
+  );
+  final mapped = withMoney
+      .replaceAll('×', zh ? ' 乘 ' : ' times ')
+      .replaceAll('−', zh ? ' 减 ' : ' minus ')
+      .replaceAll('–', zh ? ' 减 ' : ' minus ')
+      .replaceAll('÷', zh ? ' 除以 ' : ' divided by ')
+      .replaceAll('²', zh ? '的平方' : ' squared')
+      .replaceAll('+', zh ? ' 加 ' : ' plus ')
+      .replaceAll('=', zh ? ' 等于 ' : ' equals ')
+      .replaceAll('?', zh ? '几' : ' what ');
+  final spoken = mapped.replaceAllMapped(
+    RegExp(r'\d+(?:\.\d+)?'),
+    (match) => _spokenNumber(match.group(0)!, zh),
+  );
+  if (zh) return spoken.replaceAll(RegExp(r'\s+'), '');
+  return spoken.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+String _spokenNumber(String token, bool zh) {
+  if (!token.contains('.')) {
+    return zh ? _zhInt(int.parse(token)) : _enInt(int.parse(token));
+  }
+  final parts = token.split('.');
+  final whole = zh ? _zhInt(int.parse(parts[0])) : _enInt(int.parse(parts[0]));
+  final fraction = parts[1].split('').map((digit) {
+    final value = int.parse(digit);
+    return zh ? _zhInt(value) : _enInt(value);
+  }).join(zh ? '' : ' ');
+  return zh ? '$whole点$fraction' : '$whole point $fraction';
+}
+
+String _zhInt(int value) {
+  const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+  if (value < 0) return '负${_zhInt(-value)}';
+  if (value < 10) return digits[value];
+  if (value < 20) return value == 10 ? '十' : '十${digits[value % 10]}';
+  if (value < 100) {
+    final ones = value % 10;
+    return '${digits[value ~/ 10]}十${ones == 0 ? '' : digits[ones]}';
+  }
+  if (value < 1000) {
+    final rest = value % 100;
+    final head = '${digits[value ~/ 100]}百';
+    if (rest == 0) return head;
+    if (rest < 10) return '$head零${digits[rest]}';
+    return '$head${_zhInt(rest)}';
+  }
+  if (value < 10000) {
+    final rest = value % 1000;
+    final head = '${digits[value ~/ 1000]}千';
+    if (rest == 0) return head;
+    if (rest < 100) return '$head零${_zhInt(rest)}';
+    return '$head${_zhInt(rest)}';
+  }
+  return '$value';
+}
+
+String _enInt(int value) {
+  const small = [
+    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+    'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
+    'sixteen', 'seventeen', 'eighteen', 'nineteen',
+  ];
+  const tens = [
+    '', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty',
+    'ninety',
+  ];
+  if (value < 0) return 'negative ${_enInt(-value)}';
+  if (value < 20) return small[value];
+  if (value < 100) {
+    final name = tens[value ~/ 10];
+    final ones = value % 10;
+    return ones == 0 ? name : '$name ${small[ones]}';
+  }
+  if (value < 1000) {
+    final head = '${small[value ~/ 100]} hundred';
+    final rest = value % 100;
+    return rest == 0 ? head : '$head ${_enInt(rest)}';
+  }
+  if (value < 10000) {
+    final head = '${small[value ~/ 1000]} thousand';
+    final rest = value % 1000;
+    return rest == 0 ? head : '$head ${_enInt(rest)}';
+  }
+  return '$value';
+}
+
+String ttsLanguageTag(
+  String languageCode, {
+  String? countryCode,
+  String? scriptCode,
+}) {
+  final language = languageCode.toLowerCase();
+  final country = countryCode?.toUpperCase();
+  if (language == 'zh') {
+    if (country == 'TW' || scriptCode == 'Hant') return 'zh-TW';
+    return 'zh-CN';
+  }
+  if (language == 'en') return country == 'GB' ? 'en-GB' : 'en-US';
+  if (country != null && country.isNotEmpty) return '$language-$country';
+  return language;
+}

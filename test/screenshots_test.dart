@@ -45,17 +45,16 @@ void main() {
     await _settle(tester);
     await _shoot(tester, 'P01');
 
-    await tester.tap(find.text('Parent or teacher'));
+    await tester.tap(find.text('我的'));
+    await _settle(tester);
+    await tester.tap(find.text('家长或老师'));
     await _settle(tester);
     await _shoot(tester, 'P02');
 
-    await tester.enterText(
-      find.byType(TextField),
-      'Ava ${'North' * 11}',
-    );
-    await tester.tap(find.text('Grade 1'));
+    await tester.enterText(find.byType(TextField), 'Ava ${'North' * 11}');
+    await tester.tap(find.text('一年级'));
     await tester.pump();
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('保存'));
     await _settle(tester);
     await _shoot(tester, 'P03');
 
@@ -68,10 +67,15 @@ void main() {
     final learnerId = app.learners.single.id;
     await _go(tester, '/settings');
     await _shoot(tester, 'P16');
-    await tester.tap(find.text('Dark'));
+    await tester.tap(find.text('深色'));
     await _settle(tester);
     await _shoot(tester, 'P16-dark');
-    await tester.tap(find.text('Privacy policy'));
+    await tester.scrollUntilVisible(
+      find.text('隐私政策'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('隐私政策'));
     await _settle(tester);
     await _shoot(tester, 'privacy');
     await app.updateSettings(app.settings.copyWith(themeMode: 'light'));
@@ -83,15 +87,15 @@ void main() {
     await _shoot(tester, 'report');
     await _go(tester, '/tricks?learner=$learnerId');
     await _shoot(tester, 'P06');
-    await tester.tap(find.text('Make 10'));
+    await tester.tap(find.text('凑十法'));
     await _settle(tester);
     await _shoot(tester, 'P07');
     await tester.scrollUntilVisible(
-      find.text('Start practice'),
+      find.text('开始练习'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('Start practice'));
+    await tester.tap(find.text('开始练习'));
     await _settle(tester);
     await _shoot(tester, 'P08');
 
@@ -103,7 +107,7 @@ void main() {
     await container.read(speedProvider).start(speedDefault('1'));
     await _go(tester, '/speed/run');
     await _shoot(tester, 'P13');
-    await tester.tap(find.byTooltip('Pause'));
+    await tester.tap(find.byTooltip('暂停'));
     await _settle(tester);
     await _shoot(tester, 'P13-pause');
 

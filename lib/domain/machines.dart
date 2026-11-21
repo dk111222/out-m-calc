@@ -57,9 +57,7 @@ class PracticeView {
     String? repairWrongId,
   }) {
     final first = items.first;
-    final phase = first.review
-        ? 'review'
-        : (first.guided ? 'guided' : 'final');
+    final phase = first.review ? 'review' : (first.guided ? 'guided' : 'final');
     return PracticeView(
       learnerId: learnerId,
       trickId: trickId,
@@ -116,10 +114,12 @@ class PracticeView {
       correctCount: correctCount ?? this.correctCount,
       failedStep: clearFailed ? null : (failedStep ?? this.failedStep),
       dirtyMiss: dirtyMiss ?? this.dirtyMiss,
-      firstWrongInput:
-          clearFirst ? null : (firstWrongInput ?? this.firstWrongInput),
-      shownWrongFinal:
-          clearShown ? null : (shownWrongFinal ?? this.shownWrongFinal),
+      firstWrongInput: clearFirst
+          ? null
+          : (firstWrongInput ?? this.firstWrongInput),
+      shownWrongFinal: clearShown
+          ? null
+          : (shownWrongFinal ?? this.shownWrongFinal),
       pending: clearPending ? null : (pending ?? this.pending),
       missedNotes: missedNotes ?? this.missedNotes,
       repairWrongId: repairWrongId,
@@ -209,7 +209,10 @@ class PracticeEffect {
 }
 
 PracticeEffect practiceKey(PracticeView view, String key) {
-  if (!view.active || view.locked || view.phase == 'done' || view.current == null) {
+  if (!view.active ||
+      view.locked ||
+      view.phase == 'done' ||
+      view.current == null) {
     return PracticeEffect(view);
   }
   final next = applyKey(view.draft, key);
@@ -218,7 +221,10 @@ PracticeEffect practiceKey(PracticeView view, String key) {
 }
 
 PracticeEffect practiceSubmit(PracticeView view) {
-  if (!view.active || view.locked || view.phase == 'done' || view.current == null) {
+  if (!view.active ||
+      view.locked ||
+      view.phase == 'done' ||
+      view.current == null) {
     return PracticeEffect(view);
   }
   if (view.draft.trim().isEmpty) return PracticeEffect(view);
@@ -314,7 +320,11 @@ PracticeEffect practiceAdvance(PracticeView view) {
   );
 }
 
-PracticeView _afterItem(PracticeView view, Problem item, {required bool correct}) {
+PracticeView _afterItem(
+  PracticeView view,
+  Problem item, {
+  required bool correct,
+}) {
   final notes = [...view.missedNotes];
   if (!correct) {
     final step = view.failedStep;
@@ -340,7 +350,8 @@ AttemptDraft _draft(
   required bool correct,
   String? mode,
 }) {
-  final resolvedMode = mode ??
+  final resolvedMode =
+      mode ??
       (view.phase == 'final' || view.phase == 'locate' ? 'final' : 'guided');
   return AttemptDraft(
     trickId: item.trickId,
@@ -511,7 +522,12 @@ class SpeedView {
 }
 
 class SpeedEffect {
-  const SpeedEffect(this.view, {this.attempt, this.wait = false, this.finished = false});
+  const SpeedEffect(
+    this.view, {
+    this.attempt,
+    this.wait = false,
+    this.finished = false,
+  });
 
   final SpeedView view;
   final AttemptDraft? attempt;
@@ -520,14 +536,16 @@ class SpeedEffect {
 }
 
 bool speedEnded(SpeedView view) {
-  if (view.config.limitMode == 'count') {
-    return view.answered >= view.config.limitValue;
-  }
-  return view.remainingMs <= 0;
+  final limit = view.config.limitMode == 'count' ? view.config.limitValue : 10;
+  return view.answered >= limit;
 }
 
 SpeedEffect speedKey(SpeedView view, String key) {
-  if (!view.active || view.locked || view.paused || view.done || view.current == null) {
+  if (!view.active ||
+      view.locked ||
+      view.paused ||
+      view.done ||
+      view.current == null) {
     return SpeedEffect(view);
   }
   final next = applyKey(view.draft, key);
@@ -536,7 +554,11 @@ SpeedEffect speedKey(SpeedView view, String key) {
 }
 
 SpeedEffect speedSubmit(SpeedView view) {
-  if (!view.active || view.locked || view.paused || view.done || view.current == null) {
+  if (!view.active ||
+      view.locked ||
+      view.paused ||
+      view.done ||
+      view.current == null) {
     return SpeedEffect(view);
   }
   if (view.draft.trim().isEmpty) return SpeedEffect(view);
@@ -572,16 +594,10 @@ SpeedEffect speedSubmit(SpeedView view) {
 }
 
 SpeedEffect speedTick(SpeedView view, int elapsedMs) {
-  if (!view.active || view.paused || view.done || view.config.limitMode != 'time') {
+  if (!view.active || view.paused || view.done) {
     return SpeedEffect(view);
   }
-  final remain = max(0, view.remainingMs - elapsedMs);
-  final next = view.copy(
-    remainingMs: remain,
-    elapsedMs: view.elapsedMs + elapsedMs,
-  );
-  if (remain == 0) return SpeedEffect(next.copy(done: true), finished: true);
-  return SpeedEffect(next);
+  return SpeedEffect(view.copy(elapsedMs: view.elapsedMs + elapsedMs));
 }
 
 SpeedEffect speedReveal(SpeedView view, Random rng) {

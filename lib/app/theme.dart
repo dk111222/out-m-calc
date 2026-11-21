@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Token values live here. Widgets read [AppColors] and [AppSpace].
 
@@ -233,12 +234,18 @@ ThemeData buildTheme(Brightness brightness) {
     splashFactory: NoSplash.splashFactory,
     extensions: [colors],
     appBarTheme: AppBarTheme(
-      backgroundColor: colors.surface,
+      backgroundColor: colors.bg,
       foregroundColor: colors.text,
       elevation: 0,
       scrolledUnderElevation: 0,
-      toolbarHeight: AppSpace.header,
-      titleTextStyle: style(20, 28, FontWeight.w600, colors.text),
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: colors.bg,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: colors.bg,
+        systemNavigationBarIconBrightness: dark
+            ? Brightness.light
+            : Brightness.dark,
+      ),
     ),
     textTheme: TextTheme(
       labelSmall: style(12, 16, FontWeight.w600, colors.text),

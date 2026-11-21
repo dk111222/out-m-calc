@@ -8,10 +8,10 @@ import 'package:image_picker/image_picker.dart';
 
 import '../app/providers.dart';
 import '../app/theme.dart';
-import '../domain/core.dart';
 import '../domain/engine.dart';
 import '../domain/machines.dart';
 import '../domain/scan.dart';
+import '../l10n/copy.dart';
 import '../ui/kit.dart';
 
 class ScanPage extends ConsumerStatefulWidget {
@@ -125,7 +125,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'Could not save. Try again.';
+        _error = Copy.of(context).couldNotSave;
       });
     }
   }
@@ -133,30 +133,34 @@ class _ScanPageState extends ConsumerState<ScanPage> {
   @override
   Widget build(BuildContext context) {
     final app = ref.watch(appProvider);
+    final t = Copy.of(context);
     final tally = tallyFacts(_selected);
     return PageFrame(
-      title: 'Scan a paper',
+      title: t.scanPaper,
       banner: _error ?? app.banner,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: t.back,
         onPressed: () => context.go(app.childMode ? '/child' : '/adult'),
         icon: const Icon(Icons.arrow_back),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Photograph a printed page. Reading stays on this device. A wrong written answer is checked for you. Then practice five more like the ones you leave checked.',
+          Text(
+            t.pick(
+              '拍一张印好的练习页。识别只在这台设备上进行。写错的答案会先勾上，你也可以改。然后按勾选的运算再练五题。',
+              'Photograph a printed page. Reading stays on this device. A wrong written answer is checked for you. Then practice five more like the ones you leave checked.',
+            ),
           ),
           const SizedBox(height: AppSpace.s16),
           AppButton(
-            label: 'Take a photo',
+            label: t.takePhoto,
             busy: _busy,
             onPressed: _busy ? null : () => _pick(ImageSource.camera),
           ),
           const SizedBox(height: AppSpace.s12),
           AppButton(
-            label: 'Choose a photo',
+            label: t.choosePhoto,
             secondary: true,
             onPressed: _busy ? null : () => _pick(ImageSource.gallery),
           ),
@@ -164,12 +168,15 @@ class _ScanPageState extends ConsumerState<ScanPage> {
             const SizedBox(height: AppSpace.s24),
             Text(
               tally.total == 0
-                  ? 'Check the problems that were wrong.'
-                  : '${tally.total} checked · ${operationLabel(tally.focus ?? 'addition')}',
+                  ? t.pick('勾上做错的题。', 'Check the problems that were wrong.')
+                  : t.pick(
+                      '已勾选 ${tally.total} 题 · ${t.operation(tally.focus ?? 'addition')}',
+                      '${tally.total} checked · ${t.operation(tally.focus ?? 'addition')}',
+                    ),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             for (final entry in tally.counts.entries)
-              Text('${operationLabel(entry.key)}: ${entry.value}'),
+              Text('${t.operation(entry.key)}: ${entry.value}'),
             const SizedBox(height: AppSpace.s8),
             for (var i = 0; i < _facts.length; i++)
               CheckboxListTile(
@@ -181,13 +188,16 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                 title: Text(_facts[i].prompt),
                 subtitle: Text(
                   _facts[i].written == null
-                      ? 'Answer ${ _facts[i].computed}'
-                      : 'Page says ${_facts[i].written}. Answer ${_facts[i].computed}.',
+                      ? t.pick('答案 ${_facts[i].computed}', 'Answer ${_facts[i].computed}')
+                      : t.pick(
+                          '卷面写的是 ${_facts[i].written}。答案是 ${_facts[i].computed}。',
+                          'Page says ${_facts[i].written}. Answer ${_facts[i].computed}.',
+                        ),
                 ),
               ),
             const SizedBox(height: AppSpace.s16),
             AppButton(
-              label: 'Practice 5 more',
+              label: t.practiceFive,
               busy: _busy,
               onPressed: _selected.isEmpty || _busy ? null : _practice,
             ),

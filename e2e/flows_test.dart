@@ -45,6 +45,7 @@ void main() {
   });
 
   tearDownAll(() async {
+    await store.close();
     await directory.delete(recursive: true);
   });
 
@@ -79,46 +80,48 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('F01-H1 assign Make 10 and answer the first step', (tester) async {
+  testWidgets('F01-H1 assign 凑十法 and answer the first step', (tester) async {
     final app = await boot();
     await show(tester, app);
-    await tester.tap(find.text('Parent or teacher'));
+    await tester.tap(find.text('我的'));
+    await settle(tester);
+    await tester.tap(find.text('家长或老师'));
     await settle(tester);
     await tester.enterText(find.byType(TextField), 'Ava');
-    await tester.tap(find.text('Grade 1'));
+    await tester.tap(find.text('一年级'));
     await tester.pump();
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('保存'));
     await settle(tester);
-    expect(find.text('Learners'), findsOneWidget);
+    expect(find.text('布置'), findsOneWidget);
 
-    await tester.tap(find.text('Assign'));
+    await tester.tap(find.text('布置'));
     await settle(tester);
-    await tester.tap(find.text('Make 10'));
+    await tester.tap(find.text('凑十法'));
     await tester.pump();
-    await tester.tap(find.text('Save today'));
+    await tester.tap(find.text('保存今天'));
     await settle(tester);
-    expect(find.textContaining('Make 10'), findsWidgets);
+    expect(find.textContaining('凑十法'), findsWidgets);
 
     await tester.tap(find.text('Ava').first);
     await settle(tester);
-    expect(find.text("Today's practice"), findsOneWidget);
-    await tester.tap(find.text('Math Tricks'));
+    expect(find.text('首页'), findsOneWidget);
+    await tester.tap(find.text('速算技巧'));
     await settle(tester);
-    expect(find.text('Use this when'), findsOneWidget);
-    expect(find.text('Not for'), findsOneWidget);
+    expect(find.text('适合'), findsOneWidget);
+    expect(find.text('不适合'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Start practice'),
+      find.text('开始练习'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('Start practice'));
+    await tester.tap(find.text('开始练习'));
     await settle(tester);
-    expect(find.text('Submit'), findsOneWidget);
-    expect(find.text('Your answer'), findsOneWidget);
-    expect(find.text('Delete'), findsOneWidget);
+    expect(find.text('提交'), findsOneWidget);
+    expect(find.text('你的答案'), findsOneWidget);
+    expect(find.text('删除'), findsOneWidget);
 
     final practice = ProviderScope.containerOf(
-      tester.element(find.text('Submit')),
+      tester.element(find.text('提交')),
     ).read(practiceProvider);
     final answer = practice.view!.current!.steps.first.answer;
     for (final digit in answer.split('')) {
@@ -127,22 +130,22 @@ void main() {
       );
       await tester.pump();
     }
-    await tester.tap(find.text('Submit'));
-    await tester.tap(find.text('Submit'), warnIfMissed: false);
+    await tester.tap(find.text('提交'));
+    await tester.tap(find.text('提交'), warnIfMissed: false);
     await tester.pump(const Duration(milliseconds: 200));
     expect(practice.view!.stepIndex, 1);
-    expect(find.textContaining('Step 2'), findsOneWidget);
+    expect(find.textContaining('第 2 步'), findsOneWidget);
 
-    await tester.tap(find.text('Submit'));
+    await tester.tap(find.text('提交'));
     await tester.pump(const Duration(milliseconds: 200));
     expect(practice.view!.stepIndex, 1);
     await tester.tap(
       find.descendant(of: find.byType(Keypad), matching: find.text('9')),
     );
     await tester.pump();
-    await tester.tap(find.text('Submit'));
+    await tester.tap(find.text('提交'));
     await tester.pump(const Duration(milliseconds: 200));
-    expect(find.text('Not quite'), findsOneWidget);
+    expect(find.text('还不对'), findsOneWidget);
     expect(practice.view!.stepIndex, 1);
   });
 
@@ -151,32 +154,38 @@ void main() {
   ) async {
     final app = await boot();
     await show(tester, app);
-    await tester.tap(find.text('Parent or teacher'));
+    await tester.tap(find.text('我的'));
+    await settle(tester);
+    await tester.tap(find.text('家长或老师'));
     await tester.pump(const Duration(milliseconds: 300));
-    final save = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save'));
+    final save = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, '保存'),
+    );
     expect(save.onPressed, isNull);
 
-    await tester.tap(find.byTooltip('Back'));
+    await tester.tap(find.byTooltip('返回'));
     await settle(tester);
-    await tester.tap(find.text('Try as a guest'));
+    await tester.tap(find.text('先试用'));
     await settle(tester);
-    expect(find.text('Leave this blank to use Guest.'), findsOneWidget);
+    expect(find.text('留空则显示“访客”。'), findsOneWidget);
     await tester.enterText(find.byType(TextField), '');
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('保存'));
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text("Today's practice"), findsOneWidget);
-    expect(find.text('Guest'), findsWidgets);
+    expect(find.text('首页'), findsOneWidget);
+    expect(find.text('访客'), findsWidgets);
   });
 
   testWidgets('F01-E2 a long accented name is kept and shown', (tester) async {
     final app = await boot();
     await show(tester, app);
-    await tester.tap(find.text('Parent or teacher'));
+    await tester.tap(find.text('我的'));
+    await settle(tester);
+    await tester.tap(find.text('家长或老师'));
     await settle(tester);
     await tester.enterText(find.byType(TextField), 'Léa 数学🎒');
-    await tester.tap(find.text('Kindergarten'));
+    await tester.tap(find.text('幼儿园'));
     await tester.pump();
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('保存'));
     await settle(tester);
     expect(find.text('Léa 数学🎒'), findsWidgets);
   });
@@ -186,10 +195,10 @@ void main() {
     await app.createLearner(name: 'Ava', grade: '1');
     await app.enterChild(app.learners.single.id);
     await show(tester, app);
-    GoRouter.of(tester.element(find.text("Today's practice"))).go('/settings');
+    GoRouter.of(tester.element(find.text('首页'))).go('/settings');
     await settle(tester);
-    expect(find.text("Today's practice"), findsOneWidget);
-    expect(find.text('Delete all data on this device'), findsNothing);
+    expect(find.text('首页'), findsOneWidget);
+    expect(find.text('删除这台设备上的全部数据'), findsNothing);
     expect(await app.wipeAll('1234', again: '1234'), isFalse);
   });
 
@@ -199,17 +208,17 @@ void main() {
     await app.enterChild(app.learners.single.id);
     await show(tester, app);
     final speed = ProviderScope.containerOf(
-      tester.element(find.text("Today's practice")),
+      tester.element(find.text('首页')),
     ).read(speedProvider);
     await speed.start(speedDefault('3'));
-    GoRouter.of(tester.element(find.text("Today's practice"))).go('/speed/run');
+    GoRouter.of(tester.element(find.text('首页'))).go('/speed/run');
     await settle(tester);
-    expect(find.text('Time left'), findsOneWidget);
+    expect(find.text('总用时'), findsOneWidget);
     final prompt = speed.view!.current!.prompt;
     expect(find.text(prompt), findsOneWidget);
-    await tester.tap(find.byTooltip('Pause'));
+    await tester.tap(find.byTooltip('暂停'));
     await settle(tester);
-    expect(find.text('The clock is stopped. The same problem is waiting.'), findsOneWidget);
+    expect(find.text('计时已暂停。同一道题还在。'), findsOneWidget);
     expect(find.text(prompt), findsNothing);
     await speed.leave();
   });
@@ -227,8 +236,12 @@ void main() {
     expect(await app.subscribe(), isNull);
     await app.createLearner(name: 'Ava', grade: '1');
     await app.createLearner(name: 'Ben', grade: '2');
-    final ava = app.learners.firstWhere((learner) => learner.displayName == 'Ava');
-    final ben = app.learners.firstWhere((learner) => learner.displayName == 'Ben');
+    final ava = app.learners.firstWhere(
+      (learner) => learner.displayName == 'Ava',
+    );
+    final ben = app.learners.firstWhere(
+      (learner) => learner.displayName == 'Ben',
+    );
     await app.enterChild(ava.id);
     final sample = makeTen(8, 7);
     await app.recordAttempt(
@@ -264,13 +277,16 @@ void main() {
     await app.enterChild(ava.id);
     expect(() => store.wrongs(ben.id), throwsStateError);
     await show(tester, app);
-    GoRouter.of(tester.element(find.text("Today's practice"))).go('/review');
+    GoRouter.of(tester.element(find.text('首页'))).go('/review');
     await settle(tester);
-    expect(find.text('8 + 7'), findsOneWidget);
-    expect(find.text('9 + 6'), findsNothing);
+    expect(find.widgetWithText(ListTile, '8 + 7'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(ListTile), matching: find.text('9 + 6')),
+      findsNothing,
+    );
 
     final practice = ProviderScope.containerOf(
-      tester.element(find.text('8 + 7')),
+      tester.element(find.widgetWithText(ListTile, '8 + 7')),
     ).read(practiceProvider);
     final open = await store.wrongs(ava.id);
     await practice.startRepair(open.single);
@@ -304,7 +320,7 @@ void main() {
     await app.enterChild(app.learners.single.id);
     await show(tester, app);
     final practice = ProviderScope.containerOf(
-      tester.element(find.text("Today's practice")),
+      tester.element(find.text('首页')),
     ).read(practiceProvider);
     await practice.startLearn('g1-make-10');
     final prompt = practice.view!.current!.prompt;
@@ -324,7 +340,9 @@ void main() {
     await app.boot();
     await app.createLearner(name: 'Ava', grade: '1');
     final id = app.learners.single.id;
-    final yesterday = formatYmd(DateTime.now().subtract(const Duration(days: 1)));
+    final yesterday = formatYmd(
+      DateTime.now().subtract(const Duration(days: 1)),
+    );
     await store.saveSnapshot(
       SessionSnapshot(
         learnerId: id,
@@ -357,19 +375,22 @@ void main() {
     expect(await app.submitPin('1234'), isTrue);
   });
 
-  test('F01-E1 a blank name becomes Learner and stops at 60 characters', () async {
-    store.setSession(childMode: false, learnerId: null);
-    await store.wipe();
-    final app = AppController(store: store, catalog: catalog);
-    await app.boot();
-    expect(await app.createLearner(name: '   ', grade: '1'), isNull);
-    expect(app.learners.single.displayName, 'Learner');
-    expect(await app.createLearner(name: '', grade: '2'), isNull);
-    expect(app.learners.last.displayName, 'Learner 2');
-    final long = '北' * 80;
-    expect(await app.createLearner(name: long, grade: '3'), isNull);
-    expect(app.learners.last.displayName.length, 60);
-  });
+  test(
+    'F01-E1 a blank name becomes Learner and stops at 60 characters',
+    () async {
+      store.setSession(childMode: false, learnerId: null);
+      await store.wipe();
+      final app = AppController(store: store, catalog: catalog);
+      await app.boot();
+      expect(await app.createLearner(name: '   ', grade: '1'), isNull);
+      expect(app.learners.single.displayName, '学员');
+      expect(await app.createLearner(name: '', grade: '2'), isNull);
+      expect(app.learners.last.displayName, '学员 2');
+      final long = '北' * 80;
+      expect(await app.createLearner(name: long, grade: '3'), isNull);
+      expect(app.learners.last.displayName.length, 60);
+    },
+  );
 
   test('F03-E2 personal best does not leak to the other child', () async {
     store.setSession(childMode: false, learnerId: null);

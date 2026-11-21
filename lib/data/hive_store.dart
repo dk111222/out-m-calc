@@ -46,20 +46,38 @@ class HiveAppStore implements AppStore {
       }
       _hiveReady = true;
     }
-    _learners = await Hive.openBox<Map>('learners');
-    _settings = await Hive.openBox<Map>('device_settings');
-    _attempts = await Hive.openBox<Map>('attempts');
-    _wrongs = await Hive.openBox<Map>('wrong_items');
-    _speeds = await Hive.openBox<Map>('speed_rounds');
-    _mastery = await Hive.openBox<Map>('mastery');
-    _assignments = await Hive.openBox<Map>('assignments');
-    _snapshots = await Hive.openBox<Map>('session_snapshots');
-    _certificates = await Hive.openBox<Map>('certificates');
+    final opened = await Future.wait([
+      Hive.openBox<Map>('learners'),
+      Hive.openBox<Map>('device_settings'),
+      Hive.openBox<Map>('attempts'),
+      Hive.openBox<Map>('wrong_items'),
+      Hive.openBox<Map>('speed_rounds'),
+      Hive.openBox<Map>('mastery'),
+      Hive.openBox<Map>('assignments'),
+      Hive.openBox<Map>('session_snapshots'),
+      Hive.openBox<Map>('certificates'),
+    ]);
+    _learners = opened[0];
+    _settings = opened[1];
+    _attempts = opened[2];
+    _wrongs = opened[3];
+    _speeds = opened[4];
+    _mastery = opened[5];
+    _assignments = opened[6];
+    _snapshots = opened[7];
+    _certificates = opened[8];
     if (_settings.get('device') == null) {
       final fresh = DeviceSettings.fresh();
       await _settings.put('device', _settingsToMap(fresh));
     }
     _ready = true;
+  }
+
+  Future<void> close() async {
+    if (!_ready) return;
+    await Hive.close();
+    _ready = false;
+    _hiveReady = false;
   }
 
   @override
@@ -427,6 +445,7 @@ Map<String, dynamic> _settingsToMap(DeviceSettings settings) => {
   'subscriptionActive': settings.subscriptionActive,
   'themeMode': settings.themeMode,
   'textScale': settings.textScale,
+  'language': settings.language,
   'soundEnabled': settings.soundEnabled,
   'readAloudEnabled': settings.readAloudEnabled,
   'pinFailCount': settings.pinFailCount,
@@ -449,6 +468,7 @@ DeviceSettings _settingsFromMap(Map map) => DeviceSettings(
   subscriptionActive: map['subscriptionActive'] as bool? ?? false,
   themeMode: map['themeMode'] as String? ?? 'system',
   textScale: map['textScale'] as String? ?? 'medium',
+  language: map['language'] as String? ?? 'zh',
   soundEnabled: map['soundEnabled'] as bool? ?? true,
   readAloudEnabled: map['readAloudEnabled'] as bool? ?? false,
   pinFailCount: map['pinFailCount'] as int? ?? 0,

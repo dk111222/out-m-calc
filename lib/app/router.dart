@@ -5,7 +5,25 @@ import '../pages/scan_page.dart';
 import '../pages/home_pages.dart';
 import '../pages/learn_pages.dart';
 import '../pages/speed_pages.dart';
+import '../ui/child_nav.dart';
 import 'session.dart';
+
+NoTransitionPage<void> _tabs({
+  required int index,
+  String? trickId,
+  String? learnerId,
+  String? reportLearnerId,
+}) {
+  return NoTransitionPage<void>(
+    key: tabsPageKey,
+    child: MainTabs(
+      index: index,
+      trickId: trickId,
+      learnerId: learnerId,
+      reportLearnerId: reportLearnerId,
+    ),
+  );
+}
 
 GoRouter buildRouter(AppController app) {
   return GoRouter(
@@ -27,18 +45,35 @@ GoRouter buildRouter(AppController app) {
         builder: (_, state) =>
             AssignPage(learnerId: state.pathParameters['learnerId']!),
       ),
-      GoRoute(path: '/child', builder: (_, _) => const ChildHomePage()),
+      GoRoute(
+        path: '/child',
+        pageBuilder: (_, _) => _tabs(index: 0),
+      ),
       GoRoute(
         path: '/tricks',
-        builder: (_, state) =>
-            TricksPage(learnerId: state.uri.queryParameters['learner']),
+        pageBuilder: (_, state) => _tabs(
+          index: 1,
+          learnerId: state.uri.queryParameters['learner'],
+        ),
       ),
       GoRoute(
         path: '/tricks/:id',
-        builder: (_, state) => TrickDetailPage(
-          id: state.pathParameters['id']!,
+        pageBuilder: (_, state) => _tabs(
+          index: 1,
+          trickId: state.pathParameters['id'],
           learnerId: state.uri.queryParameters['learner'],
         ),
+      ),
+      GoRoute(
+        path: '/report/:learnerId',
+        pageBuilder: (_, state) => _tabs(
+          index: 2,
+          reportLearnerId: state.pathParameters['learnerId'],
+        ),
+      ),
+      GoRoute(
+        path: '/prefs',
+        pageBuilder: (_, _) => _tabs(index: 3),
       ),
       GoRoute(
         path: '/practice/:id/done',
@@ -57,15 +92,6 @@ GoRouter buildRouter(AppController app) {
       GoRoute(
         path: '/settings/privacy',
         builder: (_, _) => const PrivacyPage(),
-      ),
-      GoRoute(
-        path: '/prefs',
-        builder: (_, _) => const SettingsPage(child: true),
-      ),
-      GoRoute(
-        path: '/report/:learnerId',
-        builder: (_, state) =>
-            ReportPage(learnerId: state.pathParameters['learnerId']!),
       ),
       GoRoute(
         path: '/export/worksheet',

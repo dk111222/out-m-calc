@@ -8,6 +8,8 @@ import '../app/providers.dart';
 import '../app/theme.dart';
 import '../domain/catalog.dart';
 import '../domain/core.dart';
+import '../l10n/copy.dart';
+import '../l10n/trick_zh.dart';
 import '../domain/engine.dart';
 import '../domain/machines.dart';
 import '../ui/kit.dart';
@@ -52,7 +54,7 @@ class _TricksPageState extends ConsumerState<TricksPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Could not save. Try again.';
+        _error = Copy.of(context).couldNotSave;
       });
     }
   }
@@ -69,32 +71,42 @@ class _TricksPageState extends ConsumerState<TricksPage> {
             }
             return true;
           }).toList();
-    final groups = ['addition', 'subtraction', 'multiplication', 'division', 'percent'];
+    final groups = [
+      'addition',
+      'subtraction',
+      'multiplication',
+      'division',
+      'percent',
+    ];
+    final t = Copy.of(context);
     return PageFrame(
-      title: 'Math Tricks',
+      title: t.mathTricks,
       banner: _error ?? app.banner,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: t.back,
         onPressed: () => context.go(app.childMode ? '/child' : '/adult'),
         icon: const Icon(Icons.arrow_back),
       ),
       body: learner == null
-          ? const Text('Add a learner first.')
+          ? Text(t.addLearnerFirst)
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(gradeLabel(learner.grade), style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  t.grade(learner.grade),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(height: AppSpace.s12),
                 Wrap(
                   spacing: AppSpace.s8,
                   children: [
                     ChoiceChip(
-                      label: const Text('All'),
+                      label: Text(t.all),
                       selected: !_savedOnly,
                       onSelected: (_) => setState(() => _savedOnly = false),
                     ),
                     ChoiceChip(
-                      label: const Text('Saved'),
+                      label: Text(t.saved),
                       selected: _savedOnly,
                       onSelected: (_) => setState(() => _savedOnly = true),
                     ),
@@ -104,12 +116,14 @@ class _TricksPageState extends ConsumerState<TricksPage> {
                 if (_loading)
                   const SkeletonBlock()
                 else if (tricks.isEmpty)
-                  const Text('No tricks for this grade yet')
+                  Text(t.noTricksYet)
                 else
                   for (final operation in groups)
                     _Group(
-                      title: operationLabel(operation),
-                      tricks: tricks.where((trick) => trick.operation == operation).toList(),
+                      title: t.operation(operation),
+                      tricks: tricks
+                          .where((trick) => trick.operation == operation)
+                          .toList(),
                       learner: learner,
                       mastery: _mastery,
                       childMode: app.childMode,
@@ -138,19 +152,22 @@ class _Group extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (tricks.isEmpty) return const SizedBox.shrink();
-    final current = tricks.where((trick) => trick.grade == learner.grade).toList();
-    final later = tricks.where((trick) => trick.grade != learner.grade).toList();
+    final current = tricks
+        .where((trick) => trick.grade == learner.grade)
+        .toList();
+    final later = tricks
+        .where((trick) => trick.grade != learner.grade)
+        .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(title, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: AppSpace.s8),
-        for (final trick in current)
-          _card(context, trick, locked: false),
+        for (final trick in current) _card(context, trick, locked: false),
         if (later.isNotEmpty)
           ExpansionTile(
             tilePadding: EdgeInsets.zero,
-            title: const Text('Later grades'),
+            title: Text(Copy.of(context).laterGrades),
             children: [
               for (final trick in later)
                 _card(context, trick, locked: childMode),
@@ -162,14 +179,18 @@ class _Group extends StatelessWidget {
   }
 
   Widget _card(BuildContext context, Trick trick, {required bool locked}) {
+    final t = Copy.of(context);
+    final shown = localizeTrick(trick, t);
     return TrickCard(
-      title: trick.title,
+      title: shown.title,
       caption: locked
-          ? 'This trick is for a later grade.'
-          : '${gradeLabel(trick.grade)} · ${trick.shortRange}',
+          ? t.laterGradeTrick
+          : '${t.grade(trick.grade)} · ${shown.shortRange}',
       mastered: mastery[trick.id]?.mastered ?? false,
       saved: learner.favorites.contains(trick.id),
-      onPressed: locked ? null : () => context.go('/tricks/${trick.id}?learner=${learner.id}'),
+      onPressed: locked
+          ? null
+          : () => context.go('/tricks/${trick.id}?learner=${learner.id}'),
     );
   }
 }
@@ -207,9 +228,14 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
       final attempts = await app.store.attempts(learnerId);
       final mastery = await app.store.mastery(learnerId, widget.id);
       final finals = attempts
-          .where((attempt) => attempt.trickId == widget.id && attempt.mode == 'final')
+          .where(
+            (attempt) =>
+                attempt.trickId == widget.id && attempt.mode == 'final',
+          )
           .toList();
-      final last = finals.length > 20 ? finals.sublist(finals.length - 20) : finals;
+      final last = finals.length > 20
+          ? finals.sublist(finals.length - 20)
+          : finals;
       if (!mounted) return;
       setState(() {
         _answered = last.length;
@@ -218,7 +244,8 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
         _loading = false;
       });
       final learner = app.learnerById(learnerId);
-      if (learner != null && learner.seenLessons[widget.id] != app.clock.today) {
+      if (learner != null &&
+          learner.seenLessons[widget.id] != app.clock.today) {
         await app.markLessonSeen(learnerId, widget.id);
       }
     } catch (_) {
@@ -230,13 +257,12 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
   @override
   Widget build(BuildContext context) {
     final app = ref.watch(appProvider);
-    final trick = app.catalog.byId(widget.id);
+    final raw = app.catalog.byId(widget.id);
+    final t = Copy.of(context);
+    final trick = raw == null ? null : localizeTrick(raw, t);
     final learner = app.learnerById(widget.learnerId ?? app.activeLearnerId);
     if (trick == null || learner == null) {
-      return PageFrame(
-        title: 'Math Tricks',
-        body: const Text('This trick is not on this device.'),
-      );
+      return PageFrame(title: t.mathTricks, body: Text(t.missingTrick));
     }
     final later = _rank(trick.grade) > _rank(learner.grade) && app.childMode;
     final saved = learner.favorites.contains(trick.id);
@@ -245,13 +271,13 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
       title: trick.title,
       banner: app.banner,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: t.back,
         onPressed: () => context.go('/tricks?learner=${learner.id}'),
         icon: const Icon(Icons.arrow_back),
       ),
       actions: [
         IconButton(
-          tooltip: saved ? 'Saved' : 'Save',
+          tooltip: saved ? t.saved : t.save,
           onPressed: () => app.toggleFavorite(learner.id, trick.id),
           icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border),
         ),
@@ -259,7 +285,10 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(gradeLabel(trick.grade), style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            t.grade(trick.grade),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
           const SizedBox(height: AppSpace.s16),
           if (_loading)
             const SkeletonBlock(height: 48)
@@ -270,13 +299,13 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
               mastered: _mastered,
             ),
           const SizedBox(height: AppSpace.s24),
-          Text('Use this when', style: Theme.of(context).textTheme.titleMedium),
+          Text(t.useThisWhen, style: Theme.of(context).textTheme.titleMedium),
           Text(trick.appliesWhen),
           const SizedBox(height: AppSpace.s16),
-          Text('Not for', style: Theme.of(context).textTheme.titleMedium),
+          Text(t.notFor, style: Theme.of(context).textTheme.titleMedium),
           Text(trick.notWhen),
           const SizedBox(height: AppSpace.s16),
-          Text('Steps', style: Theme.of(context).textTheme.titleMedium),
+          Text(t.steps, style: Theme.of(context).textTheme.titleMedium),
           for (final step in trick.steps) ...[
             const SizedBox(height: AppSpace.s8),
             Text(
@@ -291,21 +320,30 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
           const SizedBox(height: AppSpace.s16),
           _Diagram(trick: trick),
           const SizedBox(height: AppSpace.s8),
-          Text('Short range: ${trick.shortRange}', style: Theme.of(context).textTheme.bodySmall),
           Text(
-            'Standard range: ${trick.standardRange}',
+            t.pick(
+              '短范围：${trick.shortRange}',
+              'Short range: ${trick.shortRange}',
+            ),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          Text(
+            t.pick(
+              '标准范围：${trick.standardRange}',
+              'Standard range: ${trick.standardRange}',
+            ),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: AppSpace.s24),
           if (!trick.ready || later)
             Text(
               later
-                  ? 'This trick is for a later grade.'
-                  : (trick.blockReason ?? 'This trick is not ready to practice yet.'),
+                  ? t.laterGradeTrick
+                  : (t.zh ? t.notReady : (trick.blockReason ?? t.notReady)),
             )
           else
             AppButton(
-              label: 'Start practice',
+              label: t.startPractice,
               onPressed: () async {
                 await ref.read(practiceProvider).startLearn(trick.id);
                 final view = ref.read(practiceProvider).view;
@@ -317,7 +355,7 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
           if (!app.childMode) ...[
             const SizedBox(height: AppSpace.s12),
             AppButton(
-              label: 'Worksheet',
+              label: Copy.of(context).worksheet,
               secondary: true,
               onPressed: () => context.go(
                 '/export/worksheet?trickId=${trick.id}&learner=${learner.id}',
@@ -355,9 +393,8 @@ class _Diagram extends StatelessWidget {
                   for (final piece in trick.example.pieces)
                     TextSpan(
                       text: piece.text,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: colors.step(piece.step),
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(color: colors.step(piece.step)),
                     ),
                 ],
               ),
@@ -404,14 +441,14 @@ class PracticePage extends ConsumerWidget {
     });
     if (view == null || view.current == null) {
       return PageFrame(
-        title: 'Practice',
+        title: Copy.of(context).practice,
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('This round is not open.'),
+            Text(Copy.of(context).pick('这一轮还没开始。', 'This round is not open.')),
             const SizedBox(height: AppSpace.s16),
             AppButton(
-              label: 'Back to today',
+              label: Copy.of(context).backToToday,
               onPressed: () => context.go('/child'),
             ),
           ],
@@ -430,7 +467,8 @@ class PracticePage extends ConsumerWidget {
       onPopInvokedWithResult: (didPop, _) => _leave(context, ref, didPop),
       child: PageFrame(
         scroll: false,
-        title: '${min(view.index + 1, view.items.length)} of ${view.items.length}',
+        title:
+            '${min(view.index + 1, view.items.length)} of ${view.items.length}',
         banner: app.banner,
         leading: IconButton(
           tooltip: 'Close',
@@ -494,18 +532,33 @@ class _Prompt extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          '${min(view.index + 1, view.items.length)} / ${view.items.length}',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         if (view.phase == 'locate')
-          Text('Check the step', style: Theme.of(context).textTheme.titleMedium),
-        Text(item.prompt, style: Theme.of(context).textTheme.displaySmall),
+          Text(
+            Copy.of(context).pick('核对这一步', 'Check the step'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        EquationLine(prompt: item.prompt, value: view.draft, mark: view.mark),
         if (view.shownWrongFinal != null)
-          Text('You entered ${view.shownWrongFinal}'),
+          Text(
+            Copy.of(context).pick(
+              '你输入了 ${view.shownWrongFinal}',
+              'You entered ${view.shownWrongFinal}',
+            ),
+          ),
         if (step != null) ...[
           const SizedBox(height: AppSpace.s12),
-          Text('Step ${step.number} of ${item.steps.length}'),
+          Text(
+            Copy.of(context).pick(
+              '第 ${step.number} 步，共 ${item.steps.length} 步',
+              'Step ${step.number} of ${item.steps.length}',
+            ),
+          ),
           Text(step.ask, style: Theme.of(context).textTheme.titleMedium),
         ],
-        const SizedBox(height: AppSpace.s16),
-        AnswerReadout(value: view.draft, mark: view.mark),
         MarkLine(mark: view.mark),
       ],
     );
@@ -520,33 +573,40 @@ class DonePage extends ConsumerWidget {
     final view = ref.watch(practiceProvider).view;
     if (view == null) {
       return PageFrame(
-        title: 'Practice results',
+        title: Copy.of(context).pick('练习结果', 'Practice results'),
         body: AppButton(
-          label: 'Back to today',
+          label: Copy.of(context).backToToday,
           onPressed: () => context.go('/child'),
         ),
       );
     }
     final total = view.items.length;
     return PageFrame(
-      title: 'Practice results',
+      title: Copy.of(context).pick('练习结果', 'Practice results'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${view.correctCount} of $total correct',
+            '${Copy.of(context).nCorrect(view.correctCount)} / $total',
             style: Theme.of(context).textTheme.displaySmall,
           ),
           const SizedBox(height: AppSpace.s16),
           if (view.missedNotes.isEmpty)
-            const Text('Every problem in this round was correct.')
+            Text(
+              Copy.of(
+                context,
+              ).pick('这一轮全部正确。', 'Every problem in this round was correct.'),
+            )
           else ...[
-            Text('Check these steps', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              Copy.of(context).pick('看这几步', 'Check these steps'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             for (final note in view.missedNotes) Text(note),
           ],
           const SizedBox(height: AppSpace.s24),
           AppButton(
-            label: 'Back to today',
+            label: Copy.of(context).backToToday,
             onPressed: () => context.go('/child'),
           ),
         ],

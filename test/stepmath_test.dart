@@ -144,9 +144,10 @@ void main() {
     expect(speedDefault('K').limitMode, 'count');
     expect(speedDefault('K').limitValue, 10);
     expect(speedDefault('1').limitMode, 'count');
-    expect(speedDefault('2').limitValue, 120);
-    expect(speedDefault('3').limitValue, 180);
-    expect(speedDefault('5').limitMode, 'time');
+    expect(speedDefault('2').limitMode, 'count');
+    expect(speedDefault('2').limitValue, 10);
+    expect(speedDefault('3').limitValue, 10);
+    expect(speedDefault('5').limitMode, 'count');
     expect(speedDefault('5').operation, 'percent');
   });
 
@@ -239,6 +240,7 @@ void main() {
     await store.wipe();
     expect(await store.readLearners(), isEmpty);
     expect((await store.readSettings()).telemetryEnabled, isFalse);
+    await store.close();
     await directory.delete(recursive: true);
   });
 
@@ -258,6 +260,22 @@ void main() {
     final drill = targetedProblems(facts, rng: Random(1));
     expect(drill, hasLength(5));
     expect(drill.every((problem) => problem.prompt.contains('+')), isTrue);
+  });
+
+  test('a problem is spoken in the system language', () {
+    expect(spokenPrompt('8 + 7'), '八加七');
+    expect(spokenPrompt('12 − 5'), '十二减五');
+    expect(spokenPrompt('6 × 4'), '六乘四');
+    expect(spokenPrompt('20 ÷ 4'), '二十除以四');
+    expect(spokenPrompt('15²'), '十五的平方');
+    expect(spokenPrompt('8 + ? = 10'), '八加几等于十');
+    expect(spokenPrompt('10% of \$80'), '八十美元的百分之十');
+    expect(spokenPrompt('8 + 7', language: 'en'), 'eight plus seven');
+    expect(spokenPrompt('10% of \$80', language: 'en'), 'ten percent of eighty dollars');
+    expect(ttsLanguageTag('zh'), 'zh-CN');
+    expect(ttsLanguageTag('zh', countryCode: 'TW'), 'zh-TW');
+    expect(ttsLanguageTag('en', countryCode: 'GB'), 'en-GB');
+    expect(ttsLanguageTag('en', countryCode: 'US'), 'en-US');
   });
 
   test('speed problems stay inside the kindergarten cap', () {

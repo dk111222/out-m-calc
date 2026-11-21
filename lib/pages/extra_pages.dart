@@ -10,10 +10,13 @@ import 'package:printing/printing.dart';
 import '../app/providers.dart';
 import '../app/theme.dart';
 import '../domain/core.dart';
+import '../l10n/copy.dart';
+import '../l10n/trick_zh.dart';
 import '../domain/engine.dart';
 import '../export/pdfs.dart';
 import '../ui/gates.dart';
 import '../ui/kit.dart';
+import 'home_pages.dart';
 
 class ErrorTrainingGate extends ConsumerStatefulWidget {
   const ErrorTrainingGate({super.key});
@@ -76,7 +79,10 @@ class _ErrorTrainingGateState extends ConsumerState<ErrorTrainingGate> {
           ),
           if (_error != null) ...[
             const SizedBox(height: AppSpace.s12),
-            Text(_error!, style: TextStyle(color: AppColors.of(context).danger)),
+            Text(
+              _error!,
+              style: TextStyle(color: AppColors.of(context).danger),
+            ),
           ],
         ],
       );
@@ -186,7 +192,7 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Could not save. Try again.';
+        _error = Copy.of(context).couldNotSave;
       });
     }
   }
@@ -199,7 +205,7 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
         title: 'Wrong problems',
         banner: app.banner,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: Copy.of(context).back,
           onPressed: () => context.go(app.childMode ? '/child' : '/adult'),
           icon: const Icon(Icons.arrow_back),
         ),
@@ -217,11 +223,12 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
       groups.putIfAbsent(day, () => []).add(item);
     }
     final days = groups.keys.toList()..sort((a, b) => b.compareTo(a));
+    final t = Copy.of(context);
     return PageFrame(
-      title: 'Wrong problems',
+      title: t.wrongProblems,
       banner: _error ?? app.banner,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: t.back,
         onPressed: () => context.go(app.childMode ? '/child' : '/adult'),
         icon: const Icon(Icons.arrow_back),
       ),
@@ -234,41 +241,57 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
                   DropdownButton<String?>(
                     isExpanded: true,
                     value: _trickId,
-                    hint: const Text('All tricks'),
+                    hint: Text(t.pick('全部技巧', 'All tricks')),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('All tricks')),
+                      DropdownMenuItem(
+                        value: null,
+                        child: Text(t.pick('全部技巧', 'All tricks')),
+                      ),
                       for (final id in tricks)
                         DropdownMenuItem(
                           value: id,
-                          child: Text(app.catalog.byId(id)?.title ?? id),
+                          child: Text(
+                            app.catalog.byId(id) == null
+                                ? id
+                                : localizeTrick(app.catalog.byId(id)!, t).title,
+                          ),
                         ),
                     ],
                     onChanged: (value) => setState(() => _trickId = value),
                   ),
                 const SizedBox(height: AppSpace.s12),
                 if (filtered.isEmpty)
-                  const Text('No wrong problems yet')
+                  Text(t.pick('还没有错题', 'No wrong problems yet'))
                 else
                   for (final day in days) ...[
                     Text(day, style: Theme.of(context).textTheme.titleMedium),
-                    Text('${groups[day]!.length} to practice'),
+                    Text(
+                      t.pick(
+                        '${groups[day]!.length} 题待练',
+                        '${groups[day]!.length} to practice',
+                      ),
+                    ),
                     for (final item in groups[day]!)
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(item.prompt),
                         subtitle: Text(
-                          'You entered ${item.userAnswer}. ${item.correctAnswer} is the result.'
-                          '${item.failedStep == null ? '' : ' Step ${item.failedStep}.'}',
+                          t.pick(
+                            '你输入了 ${item.userAnswer}。结果是 ${item.correctAnswer}。${item.failedStep == null ? '' : '第 ${item.failedStep} 步。'}',
+                            'You entered ${item.userAnswer}. ${item.correctAnswer} is the result.${item.failedStep == null ? '' : ' Step ${item.failedStep}.'}',
+                          ),
                         ),
                         trailing: TextButton(
                           onPressed: () async {
                             await ref.read(practiceProvider).startRepair(item);
                             final view = ref.read(practiceProvider).view;
                             if (view != null && context.mounted) {
-                              context.go('/practice/${item.trickId}/${view.phase}');
+                              context.go(
+                                '/practice/${item.trickId}/${view.phase}',
+                              );
                             }
                           },
-                          child: const Text('Practice'),
+                          child: Text(t.practice),
                         ),
                       ),
                     const SizedBox(height: AppSpace.s16),
@@ -295,62 +318,78 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final app = ref.watch(appProvider);
+    final t = Copy.of(context);
     if (!child && app.childMode) {
-      return PageFrame(
-        title: 'Settings',
-        body: const Text('A parent needs to open this.'),
-      );
+      return PageFrame(title: t.settings, body: Text(t.parentNeedsThis));
     }
     final settings = app.settings;
     return PageFrame(
-      title: child ? 'Practice settings' : 'Settings',
+      title: child ? t.me : t.settings,
       banner: app.banner,
-      leading: IconButton(
-        tooltip: 'Back',
-        onPressed: () => context.go(child ? '/child' : '/adult'),
-        icon: const Icon(Icons.arrow_back),
-      ),
+      leading: child
+          ? null
+          : IconButton(
+              tooltip: t.back,
+              onPressed: () => context.go('/adult'),
+              icon: const Icon(Icons.arrow_back),
+            ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Appearance', style: Theme.of(context).textTheme.titleMedium),
+          if (child) ...[
+            const LearnerHub(),
+            const SizedBox(height: AppSpace.s24),
+            Text(t.settings, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpace.s16),
+          ],
+          Text(t.languageWord, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpace.s8),
           SegmentedButton<String>(
             segments: const [
-              ButtonSegment(value: 'system', label: Text('System')),
-              ButtonSegment(value: 'light', label: Text('Light')),
-              ButtonSegment(value: 'dark', label: Text('Dark')),
+              ButtonSegment(value: 'zh', label: Text('中文')),
+              ButtonSegment(value: 'en', label: Text('English')),
             ],
-            selected: {settings.themeMode},
-            onSelectionChanged: (value) => app.updateSettings(
-              settings.copyWith(themeMode: value.first),
-            ),
+            selected: {settings.language == 'en' ? 'en' : 'zh'},
+            onSelectionChanged: (value) =>
+                app.updateSettings(settings.copyWith(language: value.first)),
           ),
           const SizedBox(height: AppSpace.s16),
-          Text('Text size', style: Theme.of(context).textTheme.titleMedium),
+          Text(t.appearance, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpace.s8),
           SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'small', label: Text('Small')),
-              ButtonSegment(value: 'medium', label: Text('Medium')),
-              ButtonSegment(value: 'large', label: Text('Large')),
+            segments: [
+              ButtonSegment(value: 'system', label: Text(t.system)),
+              ButtonSegment(value: 'light', label: Text(t.light)),
+              ButtonSegment(value: 'dark', label: Text(t.dark)),
+            ],
+            selected: {settings.themeMode},
+            onSelectionChanged: (value) =>
+                app.updateSettings(settings.copyWith(themeMode: value.first)),
+          ),
+          const SizedBox(height: AppSpace.s16),
+          Text(t.textSize, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: AppSpace.s8),
+          SegmentedButton<String>(
+            segments: [
+              ButtonSegment(value: 'small', label: Text(t.small)),
+              ButtonSegment(value: 'medium', label: Text(t.medium)),
+              ButtonSegment(value: 'large', label: Text(t.large)),
             ],
             selected: {settings.textScale},
-            onSelectionChanged: (value) => app.updateSettings(
-              settings.copyWith(textScale: value.first),
-            ),
+            onSelectionChanged: (value) =>
+                app.updateSettings(settings.copyWith(textScale: value.first)),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Sound effects'),
+            title: Text(t.soundEffects),
             value: settings.soundEnabled,
             onChanged: (value) =>
                 app.updateSettings(settings.copyWith(soundEnabled: value)),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Read the problem'),
-            subtitle: const Text('The problem is spoken. Keys stay quiet.'),
+            title: Text(t.readProblem),
+            subtitle: Text(t.readProblemBody),
             value: settings.readAloudEnabled,
             onChanged: (value) =>
                 app.updateSettings(settings.copyWith(readAloudEnabled: value)),
@@ -358,9 +397,12 @@ class SettingsPage extends ConsumerWidget {
           if (!child) ...[
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Usage numbers'),
-              subtitle: const Text(
-                'This version does not send them anywhere. The switch only saves your choice.',
+              title: Text(Copy.of(context).pick('使用数据', 'Usage numbers')),
+              subtitle: Text(
+                Copy.of(context).pick(
+                  '这一版不会把它们发送到别处。开关只保存你的选择。',
+                  'This version does not send them anywhere. The switch only saves your choice.',
+                ),
               ),
               value: settings.telemetryEnabled,
               onChanged: (value) => app.updateSettings(
@@ -369,16 +411,20 @@ class SettingsPage extends ConsumerWidget {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Parent code'),
+              title: Text(Copy.of(context).parentCode),
               subtitle: Text(
-                settings.parentPinHash == null ? 'Not set yet' : 'Saved on this device',
+                settings.parentPinHash == null
+                    ? Copy.of(context).pick('还没设置', 'Not set yet')
+                    : Copy.of(
+                        context,
+                      ).pick('已保存在这台设备上', 'Saved on this device'),
               ),
               onTap: () async {
                 if (app.settings.parentPinHash == null) {
                   await requireParentCode(
                     context,
                     app,
-                    title: 'Parent code',
+                    title: Copy.of(context).parentCode,
                     body: 'Set a four-digit code.',
                     action: (pin, again) => app.submitPin(pin, again: again),
                   );
@@ -387,7 +433,7 @@ class SettingsPage extends ConsumerWidget {
                 final ok = await requireParentCode(
                   context,
                   app,
-                  title: 'Parent code',
+                  title: Copy.of(context).parentCode,
                   body: 'Enter the current parent code.',
                   action: (pin, _) => app.submitPin(pin),
                 );
@@ -395,7 +441,7 @@ class SettingsPage extends ConsumerWidget {
                 await requireParentCode(
                   context,
                   app,
-                  title: 'Parent code',
+                  title: Copy.of(context).parentCode,
                   body: 'Set a new four-digit code.',
                   create: true,
                   action: (pin, again) => app.setNewPin(pin, again),
@@ -421,15 +467,14 @@ class SettingsPage extends ConsumerWidget {
             const SizedBox(height: AppSpace.s12),
             if (!settings.signedIn)
               AppButton(
-                label: settings.accountEmail == null ? 'Create account' : 'Sign in',
+                label: settings.accountEmail == null
+                    ? 'Create account'
+                    : 'Sign in',
                 onPressed: () => context.go('/review'),
               )
             else ...[
               if (!settings.subscriptionActive)
-                AppButton(
-                  label: 'Subscribe',
-                  onPressed: () => app.subscribe(),
-                ),
+                AppButton(label: 'Subscribe', onPressed: () => app.subscribe()),
               const SizedBox(height: AppSpace.s8),
               AppButton(
                 label: 'Sign out',
@@ -440,7 +485,7 @@ class SettingsPage extends ConsumerWidget {
             const SizedBox(height: AppSpace.s16),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Privacy policy'),
+              title: Text(Copy.of(context).privacyPolicy),
               onTap: () => context.go('/settings/privacy'),
             ),
             const SizedBox(height: AppSpace.s16),
@@ -450,13 +495,14 @@ class SettingsPage extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpace.s16),
             AppButton(
-              label: 'Delete all data on this device',
+              label: Copy.of(context).deleteAll,
               destructive: true,
               onPressed: () async {
                 final leave = await showConfirm(
                   context,
-                  title: 'Delete all data on this device',
-                  body: 'Learners, practice, and the parent code will be erased.',
+                  title: Copy.of(context).deleteAll,
+                  body:
+                      'Learners, practice, and the parent code will be erased.',
                   confirm: 'Delete all data',
                   destructive: true,
                 );
@@ -464,11 +510,12 @@ class SettingsPage extends ConsumerWidget {
                 final ok = await requireParentCode(
                   context,
                   app,
-                  title: 'Parent code',
-                  body: 'Enter the parent code to delete everything on this device.',
+                  title: Copy.of(context).parentCode,
+                  body:
+                      'Enter the parent code to delete everything on this device.',
                   action: (pin, again) => app.wipeAll(pin, again: again),
                 );
-                if (ok && context.mounted) context.go('/start');
+                if (ok && context.mounted) context.go('/child');
               },
             ),
           ],
@@ -484,33 +531,48 @@ class PrivacyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PageFrame(
-      title: 'Privacy policy',
+      title: Copy.of(context).privacyPolicy,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: Copy.of(context).back,
         onPressed: () => context.go('/settings'),
         icon: const Icon(Icons.arrow_back),
       ),
-      body: const Column(
+      body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'StepMath stores practice on this device. Lessons and speed drills do not ask for an account. Wrong-problem practice asks a parent to sign in. That email and password stay on this device.',
+            Copy.of(context).pick(
+              'StepMath 把练习存在这台设备上。学技巧和速算不需要账号。错题练习需要家长登录。邮箱和密码只留在这台设备上。',
+              'StepMath stores practice on this device. Lessons and speed drills do not ask for an account. Wrong-problem practice asks a parent to sign in. That email and password stay on this device.',
+            ),
           ),
-          SizedBox(height: AppSpace.s12),
+          const SizedBox(height: AppSpace.s12),
           Text(
-            'A learner name is optional. If you leave it blank, the app uses Learner. Guest practice is stored the same way.',
+            Copy.of(context).pick(
+              '孩子名字可以不填。留空时会用“学员”。访客练习也用同样的方式保存。',
+              'A learner name is optional. If you leave it blank, the app uses Learner. Guest practice is stored the same way.',
+            ),
           ),
-          SizedBox(height: AppSpace.s12),
+          const SizedBox(height: AppSpace.s12),
           Text(
-            'The parent code is stored as a hash, not as the four digits.',
+            Copy.of(context).pick(
+              '家长密码以哈希保存，不保存那四位数字。',
+              'The parent code is stored as a hash, not as the four digits.',
+            ),
           ),
-          SizedBox(height: AppSpace.s12),
+          const SizedBox(height: AppSpace.s12),
           Text(
-            'The app does not show ads. This version does not send usage numbers anywhere. The switch in Settings only records your choice.',
+            Copy.of(context).pick(
+              '应用不显示广告。这一版不会把使用数据发送到别处。设置里的开关只记录你的选择。',
+              'The app does not show ads. This version does not send usage numbers anywhere. The switch in Settings only records your choice.',
+            ),
           ),
-          SizedBox(height: AppSpace.s12),
+          const SizedBox(height: AppSpace.s12),
           Text(
-            'Delete all data on this device erases learners, practice, and the parent code. After that, the app starts over.',
+            Copy.of(context).pick(
+              '删除这台设备上的全部数据会清掉孩子、练习和家长密码。之后应用会重新开始。',
+              'Delete all data on this device erases learners, practice, and the parent code. After that, the app starts over.',
+            ),
           ),
         ],
       ),
@@ -561,7 +623,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Could not save. Try again.';
+        _error = Copy.of(context).couldNotSave;
       });
     }
   }
@@ -571,11 +633,12 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     final app = ref.watch(appProvider);
     final learner = app.learnerById(widget.learnerId);
     final report = _report;
+    final t = Copy.of(context);
     return PageFrame(
-      title: 'Last 7 days',
+      title: t.pick('最近 7 天', 'Last 7 days'),
       banner: _error,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: t.back,
         onPressed: () => context.go('/adult'),
         icon: const Icon(Icons.arrow_back),
       ),
@@ -584,29 +647,66 @@ class _ReportPageState extends ConsumerState<ReportPage> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(learner?.displayName ?? 'Learner', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  learner?.displayName ?? t.learnerStem,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: AppSpace.s12),
                 if (report.problems == 0 && report.days == 0)
-                  const Text('No practice in the last 7 days.')
+                  Text(t.pick('最近 7 天没有练习。', 'No practice in the last 7 days.'))
                 else ...[
-                  Text('Days practiced: ${report.days}'),
-                  Text('Problems: ${report.problems}'),
-                  Text('Correct: ${(report.accuracy * 100).round()}%'),
-                  Text('New mastered: ${report.newMastered}'),
+                  Text(
+                    t.pick(
+                      '练习天数：${report.days}',
+                      'Days practiced: ${report.days}',
+                    ),
+                  ),
+                  Text(
+                    t.pick(
+                      '题数：${report.problems}',
+                      'Problems: ${report.problems}',
+                    ),
+                  ),
+                  Text(
+                    t.pick(
+                      '正确：${(report.accuracy * 100).round()}%',
+                      'Correct: ${(report.accuracy * 100).round()}%',
+                    ),
+                  ),
+                  Text(
+                    t.pick(
+                      '新掌握：${report.newMastered}',
+                      'New mastered: ${report.newMastered}',
+                    ),
+                  ),
                   Text(
                     report.mostMissedStep == null
-                        ? 'No missed step stood out.'
-                        : 'Most missed step: ${report.mostMissedStep} (${report.missedStepCount})',
+                        ? t.pick('没有特别容易错的步骤。', 'No missed step stood out.')
+                        : t.pick(
+                            '最容易错的步骤：${report.mostMissedStep}（${report.missedStepCount}）',
+                            'Most missed step: ${report.mostMissedStep} (${report.missedStepCount})',
+                          ),
                   ),
                   if (report.correctPerMinute != null)
                     Text(
-                      'Speed: ${report.correctPerMinute!.toStringAsFixed(1)} correct per minute',
+                      t.pick(
+                        '速度：每分钟 ${report.correctPerMinute!.toStringAsFixed(1)} 题正确',
+                        'Speed: ${report.correctPerMinute!.toStringAsFixed(1)} correct per minute',
+                      ),
                     ),
                 ],
                 const SizedBox(height: AppSpace.s24),
-                Text('Certificate', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  Copy.of(context).pick('奖状', 'Certificate'),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 if (_certificates.isEmpty)
-                  const Text('A certificate appears after a trick is mastered or a speed best is set.')
+                  Text(
+                    Copy.of(context).pick(
+                      '掌握一个技巧，或速算刷新最好成绩后，会出现奖状。',
+                      'A certificate appears after a trick is mastered or a speed best is set.',
+                    ),
+                  )
                 else
                   for (final certificate in _certificates)
                     ListTile(
@@ -641,30 +741,33 @@ class _WorksheetPageState extends ConsumerState<WorksheetPage> {
     final app = ref.watch(appProvider);
     final trick = app.catalog.byId(widget.trickId);
     if (app.childMode) {
-      return const PageFrame(
-        title: 'Worksheet',
-        body: Text('A parent needs to open this.'),
+      return PageFrame(
+        title: Copy.of(context).worksheet,
+        body: Text(Copy.of(context).parentNeedsThis),
       );
     }
     if (!app.settings.printUnlocked) {
-      return const PageFrame(
-        title: 'Worksheet',
+      return PageFrame(
+        title: Copy.of(context).worksheet,
         body: Text(
-          'Worksheets stay on this device. Printing is turned off until it is included for this device.',
+          Copy.of(context).pick(
+            '练习页留在这台设备上。这台设备还没打开打印。',
+            'Worksheets stay on this device. Printing is turned off until it is included for this device.',
+          ),
         ),
       );
     }
     if (trick == null || !trick.ready) {
-      return const PageFrame(
-        title: 'Worksheet',
-        body: Text('This trick is not ready to practice yet.'),
+      return PageFrame(
+        title: Copy.of(context).worksheet,
+        body: Text(Copy.of(context).notReady),
       );
     }
     return PageFrame(
-      title: 'Worksheet',
+      title: Copy.of(context).worksheet,
       banner: _error,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: Copy.of(context).back,
         onPressed: () => context.go(
           '/tricks/${widget.trickId}?learner=${app.activeLearnerId ?? ''}',
         ),
@@ -673,12 +776,20 @@ class _WorksheetPageState extends ConsumerState<WorksheetPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(trick.title, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            localizeTrick(trick, Copy.of(context)).title,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: AppSpace.s8),
-          const Text('One trick, the steps, 20 problems, and an answer page.'),
+          Text(
+            Copy.of(context).pick(
+              '一个技巧、步骤、20 道题，以及答案页。',
+              'One trick, the steps, 20 problems, and an answer page.',
+            ),
+          ),
           const SizedBox(height: AppSpace.s16),
           AppButton(
-            label: 'Open print preview',
+            label: Copy.of(context).pick('打开打印预览', 'Open print preview'),
             busy: _busy,
             onPressed: () async {
               setState(() {
@@ -704,7 +815,8 @@ class _WorksheetPageState extends ConsumerState<WorksheetPage> {
                   name: 'stepmath-${trick.id}.pdf',
                 );
               } catch (_) {
-                if (mounted) setState(() => _error = 'Could not save. Try again.');
+                if (mounted)
+                  setState(() => _error = Copy.of(context).couldNotSave);
               } finally {
                 if (mounted) setState(() => _busy = false);
               }
@@ -751,7 +863,10 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
   }
 
   Future<void> _load() async {
-    final rows = await ref.read(appProvider).store.certificates(widget.learnerId);
+    final rows = await ref
+        .read(appProvider)
+        .store
+        .certificates(widget.learnerId);
     if (!mounted) return;
     setState(() {
       for (final row in rows) {
@@ -766,32 +881,42 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
     final learner = app.learnerById(widget.learnerId);
     final certificate = _certificate;
     if (!app.settings.printUnlocked) {
-      return const PageFrame(
-        title: 'Certificate',
+      return PageFrame(
+        title: Copy.of(context).pick('奖状', 'Certificate'),
         body: Text(
-          'Certificates stay on this device. Printing is turned off until it is included for this device.',
+          Copy.of(context).pick(
+            '奖状留在这台设备上。这台设备还没打开打印。',
+            'Certificates stay on this device. Printing is turned off until it is included for this device.',
+          ),
         ),
       );
     }
     return PageFrame(
-      title: 'Certificate',
+      title: Copy.of(context).pick('奖状', 'Certificate'),
       banner: _error,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: Copy.of(context).back,
         onPressed: () => context.go('/report/${widget.learnerId}'),
         icon: const Icon(Icons.arrow_back),
       ),
       body: certificate == null
-          ? const Text('That certificate is not on this device.')
+          ? Text(
+              Copy.of(
+                context,
+              ).pick('这台设备上没有这张奖状。', 'That certificate is not on this device.'),
+            )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(certificate.title, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  certificate.title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: AppSpace.s8),
                 Text(learner?.displayName ?? 'Learner'),
                 const SizedBox(height: AppSpace.s16),
                 AppButton(
-                  label: 'Open print preview',
+                  label: Copy.of(context).pick('打开打印预览', 'Open print preview'),
                   busy: _busy,
                   onPressed: () async {
                     setState(() => _busy = true);
@@ -817,7 +942,7 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
                       );
                     } catch (_) {
                       if (mounted) {
-                        setState(() => _error = 'Could not save. Try again.');
+                        setState(() => _error = Copy.of(context).couldNotSave);
                       }
                     } finally {
                       if (mounted) setState(() => _busy = false);

@@ -7,29 +7,26 @@ import 'package:go_router/go_router.dart';
 import '../app/providers.dart';
 import '../app/theme.dart';
 import '../domain/core.dart';
+import '../l10n/copy.dart';
 import '../domain/machines.dart';
 import '../ui/kit.dart';
 
 class SpeedForm extends StatelessWidget {
-  const SpeedForm({
-    super.key,
-    required this.config,
-    required this.onChanged,
-  });
+  const SpeedForm({super.key, required this.config, required this.onChanged});
 
   final SpeedConfig config;
   final ValueChanged<SpeedConfig> onChanged;
 
   static const counts = [5, 10, 15, 20, 30];
-  static const times = [30, 60, 120, 180, 300];
   static const digits = [1, 2, 3, 4];
 
   @override
   Widget build(BuildContext context) {
+    final t = Copy.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Operation', style: Theme.of(context).textTheme.titleMedium),
+        Text(t.operationWord, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: AppSpace.s8),
         Wrap(
           spacing: AppSpace.s8,
@@ -44,53 +41,25 @@ class SpeedForm extends StatelessWidget {
               'percent',
             ])
               ChoiceChip(
-                label: Text(operationLabel(operation)),
+                label: Text(t.operation(operation)),
                 selected: config.operation == operation,
-                onSelected: (_) => onChanged(config.copyWith(operation: operation)),
+                onSelected: (_) =>
+                    onChanged(config.copyWith(operation: operation)),
               ),
           ],
         ),
         const SizedBox(height: AppSpace.s16),
-        Text('End the round by', style: Theme.of(context).textTheme.titleMedium),
-        RadioGroup<String>(
-          groupValue: config.limitMode,
-          onChanged: (value) {
-            if (value == null) return;
-            final timed = value == 'time';
-            onChanged(
-              config.copyWith(
-                limitMode: value,
-                limitValue: (timed ? times : counts).contains(config.limitValue)
-                    ? config.limitValue
-                    : (timed ? 180 : 10),
-              ),
-            );
-          },
-          child: const Column(
-            children: [
-              RadioListTile<String>(
-                value: 'count',
-                title: Text('Problems left'),
-                contentPadding: EdgeInsets.zero,
-              ),
-              RadioListTile<String>(
-                value: 'time',
-                title: Text('Time left'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ],
-          ),
-        ),
         StepperRow(
-          label: config.limitMode == 'time' ? 'Seconds' : 'Problems',
-          value: (config.limitMode == 'time' ? times : counts).contains(config.limitValue)
+          label: t.pick('题数', 'Problems'),
+          value: counts.contains(config.limitValue)
               ? config.limitValue
-              : (config.limitMode == 'time' ? times : counts).first,
-          steps: config.limitMode == 'time' ? times : counts,
-          onChanged: (value) => onChanged(config.copyWith(limitValue: value)),
+              : counts[1],
+          steps: counts,
+          onChanged: (value) =>
+              onChanged(config.copyWith(limitMode: 'count', limitValue: value)),
         ),
         StepperRow(
-          label: 'Smallest number of digits',
+          label: t.pick('最少位数', 'Smallest number of digits'),
           value: config.digitMin,
           steps: digits,
           onChanged: (value) => onChanged(
@@ -101,16 +70,17 @@ class SpeedForm extends StatelessWidget {
           ),
         ),
         StepperRow(
-          label: 'Largest number of digits',
+          label: t.pick('最多位数', 'Largest number of digits'),
           value: config.digitMax,
           steps: digits.where((digit) => digit >= config.digitMin).toList(),
           onChanged: (value) => onChanged(config.copyWith(digitMax: value)),
         ),
-        TimerPanel(
-          caption: config.limitMode == 'time' ? 'Time left' : 'Problems left',
-          value: config.limitMode == 'time'
-              ? clockLabel(config.limitValue * 1000)
-              : '${config.limitValue}',
+        Text(
+          t.pick(
+            '这一轮只记录总用时，不倒计时。',
+            'This round records total time. There is no countdown.',
+          ),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );
@@ -133,11 +103,12 @@ class _SpeedSetupPageState extends ConsumerState<SpeedSetupPage> {
     final learner = app.active;
     _config ??= speedDefault(learner?.grade ?? '1');
     final config = _config!;
+    final t = Copy.of(context);
     return PageFrame(
-      title: 'Speed Drill',
+      title: t.speedDrill,
       banner: app.banner,
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: t.back,
         onPressed: () => context.go(app.childMode ? '/child' : '/adult'),
         icon: const Icon(Icons.arrow_back),
       ),
@@ -145,14 +116,20 @@ class _SpeedSetupPageState extends ConsumerState<SpeedSetupPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Choose the operation, the size of the numbers, and how the round ends.',
+            t.pick(
+              '选择运算和数字大小。这一轮记下总用时。',
+              'Choose the operation and the size of the numbers. The round records total time.',
+            ),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: AppSpace.s16),
-          SpeedForm(config: config, onChanged: (value) => setState(() => _config = value)),
+          SpeedForm(
+            config: config,
+            onChanged: (value) => setState(() => _config = value),
+          ),
           const SizedBox(height: AppSpace.s16),
           AppButton(
-            label: 'Start',
+            label: Copy.of(context).pick('开始', 'Start'),
             onPressed: learner == null
                 ? null
                 : () async {
@@ -163,7 +140,7 @@ class _SpeedSetupPageState extends ConsumerState<SpeedSetupPage> {
           if (!app.childMode && learner != null) ...[
             const SizedBox(height: AppSpace.s12),
             AppButton(
-              label: 'Save today',
+              label: Copy.of(context).saveToday,
               secondary: true,
               onPressed: () async {
                 final now = app.clock.now().toUtc();
@@ -215,7 +192,8 @@ class _SpeedRunPageState extends ConsumerState<SpeedRunPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       _hidden ??= DateTime.now();
     }
     if (state == AppLifecycleState.resumed) {
@@ -238,25 +216,31 @@ class _SpeedRunPageState extends ConsumerState<SpeedRunPage>
     });
     if (view == null) {
       return PageFrame(
-        title: 'Speed Drill',
+        title: Copy.of(context).speedDrill,
         body: AppButton(
-          label: 'Back to today',
+          label: Copy.of(context).backToToday,
           onPressed: () => context.go('/child'),
         ),
       );
     }
     if (view.paused) {
       return PageFrame(
-        title: 'Pause',
+        title: Copy.of(context).pick('暂停', 'Pause'),
         scroll: false,
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Paused', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              Copy.of(context).pick('已暂停', 'Paused'),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: AppSpace.s8),
-            const Text('The clock is stopped. The same problem is waiting.'),
+            Text(Copy.of(context).clockStopped),
             const Spacer(),
-            AppButton(label: 'Continue', onPressed: speed.resumeRunning),
+            AppButton(
+              label: Copy.of(context).continueLabel,
+              onPressed: speed.resumeRunning,
+            ),
           ],
         ),
       );
@@ -274,10 +258,13 @@ class _SpeedRunPageState extends ConsumerState<SpeedRunPage>
         if (didPop) return;
         final leave = await showConfirm(
           context,
-          title: 'Leave this round?',
-          body: 'Answered questions stay on this round until the day ends.',
-          confirm: 'Leave',
-          cancel: 'Stay',
+          title: Copy.of(context).pick('离开这一轮？', 'Leave this round?'),
+          body: Copy.of(context).pick(
+            '已答的题会留到今天结束。',
+            'Answered questions stay on this round until the day ends.',
+          ),
+          confirm: Copy.of(context).pick('离开', 'Leave'),
+          cancel: Copy.of(context).pick('留下', 'Stay'),
         );
         if (leave && context.mounted) {
           await speed.leave();
@@ -286,16 +273,19 @@ class _SpeedRunPageState extends ConsumerState<SpeedRunPage>
       },
       child: PageFrame(
         scroll: false,
-        title: 'Speed Drill',
+        title: Copy.of(context).speedDrill,
         leading: IconButton(
-          tooltip: 'Close',
+          tooltip: Copy.of(context).pick('关闭', 'Close'),
           onPressed: () async {
             final leave = await showConfirm(
               context,
-              title: 'Leave this round?',
-              body: 'Answered questions stay on this round until the day ends.',
-              confirm: 'Leave',
-              cancel: 'Stay',
+              title: Copy.of(context).pick('离开这一轮？', 'Leave this round?'),
+              body: Copy.of(context).pick(
+                '已答的题会留到今天结束。',
+                'Answered questions stay on this round until the day ends.',
+              ),
+              confirm: Copy.of(context).pick('离开', 'Leave'),
+              cancel: Copy.of(context).pick('留下', 'Stay'),
             );
             if (leave && context.mounted) {
               await speed.leave();
@@ -306,7 +296,7 @@ class _SpeedRunPageState extends ConsumerState<SpeedRunPage>
         ),
         actions: [
           IconButton(
-            tooltip: 'Pause',
+            tooltip: Copy.of(context).pick('暂停', 'Pause'),
             onPressed: speed.pause,
             icon: const Icon(Icons.pause),
           ),
@@ -349,21 +339,19 @@ class _SpeedPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final item = view.current;
-    final caption = view.config.limitMode == 'time' ? 'Time left' : 'Problems left';
-    final value = view.config.limitMode == 'time'
-        ? clockLabel(view.remainingMs)
-        : '${view.problemsLeft}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TimerPanel(caption: caption, value: value, warning: view.warning),
-        const SizedBox(height: AppSpace.s24),
-        Text(
-          item?.prompt ?? '',
-          style: Theme.of(context).textTheme.displaySmall,
+        TimerPanel(
+          caption: Copy.of(context).elapsed,
+          value: clockLabel(view.elapsedMs),
         ),
-        const SizedBox(height: AppSpace.s16),
-        AnswerReadout(value: view.draft, mark: view.mark),
+        const SizedBox(height: AppSpace.s24),
+        EquationLine(
+          prompt: item?.prompt ?? '',
+          value: view.draft,
+          mark: view.mark,
+        ),
         MarkLine(mark: view.mark),
       ],
     );
@@ -378,34 +366,45 @@ class SpeedDonePage extends ConsumerWidget {
     final view = ref.watch(speedProvider).view;
     if (view == null) {
       return PageFrame(
-        title: 'Speed Drill',
+        title: Copy.of(context).speedDrill,
         body: AppButton(
-          label: 'Back to today',
+          label: Copy.of(context).backToToday,
           onPressed: () => context.go('/child'),
         ),
       );
     }
-    final best = view.correct > view.previousBest ? view.correct : view.previousBest;
+    final t = Copy.of(context);
+    final best = view.correct > view.previousBest
+        ? view.correct
+        : view.previousBest;
     final fresh = view.correct > view.previousBest && view.correct > 0;
     return PageFrame(
-      title: 'Speed Drill',
+      title: t.speedDrill,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${view.correct} correct',
+            t.nCorrect(view.correct),
             style: Theme.of(context).textTheme.displaySmall,
           ),
           const SizedBox(height: AppSpace.s8),
           Text(
-            fresh ? 'New personal best' : 'Personal best: $best',
+            fresh ? t.newBest : t.best(best),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpace.s8),
-          Text(view.config.summary, style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            view.config.summary(language: t.language),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: AppSpace.s8),
+          Text(
+            '${t.elapsed} ${clockLabel(view.elapsedMs)}',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: AppSpace.s24),
           AppButton(
-            label: 'Back to today',
+            label: t.backToToday,
             onPressed: () => context.go('/child'),
           ),
         ],

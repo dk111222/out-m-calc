@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app/theme.dart';
+import '../l10n/copy.dart';
 
 class PageFrame extends StatelessWidget {
   const PageFrame({
@@ -42,38 +43,47 @@ class PageFrame extends StatelessWidget {
             ),
           )
         : padded;
+    final tools = leading != null || (actions?.isNotEmpty ?? false);
     return Scaffold(
       backgroundColor: colors.bg,
-      appBar: AppBar(
-        leading: leading,
-        title: Text(title),
-        actions: actions,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: colors.border),
-        ),
-      ),
-      body: Column(
-        children: [
-          if (banner != null)
-            Material(
-              color: colors.surface,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpace.s12),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: colors.danger),
-                    const SizedBox(width: AppSpace.s8),
-                    Expanded(
-                      child: Text(banner!, style: TextStyle(color: colors.danger)),
-                    ),
-                  ],
+      body: SafeArea(
+        child: Semantics(
+          namesRoute: true,
+          label: title,
+          explicitChildNodes: true,
+          child: Column(
+            children: [
+              if (tools)
+                SizedBox(
+                  height: AppSpace.minTarget,
+                  child: Row(children: [?leading, const Spacer(), ...?actions]),
                 ),
+              if (banner != null)
+                Material(
+                  color: colors.surface,
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpace.s12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: colors.danger),
+                        const SizedBox(width: AppSpace.s8),
+                        Expanded(
+                          child: Text(
+                            banner!,
+                            style: TextStyle(color: colors.danger),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: scroll ? SingleChildScrollView(child: content) : content,
               ),
-            ),
-          Expanded(child: scroll ? SingleChildScrollView(child: content) : content),
-          ?bottom,
-        ],
+              ?bottom,
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -116,7 +126,7 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final text = busy ? 'Working' : label;
+    final text = busy ? Copy.of(context).working : label;
     final style = FilledButton.styleFrom(
       minimumSize: const Size.fromHeight(AppSpace.minTarget),
       backgroundColor: secondary
@@ -168,7 +178,9 @@ class TrickCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final enabled = onPressed != null;
-    final name = mastered ? '$title, ${caption.isEmpty ? '' : '$caption, '}Mastered' : '$title, $caption';
+    final name = mastered
+        ? '$title, ${caption.isEmpty ? '' : '$caption, '}Mastered'
+        : '$title, $caption';
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpace.s16),
       child: DecoratedBox(
@@ -199,22 +211,29 @@ class TrickCard extends StatelessWidget {
                           children: [
                             Text(
                               title,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: enabled ? colors.text : colors.textMuted,
-                              ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: enabled
+                                        ? colors.text
+                                        : colors.textMuted,
+                                  ),
                             ),
                             if (caption.isNotEmpty) ...[
                               const SizedBox(height: AppSpace.s4),
-                              Text(caption, style: Theme.of(context).textTheme.bodySmall),
+                              Text(
+                                caption,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
                             ],
                             if (mastered) ...[
                               const SizedBox(height: AppSpace.s4),
                               Text(
-                                'Mastered',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: colors.success,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                Copy.of(context).mastered,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: colors.success,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                               ),
                             ],
                           ],
@@ -312,12 +331,18 @@ class Keypad extends StatelessWidget {
                 children: [
                   Expanded(child: key('.', '.')),
                   Expanded(child: key('0', '0')),
-                  Expanded(child: key('Delete', 'delete', semantics: 'Delete')),
+                  Expanded(
+                    child: key(
+                      Copy.of(context).delete,
+                      'delete',
+                      semantics: Copy.of(context).delete,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: AppSpace.s8),
               AppButton(
-                label: 'Submit',
+                label: Copy.of(context).submit,
                 onPressed: enabled ? onSubmit : null,
               ),
             ],
@@ -328,12 +353,41 @@ class Keypad extends StatelessWidget {
   }
 }
 
-class AnswerReadout extends StatelessWidget {
-  const AnswerReadout({
+class EquationLine extends StatelessWidget {
+  const EquationLine({
     super.key,
+    required this.prompt,
     required this.value,
     this.mark,
   });
+
+  final String prompt;
+  final String value;
+  final String? mark;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.displaySmall;
+    final showEquals = prompt.isNotEmpty && !prompt.contains('=');
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Flexible(child: Text(prompt, style: style)),
+        if (showEquals) ...[
+          const SizedBox(width: AppSpace.s8),
+          Text('=', style: style),
+        ],
+        const SizedBox(width: AppSpace.s8),
+        Expanded(
+          child: AnswerReadout(value: value, mark: mark),
+        ),
+      ],
+    );
+  }
+}
+
+class AnswerReadout extends StatelessWidget {
+  const AnswerReadout({super.key, required this.value, this.mark});
 
   final String value;
   final String? mark;
@@ -344,10 +398,11 @@ class AnswerReadout extends StatelessWidget {
     final border = mark == 'wrong'
         ? colors.danger
         : (mark == 'correct' ? colors.success : colors.borderInput);
+    final t = Copy.of(context);
     return Semantics(
       textField: true,
-      label: 'Your answer',
-      value: value.isEmpty ? 'Empty' : value,
+      label: t.yourAnswer,
+      value: value.isEmpty ? t.pick('空', 'Empty') : value,
       liveRegion: true,
       child: AnimatedContainer(
         duration: motionFast,
@@ -362,7 +417,7 @@ class AnswerReadout extends StatelessWidget {
           border: Border.all(color: border, width: 2),
         ),
         child: Text(
-          value.isEmpty ? 'Your answer' : value,
+          value.isEmpty ? Copy.of(context).yourAnswer : value,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             color: value.isEmpty ? colors.textMuted : colors.text,
           ),
@@ -383,7 +438,9 @@ class MarkLine extends StatelessWidget {
     final colors = AppColors.of(context);
     final correct = mark == 'correct';
     final color = correct ? colors.success : colors.danger;
-    final label = correct ? 'Correct' : 'Not quite';
+    final label = correct
+        ? Copy.of(context).correct
+        : Copy.of(context).notQuite;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpace.s8),
       child: Row(
@@ -392,7 +449,9 @@ class MarkLine extends StatelessWidget {
           const SizedBox(width: AppSpace.s8),
           Text(
             label,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: color),
           ),
         ],
       ),
@@ -458,18 +517,20 @@ class ProgressChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final t = Copy.of(context);
     final shown = answered == 0 ? 0 : correct;
-    final label = mastered
-        ? 'Mastered. $shown of 20 correct'
-        : '$shown of 20 correct';
+    final count = t.pick('$shown / 20 题正确', '$shown of 20 correct');
+    final label = mastered ? '${t.mastered}. $count' : count;
     final fraction = loading ? 0.0 : (shown / 20).clamp(0.0, 1.0);
     return Semantics(
-      label: answered == 0 && !mastered ? '0 of 20' : label,
+      label: answered == 0 && !mastered ? t.pick('0 / 20', '0 of 20') : label,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            mastered ? 'Mastered' : (answered == 0 ? '0 of 20' : '$shown of 20 correct'),
+            mastered
+                ? t.mastered
+                : (answered == 0 ? t.pick('0 / 20', '0 of 20') : count),
             style: Theme.of(context).textTheme.labelSmall,
           ),
           const SizedBox(height: AppSpace.s8),
@@ -522,7 +583,9 @@ class StepperRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpace.s12),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium)),
+          Expanded(
+            child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          ),
           _stepButton(
             context,
             icon: Icons.remove,
@@ -731,8 +794,8 @@ class _PinDialogState extends State<_PinDialog> {
           keyboardType: TextInputType.number,
           maxLength: 4,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-            labelText: 'Parent code',
+          decoration: InputDecoration(
+            labelText: Copy.of(context).parentCode,
             counterText: '',
           ),
         ),
@@ -745,8 +808,10 @@ class _PinDialogState extends State<_PinDialog> {
             keyboardType: TextInputType.number,
             maxLength: 4,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              labelText: 'Enter the code again',
+            decoration: InputDecoration(
+              labelText: Copy.of(
+                context,
+              ).pick('再输入一次密码', 'Enter the code again'),
               counterText: '',
             ),
           ),
@@ -755,7 +820,10 @@ class _PinDialogState extends State<_PinDialog> {
           Padding(
             padding: const EdgeInsets.only(top: AppSpace.s8),
             child: Text(
-              'Try again in ${widget.waitSeconds} seconds.',
+              Copy.of(context).pick(
+                '${widget.waitSeconds} 秒后再试。',
+                'Try again in ${widget.waitSeconds} seconds.',
+              ),
               style: TextStyle(color: colors.danger),
             ),
           ),
@@ -766,24 +834,32 @@ class _PinDialogState extends State<_PinDialog> {
           ),
         const SizedBox(height: AppSpace.s16),
         AppButton(
-          label: 'Cancel',
+          label: Copy.of(context).cancel,
           secondary: true,
           onPressed: () => Navigator.pop(context),
         ),
         const SizedBox(height: AppSpace.s8),
         AppButton(
-          label: 'Continue',
+          label: Copy.of(context).continueLabel,
           onPressed: locked
               ? null
               : () {
                   final pin = _first.text;
                   final again = widget.create ? _second.text : null;
                   if (!RegExp(r'^\d{4}$').hasMatch(pin)) {
-                    setState(() => _error = 'Enter four digits.');
+                    setState(
+                      () => _error = Copy.of(
+                        context,
+                      ).pick('请输入四位数字。', 'Enter four digits.'),
+                    );
                     return;
                   }
                   if (widget.create && pin != again) {
-                    setState(() => _error = 'Those codes do not match.');
+                    setState(
+                      () => _error = Copy.of(
+                        context,
+                      ).pick('两次密码不一致。', 'Those codes do not match.'),
+                    );
                     return;
                   }
                   Navigator.pop(context, PinResult(pin, again));
@@ -839,8 +915,8 @@ class HardwareKeys extends StatelessWidget {
   }
 }
 
-String clockLabel(int remainingMs) {
-  final seconds = (remainingMs / 1000).ceil().clamp(0, 24 * 3600);
+String clockLabel(int elapsedMs) {
+  final seconds = (elapsedMs / 1000).floor().clamp(0, 24 * 3600);
   final minutes = seconds ~/ 60;
   final rest = seconds % 60;
   return '${minutes.toString().padLeft(2, '0')}:${rest.toString().padLeft(2, '0')}';

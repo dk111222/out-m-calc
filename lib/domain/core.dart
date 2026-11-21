@@ -9,39 +9,41 @@ const correctAdvance = Duration(milliseconds: 90);
 
 const grades = ['K', '1', '2', '3', '4', '5'];
 
-String gradeLabel(String grade) {
+String gradeLabel(String grade, {String language = 'zh'}) {
+  final zh = language != 'en';
   switch (grade) {
     case 'K':
-      return 'Kindergarten';
+      return zh ? '幼儿园' : 'Kindergarten';
     case '1':
-      return 'Grade 1';
+      return zh ? '一年级' : 'Grade 1';
     case '2':
-      return 'Grade 2';
+      return zh ? '二年级' : 'Grade 2';
     case '3':
-      return 'Grade 3';
+      return zh ? '三年级' : 'Grade 3';
     case '4':
-      return 'Grade 4';
+      return zh ? '四年级' : 'Grade 4';
     case '5':
-      return 'Grade 5';
+      return zh ? '五年级' : 'Grade 5';
     default:
-      return 'Grade';
+      return zh ? '年级' : 'Grade';
   }
 }
 
-String operationLabel(String operation) {
+String operationLabel(String operation, {String language = 'zh'}) {
+  final zh = language != 'en';
   switch (operation) {
     case 'addition':
-      return 'Addition';
+      return zh ? '加法' : 'Addition';
     case 'subtraction':
-      return 'Subtraction';
+      return zh ? '减法' : 'Subtraction';
     case 'multiplication':
-      return 'Multiplication';
+      return zh ? '乘法' : 'Multiplication';
     case 'division':
-      return 'Division';
+      return zh ? '除法' : 'Division';
     case 'percent':
-      return 'Percent';
+      return zh ? '百分数' : 'Percent';
     case 'mixed':
-      return 'Mixed';
+      return zh ? '混合' : 'Mixed';
     default:
       return operation;
   }
@@ -309,18 +311,23 @@ class SpeedConfig {
     );
   }
 
-  String get limitLabel {
+  String limitLabel({String language = 'zh'}) {
+    final zh = language != 'en';
     if (limitMode == 'count') {
-      return limitValue == 1 ? '1 problem' : '$limitValue problems';
+      return zh
+          ? '$limitValue 题'
+          : (limitValue == 1 ? '1 problem' : '$limitValue problems');
     }
     if (limitValue % 60 == 0) {
       final minutes = limitValue ~/ 60;
+      if (zh) return '$minutes 分钟';
       return minutes == 1 ? '1 minute' : '$minutes minutes';
     }
-    return '$limitValue seconds';
+    return zh ? '$limitValue 秒' : '$limitValue seconds';
   }
 
-  String get summary => '$limitLabel · ${operationLabel(operation)}';
+  String summary({String language = 'zh'}) =>
+      '${limitLabel(language: language)} · ${operationLabel(operation, language: language)}';
 
   Map<String, Object> toJson() => {
     'operation': operation,
@@ -364,32 +371,32 @@ SpeedConfig speedDefault(String grade) {
         operation: 'mixed',
         digitMin: 2,
         digitMax: 2,
-        limitMode: 'time',
-        limitValue: 120,
+        limitMode: 'count',
+        limitValue: 10,
       );
     case '3':
       return const SpeedConfig(
         operation: 'mixed',
         digitMin: 1,
         digitMax: 1,
-        limitMode: 'time',
-        limitValue: 180,
+        limitMode: 'count',
+        limitValue: 10,
       );
     case '4':
       return const SpeedConfig(
         operation: 'mixed',
         digitMin: 2,
         digitMax: 2,
-        limitMode: 'time',
-        limitValue: 180,
+        limitMode: 'count',
+        limitValue: 10,
       );
     default:
       return const SpeedConfig(
         operation: 'percent',
         digitMin: 2,
         digitMax: 3,
-        limitMode: 'time',
-        limitValue: 180,
+        limitMode: 'count',
+        limitValue: 10,
       );
   }
 }
@@ -783,8 +790,9 @@ class Learner {
       grade: grade ?? this.grade,
       isGuest: isGuest ?? this.isGuest,
       streakCount: streakCount ?? this.streakCount,
-      lastPracticeDate:
-          clearLastDate ? null : (lastPracticeDate ?? this.lastPracticeDate),
+      lastPracticeDate: clearLastDate
+          ? null
+          : (lastPracticeDate ?? this.lastPracticeDate),
       streakSkipWeek: streakSkipWeek ?? this.streakSkipWeek,
       streakSkipUsed: streakSkipUsed ?? this.streakSkipUsed,
       favorites: favorites ?? this.favorites,
@@ -811,6 +819,7 @@ class DeviceSettings {
     required this.subscriptionActive,
     required this.themeMode,
     required this.textScale,
+    required this.language,
     required this.soundEnabled,
     required this.readAloudEnabled,
     required this.pinFailCount,
@@ -832,6 +841,7 @@ class DeviceSettings {
   final bool subscriptionActive;
   final String themeMode;
   final String textScale;
+  final String language;
   final bool soundEnabled;
   final bool readAloudEnabled;
   final int pinFailCount;
@@ -866,6 +876,7 @@ class DeviceSettings {
       subscriptionActive: false,
       themeMode: 'system',
       textScale: 'medium',
+      language: 'zh',
       soundEnabled: true,
       readAloudEnabled: false,
       pinFailCount: 0,
@@ -890,6 +901,7 @@ class DeviceSettings {
     bool? subscriptionActive,
     String? themeMode,
     String? textScale,
+    String? language,
     bool? soundEnabled,
     bool? readAloudEnabled,
     int? pinFailCount,
@@ -902,8 +914,9 @@ class DeviceSettings {
       parentPinHash: clearPin ? null : (parentPinHash ?? this.parentPinHash),
       pinSalt: clearPin ? null : (pinSalt ?? this.pinSalt),
       telemetryEnabled: telemetryEnabled ?? this.telemetryEnabled,
-      activeLearnerId:
-          clearActive ? null : (activeLearnerId ?? this.activeLearnerId),
+      activeLearnerId: clearActive
+          ? null
+          : (activeLearnerId ?? this.activeLearnerId),
       extraLearnersUnlocked:
           extraLearnersUnlocked ?? this.extraLearnersUnlocked,
       printUnlocked: printUnlocked ?? this.printUnlocked,
@@ -914,10 +927,13 @@ class DeviceSettings {
       subscriptionActive: subscriptionActive ?? this.subscriptionActive,
       themeMode: themeMode ?? this.themeMode,
       textScale: textScale ?? this.textScale,
+      language: language ?? this.language,
       soundEnabled: soundEnabled ?? this.soundEnabled,
       readAloudEnabled: readAloudEnabled ?? this.readAloudEnabled,
       pinFailCount: pinFailCount ?? this.pinFailCount,
-      pinLockedUntil: clearLock ? null : (pinLockedUntil ?? this.pinLockedUntil),
+      pinLockedUntil: clearLock
+          ? null
+          : (pinLockedUntil ?? this.pinLockedUntil),
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
