@@ -89,6 +89,7 @@ class Copy {
   String get learnerNameHint =>
       pick('留空则使用“学员”加编号。', 'Leave this blank to use Learner and a number.');
   String get gradeWord => pick('年级', 'Grade');
+  String get avatarWord => pick('头像', 'Picture');
   String get save => pick('保存', 'Save');
   String get learners => pick('孩子', 'Learners');
   String get settings => pick('设置', 'Settings');
@@ -104,10 +105,6 @@ class Copy {
   String get trickLibrary => pick('技巧库', 'Trick library');
   String get addLearnerFirst => pick('请先添加孩子。', 'Add a learner first.');
   String get todayPractice => pick('今天的练习', 'Today\'s practice');
-  String get guestProfile => pick(
-    '这是这台设备上的访客档案。进度会留在这里，直到家长删除。',
-    'Guest profile on this device. Progress stays here until a parent deletes it.',
-  );
   String get skipKept => pick('本周用过一次保留连续天数。', 'This week\'s skip kept the streak.');
   String get streakReset => pick('连续天数已重新开始。', 'The streak started over.');
   String get continueLabel => pick('继续', 'Continue');

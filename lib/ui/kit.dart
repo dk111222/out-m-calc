@@ -164,6 +164,7 @@ class TrickCard extends StatelessWidget {
     required this.title,
     required this.caption,
     required this.onPressed,
+    this.leading,
     this.mastered = false,
     this.saved = false,
   });
@@ -171,6 +172,7 @@ class TrickCard extends StatelessWidget {
   final String title;
   final String caption;
   final VoidCallback? onPressed;
+  final Widget? leading;
   final bool mastered;
   final bool saved;
 
@@ -205,6 +207,10 @@ class TrickCard extends StatelessWidget {
                   padding: const EdgeInsets.all(AppSpace.s16),
                   child: Row(
                     children: [
+                      if (leading != null) ...[
+                        leading!,
+                        const SizedBox(width: AppSpace.s12),
+                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

@@ -210,6 +210,7 @@ class AppController extends ChangeNotifier {
   Future<String?> createLearner({
     required String name,
     required String grade,
+    String? avatar,
     bool guest = false,
   }) async {
     if (childMode) return copy.parentNeedsThis;
@@ -227,6 +228,10 @@ class AppController extends ChangeNotifier {
       id: newId(),
       displayName: display,
       grade: grade,
+      avatar: avatarIdFor(
+        avatar,
+        '${learners.length}-${display.hashCode}',
+      ),
       isGuest: guest,
       streakCount: 0,
       lastPracticeDate: null,

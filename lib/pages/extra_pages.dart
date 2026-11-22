@@ -14,6 +14,7 @@ import '../l10n/copy.dart';
 import '../l10n/trick_zh.dart';
 import '../domain/engine.dart';
 import '../export/pdfs.dart';
+import '../ui/avatars.dart';
 import '../ui/gates.dart';
 import '../ui/kit.dart';
 import 'home_pages.dart';
@@ -639,9 +640,19 @@ class _ReportPageState extends ConsumerState<ReportPage> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  learner?.displayName ?? t.learnerStem,
-                  style: Theme.of(context).textTheme.titleMedium,
+                Row(
+                  children: [
+                    if (learner != null) ...[
+                      ChildAvatar(id: learner.avatar, size: 40),
+                      const SizedBox(width: AppSpace.s12),
+                    ],
+                    Expanded(
+                      child: Text(
+                        learner?.displayName ?? t.learnerStem,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpace.s12),
                 if (report.problems == 0 && report.days == 0)

@@ -9,6 +9,7 @@ import '../app/theme.dart';
 import '../domain/core.dart';
 import '../l10n/copy.dart';
 import '../l10n/trick_zh.dart';
+import '../ui/avatars.dart';
 import '../ui/gates.dart';
 import '../ui/kit.dart';
 import 'speed_form.dart';
@@ -86,6 +87,7 @@ class LearnerFormPage extends ConsumerStatefulWidget {
 class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
   late final TextEditingController _name;
   String? _grade;
+  String? _avatar;
   String? _error;
   bool _busy = false;
 
@@ -108,6 +110,9 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
   Widget build(BuildContext context) {
     final app = ref.watch(appProvider);
     final t = Copy.of(context);
+    final avatar =
+        _avatar ??
+        learnerAvatarIds[app.learners.length % learnerAvatarIds.length];
     if (widget.guest && !_seededName) {
       _seededName = true;
       _name.text = t.guest;
@@ -130,6 +135,13 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
               labelText: t.name,
               helperText: widget.guest ? t.guestNameHint : t.learnerNameHint,
             ),
+          ),
+          const SizedBox(height: AppSpace.s16),
+          Text(t.avatarWord, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: AppSpace.s8),
+          AvatarPicker(
+            selected: avatar,
+            onSelected: (value) => setState(() => _avatar = value),
           ),
           const SizedBox(height: AppSpace.s16),
           Text(t.gradeWord, style: Theme.of(context).textTheme.titleMedium),
@@ -167,6 +179,7 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
                     final error = await app.createLearner(
                       name: _name.text,
                       grade: _grade!,
+                      avatar: avatar,
                       guest: widget.guest,
                     );
                     if (!mounted) return;
@@ -357,6 +370,7 @@ class _LearnerRow extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TrickCard(
+            leading: ChildAvatar(id: learner.avatar, size: 48),
             title: learner.displayName,
             caption:
                 '$guest${t.grade(learner.grade)} · ${t.dayStreak(learner.streakCount)} · $task',
@@ -429,6 +443,8 @@ class ChildHomePage extends ConsumerWidget {
         children: [
           Row(
             children: [
+              ChildAvatar(id: learner.avatar, size: 48),
+              const SizedBox(width: AppSpace.s12),
               Expanded(
                 child: Text(
                   learner.displayName,
@@ -454,10 +470,6 @@ class ChildHomePage extends ConsumerWidget {
             t.dayStreak(learner.streakCount),
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          if (learner.isGuest) ...[
-            const SizedBox(height: AppSpace.s8),
-            Text(t.guestProfile),
-          ],
           if (learner.streakNotice == 'held') ...[
             const SizedBox(height: AppSpace.s8),
             Text(t.skipKept),

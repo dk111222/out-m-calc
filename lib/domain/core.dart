@@ -768,11 +768,29 @@ String newId([Random? random]) {
   return '$time-${source.nextInt(1 << 32)}';
 }
 
+const learnerAvatarIds = [
+  'sunny',
+  'maple',
+  'river',
+  'cedar',
+  'wren',
+  'noah',
+  'piper',
+  'leo',
+];
+
+String avatarIdFor(String? stored, String seed) {
+  if (stored != null && learnerAvatarIds.contains(stored)) return stored;
+  final index = seed.hashCode.abs() % learnerAvatarIds.length;
+  return learnerAvatarIds[index];
+}
+
 class Learner {
   const Learner({
     required this.id,
     required this.displayName,
     required this.grade,
+    this.avatar = 'sunny',
     required this.isGuest,
     required this.streakCount,
     required this.lastPracticeDate,
@@ -788,6 +806,7 @@ class Learner {
   final String id;
   final String displayName;
   final String grade;
+  final String avatar;
   final bool isGuest;
   final int streakCount;
   final String? lastPracticeDate;
@@ -802,6 +821,7 @@ class Learner {
   Learner copyWith({
     String? displayName,
     String? grade,
+    String? avatar,
     bool? isGuest,
     int? streakCount,
     String? lastPracticeDate,
@@ -818,6 +838,7 @@ class Learner {
       id: id,
       displayName: displayName ?? this.displayName,
       grade: grade ?? this.grade,
+      avatar: avatar ?? this.avatar,
       isGuest: isGuest ?? this.isGuest,
       streakCount: streakCount ?? this.streakCount,
       lastPracticeDate: clearLastDate
