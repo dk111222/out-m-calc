@@ -53,6 +53,10 @@ class Copy {
         return '除法';
       case '10%, 5%, and 1%':
         return '10%、5% 和 1%';
+      case 'Decimal tenths':
+        return '一位小数';
+      case 'Fraction tenths':
+        return '分数加减';
       case 'Mixed review':
         return '混合复习';
       default:
@@ -111,7 +115,8 @@ class Copy {
   String get facts => pick('口算', 'Facts');
   String get wrongProblems => pick('错题', 'Wrong problems');
   String get dailyPractice => pick('每日一练', 'Daily practice');
-  String get tenProblems => pick('按这个年级出十道题。', 'Ten problems for this grade.');
+  String get tenProblems =>
+      pick('按当前年级随机出十道题。', 'Ten random problems for this grade.');
   String get worksheet => pick('练习页', 'Worksheet');
   String get thisGrade => pick('这个年级', 'This grade');
   String get laterGrades => pick('更高年级', 'Later grades');
@@ -126,12 +131,16 @@ class Copy {
   String get notFor => pick('不适合', 'Not for');
   String get steps => pick('步骤', 'Steps');
   String get startPractice => pick('开始练习', 'Start practice');
-  String get backToToday => pick('回到今天', 'Back to today');
+  String get backToToday => pick('返回首页', 'Back to home');
   String get submit => pick('提交', 'Submit');
   String get yourAnswer => pick('你的答案', 'Your answer');
   String get delete => pick('删除', 'Delete');
+  String get undo => pick('回退', 'Undo');
   String get notQuite => pick('还不对', 'Not quite');
   String get correct => pick('正确', 'Correct');
+  String get wrong => pick('错误', 'Wrong');
+  String get previousProblem => pick('上一题', 'Previous');
+  String get nextProblem => pick('下一题', 'Next');
   String get working => pick('请稍候', 'Working');
   String get mastered => pick('已掌握', 'Mastered');
   String get timeLeft => pick('剩余时间', 'Time left');

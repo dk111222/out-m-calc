@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'core.dart';
 import 'engine.dart';
 
 class LessonStep {
@@ -75,7 +76,7 @@ class Catalog {
   }
 
   List<Trick> forGrade(String grade) =>
-      tricks.where((trick) => trick.grade == grade).toList();
+      tricks.where((trick) => trick.grade == canonicalGrade(grade)).toList();
 
   static Catalog parse(String raw) {
     final decoded = jsonDecode(raw) as Map<String, dynamic>;

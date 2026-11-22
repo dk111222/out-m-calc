@@ -152,11 +152,15 @@ class _Group extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (tricks.isEmpty) return const SizedBox.shrink();
+    final level = canonicalGrade(learner.grade);
     final current = tricks
-        .where((trick) => trick.grade == learner.grade)
+        .where((trick) => canonicalGrade(trick.grade) == level)
+        .toList();
+    final earlier = tricks
+        .where((trick) => _rank(trick.grade) < _rank(learner.grade))
         .toList();
     final later = tricks
-        .where((trick) => trick.grade != learner.grade)
+        .where((trick) => _rank(trick.grade) > _rank(learner.grade))
         .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -164,6 +168,7 @@ class _Group extends StatelessWidget {
         Text(title, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: AppSpace.s8),
         for (final trick in current) _card(context, trick, locked: false),
+        for (final trick in earlier) _card(context, trick, locked: false),
         if (later.isNotEmpty)
           ExpansionTile(
             tilePadding: EdgeInsets.zero,
@@ -352,16 +357,6 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
                 }
               },
             ),
-          if (!app.childMode) ...[
-            const SizedBox(height: AppSpace.s12),
-            AppButton(
-              label: Copy.of(context).worksheet,
-              secondary: true,
-              onPressed: () => context.go(
-                '/export/worksheet?trickId=${trick.id}&learner=${learner.id}',
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -434,12 +429,47 @@ class PracticePage extends ConsumerWidget {
     final view = practice.view;
     ref.listen(practiceProvider, (previous, next) {
       final current = next.view;
-      if (current == null) return;
+      if (current == null || current.phase == 'done') return;
       final target = '/practice/${current.trickId}/${current.phase}';
       final loc = GoRouterState.of(context).uri.path;
       if (loc != target) context.go(target);
     });
-    if (view == null || view.current == null) {
+    if (practice.reportDue && view != null && view.phase == 'done') {
+      practice.reportDue = false;
+      final misses = view.misses;
+      final correct = view.correctCount;
+      final elapsed = view.elapsedMs;
+      final trickId = view.trickId;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!context.mounted) return;
+        final again = await showTrainingReport(
+          context,
+          correct: correct,
+          wrong: misses.length,
+          elapsed: clockLabel(elapsed),
+          onSaveWrongs: misses.isEmpty
+              ? null
+              : () => ref.read(appProvider).bookRoundMisses(misses),
+          bookWrongs: ref.read(appProvider).settings.bookWrongs,
+          onBookWrongs: (value) {
+            final app = ref.read(appProvider);
+            return app.updateSettings(
+              app.settings.copyWith(bookWrongs: value),
+            );
+          },
+        );
+        if (!context.mounted) return;
+        if (again) {
+          await ref.read(practiceProvider).startLearn(trickId);
+          return;
+        }
+        context.go('/child');
+      });
+    }
+    final finished = view != null && view.phase == 'done';
+    final item = view?.current ??
+        (finished && view.items.isNotEmpty ? view.items.last : null);
+    if (view == null || item == null) {
       return PageFrame(
         title: Copy.of(context).practice,
         body: Column(
@@ -455,50 +485,44 @@ class PracticePage extends ConsumerWidget {
         ),
       );
     }
-    final item = view.current!;
-    final prompt = _Prompt(view: view, item: item);
-    final keys = Keypad(
-      enabled: !view.locked,
-      onKey: practice.key,
-      onSubmit: practice.submit,
-    );
+    final t = Copy.of(context);
+    final raw = app.catalog.byId(view.trickId);
+    final title = raw == null ? t.dailyPractice : localizeTrick(raw, t).title;
+    final next = !finished && view.index + 1 < view.items.length
+        ? view.items[view.index + 1].prompt
+        : null;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) => _leave(context, ref, didPop),
       child: PageFrame(
         scroll: false,
-        title:
-            '${min(view.index + 1, view.items.length)} of ${view.items.length}',
+        padding: EdgeInsets.zero,
+        title: title,
         banner: app.banner,
-        leading: IconButton(
-          tooltip: 'Close',
-          onPressed: () => _leave(context, ref, false),
-          icon: const Icon(Icons.close),
-        ),
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            final side = constraints.maxWidth >= AppSpace.sideBySide;
-            return HardwareKeys(
-              enabled: !view.locked,
-              onKey: practice.key,
-              onSubmit: practice.submit,
-              child: side
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: SingleChildScrollView(child: prompt)),
-                        const SizedBox(width: AppSpace.s16),
-                        Flexible(child: keys),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        Expanded(child: SingleChildScrollView(child: prompt)),
-                        keys,
-                      ],
-                    ),
-            );
-          },
+        body: HardwareKeys(
+          enabled: !finished && !view.locked,
+          onKey: practice.key,
+          onSubmit: practice.submit,
+          child: DrillBoard(
+            title: title,
+            onBack: () => _leave(context, ref, false),
+            status: Text(
+              '${min(view.index + 1, view.items.length)} / ${view.items.length}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            previousPrompt: finished ? null : view.previousPrompt,
+            previousAnswer: finished ? null : view.previousAnswer,
+            previousCorrect: finished ? null : view.previousCorrect,
+            prompt: item.prompt,
+            value: finished ? '' : view.draft,
+            mark: finished ? null : view.mark,
+            nextPrompt: next,
+            keysEnabled: !finished && !view.locked,
+            showAnswer: !finished,
+            onKey: practice.key,
+            onSubmit: practice.submit,
+            detail: finished ? null : _PracticeDetail(view: view, item: item),
+          ),
         ),
       ),
     );
@@ -520,8 +544,8 @@ class PracticePage extends ConsumerWidget {
   }
 }
 
-class _Prompt extends StatelessWidget {
-  const _Prompt({required this.view, required this.item});
+class _PracticeDetail extends StatelessWidget {
+  const _PracticeDetail({required this.view, required this.item});
 
   final PracticeView view;
   final Problem item;
@@ -529,19 +553,21 @@ class _Prompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final step = view.showingSteps ? item.steps[view.stepIndex] : null;
+    final t = Copy.of(context);
+    if (view.phase != 'locate' &&
+        view.shownWrongFinal == null &&
+        step == null &&
+        view.mark == null) {
+      return const SizedBox.shrink();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${min(view.index + 1, view.items.length)} / ${view.items.length}',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
         if (view.phase == 'locate')
           Text(
-            Copy.of(context).pick('核对这一步', 'Check the step'),
+            t.pick('核对这一步', 'Check the step'),
             style: Theme.of(context).textTheme.titleMedium,
           ),
-        EquationLine(prompt: item.prompt, value: view.draft, mark: view.mark),
         if (view.shownWrongFinal != null)
           Text(
             Copy.of(context).pick(
@@ -552,7 +578,7 @@ class _Prompt extends StatelessWidget {
         if (step != null) ...[
           const SizedBox(height: AppSpace.s12),
           Text(
-            Copy.of(context).pick(
+            t.pick(
               '第 ${step.number} 步，共 ${item.steps.length} 步',
               'Step ${step.number} of ${item.steps.length}',
             ),
@@ -565,54 +591,59 @@ class _Prompt extends StatelessWidget {
   }
 }
 
-class DonePage extends ConsumerWidget {
+class DonePage extends ConsumerStatefulWidget {
   const DonePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final view = ref.watch(practiceProvider).view;
+  ConsumerState<DonePage> createState() => _DonePageState();
+}
+
+class _DonePageState extends ConsumerState<DonePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _report());
+  }
+
+  Future<void> _report() async {
+    final view = ref.read(practiceProvider).view;
+    if (!mounted) return;
     if (view == null) {
-      return PageFrame(
-        title: Copy.of(context).pick('练习结果', 'Practice results'),
-        body: AppButton(
-          label: Copy.of(context).backToToday,
-          onPressed: () => context.go('/child'),
-        ),
-      );
+      context.go('/child');
+      return;
     }
-    final total = view.items.length;
-    return PageFrame(
-      title: Copy.of(context).pick('练习结果', 'Practice results'),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${Copy.of(context).nCorrect(view.correctCount)} / $total',
-            style: Theme.of(context).textTheme.displaySmall,
-          ),
-          const SizedBox(height: AppSpace.s16),
-          if (view.missedNotes.isEmpty)
-            Text(
-              Copy.of(
-                context,
-              ).pick('这一轮全部正确。', 'Every problem in this round was correct.'),
-            )
-          else ...[
-            Text(
-              Copy.of(context).pick('看这几步', 'Check these steps'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            for (final note in view.missedNotes) Text(note),
-          ],
-          const SizedBox(height: AppSpace.s24),
-          AppButton(
-            label: Copy.of(context).backToToday,
-            onPressed: () => context.go('/child'),
-          ),
-        ],
-      ),
+    final trickId = view.trickId;
+    final again = await showTrainingReport(
+      context,
+      correct: view.correctCount,
+      wrong: view.misses.length,
+      elapsed: clockLabel(view.elapsedMs),
+      onSaveWrongs: view.misses.isEmpty
+          ? null
+          : () => ref.read(appProvider).bookRoundMisses(view.misses),
+      bookWrongs: ref.read(appProvider).settings.bookWrongs,
+      onBookWrongs: (value) {
+        final app = ref.read(appProvider);
+        return app.updateSettings(app.settings.copyWith(bookWrongs: value));
+      },
+    );
+    if (!mounted) return;
+    if (again) {
+      await ref.read(practiceProvider).startLearn(trickId);
+      final phase = ref.read(practiceProvider).view?.phase;
+      if (mounted && phase != null) context.go('/practice/$trickId/$phase');
+      return;
+    }
+    context.go('/child');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: AppColors.of(context).bg,
+      child: const SizedBox.expand(),
     );
   }
 }
 
-int _rank(String grade) => grades.indexOf(grade);
+int _rank(String grade) => grades.indexOf(canonicalGrade(grade));

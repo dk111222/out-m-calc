@@ -416,7 +416,7 @@ Learner _learnerFromMap(Map map) {
   return Learner(
     id: map['id'] as String,
     displayName: map['displayName'] as String? ?? 'Learner',
-    grade: map['grade'] as String? ?? '1',
+    grade: canonicalGrade(map['grade'] as String? ?? '1'),
     isGuest: map['isGuest'] as bool? ?? false,
     streakCount: map['streakCount'] as int? ?? 0,
     lastPracticeDate: map['lastPracticeDate'] as String?,
@@ -448,6 +448,7 @@ Map<String, dynamic> _settingsToMap(DeviceSettings settings) => {
   'language': settings.language,
   'soundEnabled': settings.soundEnabled,
   'readAloudEnabled': settings.readAloudEnabled,
+  'bookWrongs': settings.bookWrongs,
   'pinFailCount': settings.pinFailCount,
   'pinLockedUntil': settings.pinLockedUntil?.toUtc().toIso8601String(),
   'createdAt': settings.createdAt.toUtc().toIso8601String(),
@@ -471,6 +472,7 @@ DeviceSettings _settingsFromMap(Map map) => DeviceSettings(
   language: map['language'] as String? ?? 'zh',
   soundEnabled: map['soundEnabled'] as bool? ?? true,
   readAloudEnabled: map['readAloudEnabled'] as bool? ?? false,
+  bookWrongs: map['bookWrongs'] as bool? ?? true,
   pinFailCount: map['pinFailCount'] as int? ?? 0,
   pinLockedUntil: map['pinLockedUntil'] == null
       ? null

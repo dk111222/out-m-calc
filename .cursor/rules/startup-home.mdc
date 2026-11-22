@@ -1,0 +1,16 @@
+---
+description: First launch must open the home page, not a loading screen
+alwaysApply: true
+---
+
+# Startup goes straight to the home page
+
+The first Flutter frame after a successful boot is the home page (child home, or the adult page when no child session is open). It must not be a loading page, a cover, a skeleton, or any other waiting screen.
+
+Measured on this phone: the Dart isolate is up in well under a second. A cold start that already has its engine cache draws a window in under a second. The long first open came from releasing that first frame onto `/loading` (`正在这台设备上打开练习`) and only then building the home page.
+
+- Do not set the router `initialLocation` to `/loading`. Use `AppController.openLocation()` so the first route is already the home page.
+- Do not call `allowFirstFrame`, or a delayed timer, in order to show `LaunchCover`, a splash widget, or `LoadingPage` while storage or the next route is still pending. Hold the system window until the home page itself can paint.
+- Do not add a new startup route, overlay, or placeholder to hide a slow first build. Fix the first frame so it is the home page.
+- `LoadingPage` stays only for a failed boot, not for a normal open.
+- Do not raise the Gradle heap in `android/gradle.properties` (`-Xmx448m`) to chase this. A debug install still carries `kernel_blob.bin`; do not paper over that with another waiting screen.

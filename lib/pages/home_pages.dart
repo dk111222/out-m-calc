@@ -11,7 +11,7 @@ import '../l10n/copy.dart';
 import '../l10n/trick_zh.dart';
 import '../ui/gates.dart';
 import '../ui/kit.dart';
-import 'speed_pages.dart';
+import 'speed_form.dart';
 
 class LoadingPage extends ConsumerWidget {
   const LoadingPage({super.key});
@@ -478,33 +478,16 @@ class ChildHomePage extends ConsumerWidget {
             ),
           _DailyCard(
             learnerId: learner.id,
-            onStart: () => _startDaily(
-              context,
-              ref,
-              learnTrick,
-              seen,
-              speed,
-              learner.grade,
-            ),
+            onStart: () => _startDaily(context, ref, learner.grade),
           ),
           const SizedBox(height: AppSpace.s16),
           _SpeedHomeCard(
-            summary:
-                speed?.summary(language: t.language) ??
-                speedDefault(learner.grade).summary(language: t.language),
-            samples: drills.take(2).map((drill) => drill.sample).toList(),
-            onSettings: () => context.go('/speed/setup'),
-            onWorksheet: () {
-              final trick =
-                  learnTrick ??
-                  app.catalog
-                      .forGrade(learner.grade)
-                      .where((item) => item.ready)
-                      .firstOrNull;
-              if (trick == null) return;
-              context.go('/export/worksheet?trickId=${trick.id}');
-            },
-            onStart: () => _openSpeed(context, ref, speed, learner.grade),
+            level: learner.grade,
+            initial: speedForLevel(
+              speed ?? speedDefault(learner.grade),
+              learner.grade,
+            ),
+            onStart: (config) => _openSpeed(context, ref, config),
           ),
           const SizedBox(height: AppSpace.s16),
           InkWell(
@@ -533,7 +516,7 @@ class ChildHomePage extends ConsumerWidget {
               ),
             ),
           ),
-          for (final drill in drills.take(2))
+          for (final drill in drills)
             TrickCard(
               title: t.factTitle(drill.title),
               caption: drill.sample,
@@ -592,13 +575,8 @@ class ChildHomePage extends ConsumerWidget {
   Future<void> _openSpeed(
     BuildContext context,
     WidgetRef ref,
-    SpeedConfig? config,
-    String grade,
+    SpeedConfig config,
   ) async {
-    if (config == null) {
-      context.go('/speed/setup');
-      return;
-    }
     await ref.read(speedProvider).start(config);
     if (context.mounted) context.go('/speed/run');
   }
@@ -606,24 +584,8 @@ class ChildHomePage extends ConsumerWidget {
   Future<void> _startDaily(
     BuildContext context,
     WidgetRef ref,
-    dynamic trick,
-    bool seen,
-    SpeedConfig? speed,
     String grade,
   ) async {
-    final app = ref.read(appProvider);
-    if (app.snapshot != null && app.snapshot!.localDate == app.clock.today) {
-      await _continue(context, ref);
-      return;
-    }
-    if (trick != null) {
-      await _openLearn(context, ref, trick, seen);
-      return;
-    }
-    if (speed != null) {
-      await _openSpeed(context, ref, speed, grade);
-      return;
-    }
     await ref.read(speedProvider).start(dailyPractice(grade));
     if (context.mounted) context.go('/speed/run');
   }
@@ -656,38 +618,94 @@ class _DailyCard extends StatelessWidget {
   }
 }
 
-class _SpeedHomeCard extends StatelessWidget {
+class _SpeedHomeCard extends StatefulWidget {
   const _SpeedHomeCard({
-    required this.summary,
-    required this.samples,
-    required this.onSettings,
-    required this.onWorksheet,
+    required this.level,
+    required this.initial,
     required this.onStart,
   });
 
-  final String summary;
-  final List<String> samples;
-  final VoidCallback onSettings;
-  final VoidCallback onWorksheet;
-  final VoidCallback onStart;
+  final String level;
+  final SpeedConfig initial;
+  final Future<void> Function(SpeedConfig config) onStart;
+
+  @override
+  State<_SpeedHomeCard> createState() => _SpeedHomeCardState();
+}
+
+class _SpeedHomeCardState extends State<_SpeedHomeCard> {
+  late SpeedConfig _config;
+
+  @override
+  void initState() {
+    super.initState();
+    _config = widget.initial;
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = Copy.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TrickCard(title: t.speedDrill, caption: summary, onPressed: onStart),
-        for (final sample in samples)
-          Text(sample, style: Theme.of(context).textTheme.bodySmall),
-        Wrap(
-          spacing: AppSpace.s8,
-          children: [
-            TextButton(onPressed: onSettings, child: Text(t.settings)),
-            TextButton(onPressed: onWorksheet, child: Text(t.worksheet)),
-          ],
+    final colors = AppColors.of(context);
+    final summary = _config.summary(language: t.language);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppSpace.rMd),
+        border: Border.all(color: colors.border),
+        boxShadow: colors.cardShadow,
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppSpace.rMd),
+          onTap: () => widget.onStart(_config),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 72),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpace.s16,
+                AppSpace.s8,
+                AppSpace.s4,
+                AppSpace.s8,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t.speedDrill,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: AppSpace.s4),
+                        Text(
+                          summary,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: t.settings,
+                    onPressed: () async {
+                    final next = await showSpeedSetupDialog(
+                      context,
+                      config: _config,
+                      level: widget.level,
+                    );
+                      if (next != null && mounted) {
+                        setState(() => _config = next);
+                      }
+                    },
+                    icon: const Icon(Icons.settings),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -726,7 +744,7 @@ class _AssignPageState extends ConsumerState<AssignPage> {
     }
     final mine = app.catalog.forGrade(learner.grade);
     final later = app.catalog.tricks.where(
-      (trick) => trick.grade != learner.grade,
+      (trick) => canonicalGrade(trick.grade) != canonicalGrade(learner.grade),
     );
     return PageFrame(
       title: t.assign,
@@ -778,6 +796,7 @@ class _AssignPageState extends ConsumerState<AssignPage> {
             ),
           ] else
             SpeedForm(
+              level: learner.grade,
               config: _speed,
               onChanged: (value) => setState(() => _speed = value),
             ),

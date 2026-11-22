@@ -9,9 +9,23 @@ const correctAdvance = Duration(milliseconds: 90);
 
 const grades = ['K', '1', '2', '3', '4', '5'];
 
+/// Profiles saved while the app used three bands map back onto a grade.
+String canonicalGrade(String grade) {
+  switch (grade) {
+    case 'basic':
+      return '1';
+    case 'middle':
+      return '3';
+    case 'advanced':
+      return '5';
+    default:
+      return grades.contains(grade) ? grade : '1';
+  }
+}
+
 String gradeLabel(String grade, {String language = 'zh'}) {
   final zh = language != 'en';
-  switch (grade) {
+  switch (canonicalGrade(grade)) {
     case 'K':
       return zh ? '幼儿园' : 'Kindergarten';
     case '1':
@@ -25,7 +39,30 @@ String gradeLabel(String grade, {String language = 'zh'}) {
     case '5':
       return zh ? '五年级' : 'Grade 5';
     default:
-      return zh ? '年级' : 'Grade';
+      return zh ? '一年级' : 'Grade 1';
+  }
+}
+
+SpeedConfig speedForLevel(SpeedConfig config, String grade) {
+  if (operationsFor(grade).contains(config.operation)) return config;
+  return config.copyWith(operation: 'mixed');
+}
+
+List<String> operationsFor(String grade) {
+  switch (canonicalGrade(grade)) {
+    case '3':
+    case '4':
+      return const [
+        'mixed',
+        'addition',
+        'subtraction',
+        'multiplication',
+        'division',
+      ];
+    case '5':
+      return const ['mixed', 'percent', 'decimal', 'fraction'];
+    default:
+      return const ['mixed', 'addition', 'subtraction'];
   }
 }
 
@@ -42,6 +79,10 @@ String operationLabel(String operation, {String language = 'zh'}) {
       return zh ? '除法' : 'Division';
     case 'percent':
       return zh ? '百分数' : 'Percent';
+    case 'decimal':
+      return zh ? '小数' : 'Decimals';
+    case 'fraction':
+      return zh ? '分数' : 'Fractions';
     case 'mixed':
       return zh ? '混合' : 'Mixed';
     default:
@@ -349,20 +390,12 @@ class SpeedConfig {
 }
 
 SpeedConfig speedDefault(String grade) {
-  switch (grade) {
+  switch (canonicalGrade(grade)) {
     case 'K':
-      return const SpeedConfig(
-        operation: 'addition',
-        digitMin: 1,
-        digitMax: 1,
-        limitMode: 'count',
-        limitValue: 10,
-      );
-    case '1':
       return const SpeedConfig(
         operation: 'mixed',
         digitMin: 1,
-        digitMax: 2,
+        digitMax: 1,
         limitMode: 'count',
         limitValue: 10,
       );
@@ -390,11 +423,19 @@ SpeedConfig speedDefault(String grade) {
         limitMode: 'count',
         limitValue: 10,
       );
+    case '5':
+      return const SpeedConfig(
+        operation: 'mixed',
+        digitMin: 1,
+        digitMax: 1,
+        limitMode: 'count',
+        limitValue: 10,
+      );
     default:
       return const SpeedConfig(
-        operation: 'percent',
-        digitMin: 2,
-        digitMax: 3,
+        operation: 'mixed',
+        digitMin: 1,
+        digitMax: 2,
         limitMode: 'count',
         limitValue: 10,
       );
@@ -417,6 +458,15 @@ SpeedConfig dailyPractice(String grade) {
   return speedDefault(grade).copyWith(limitMode: 'count', limitValue: 10);
 }
 
+bool isDailyPractice(SpeedConfig config, String grade) {
+  final daily = dailyPractice(grade);
+  return config.operation == daily.operation &&
+      config.digitMin == daily.digitMin &&
+      config.digitMax == daily.digitMax &&
+      config.limitMode == daily.limitMode &&
+      config.limitValue == daily.limitValue;
+}
+
 List<FactDrill> factDrills(String grade) {
   SpeedConfig drill(
     String operation, {
@@ -433,7 +483,7 @@ List<FactDrill> factDrills(String grade) {
     );
   }
 
-  switch (grade) {
+  switch (canonicalGrade(grade)) {
     case 'K':
       return [
         FactDrill(
@@ -445,11 +495,6 @@ List<FactDrill> factDrills(String grade) {
           title: 'Subtracting within 10',
           sample: '10 − 6 = ?',
           config: drill('subtraction'),
-        ),
-        FactDrill(
-          title: 'Mixed within 10',
-          sample: '8 + 2 = ?',
-          config: drill('mixed'),
         ),
       ];
     case '1':
@@ -464,46 +509,31 @@ List<FactDrill> factDrills(String grade) {
           sample: '15 − 7 = ?',
           config: drill('subtraction', digits: 2),
         ),
-        FactDrill(
-          title: 'Mixed within 20',
-          sample: '13 − 5 = ?',
-          config: drill('mixed', digits: 2),
-        ),
       ];
     case '2':
       return [
         FactDrill(
           title: 'Adding within 100',
           sample: '27 + 16 = ?',
-          config: drill('addition', digits: 2, mode: 'time', limit: 120),
+          config: drill('addition', digits: 2),
         ),
         FactDrill(
           title: 'Subtracting within 100',
           sample: '53 − 18 = ?',
-          config: drill('subtraction', digits: 2, mode: 'time', limit: 120),
-        ),
-        FactDrill(
-          title: 'Mixed within 100',
-          sample: '40 + 25 = ?',
-          config: drill('mixed', digits: 2, mode: 'time', limit: 120),
+          config: drill('subtraction', digits: 2),
         ),
       ];
     case '3':
       return [
         FactDrill(
           title: 'Multiplication facts',
-          sample: '6 × 5 = ?',
-          config: drill('multiplication', mode: 'time', limit: 180),
+          sample: '6 × 7 = ?',
+          config: drill('multiplication'),
         ),
         FactDrill(
           title: 'Division facts',
-          sample: '35 ÷ 5 = ?',
-          config: drill('division', mode: 'time', limit: 180),
-        ),
-        FactDrill(
-          title: 'Mixed facts',
-          sample: '8 × 4 = ?',
-          config: drill('mixed', mode: 'time', limit: 180),
+          sample: '42 ÷ 6 = ?',
+          config: drill('division'),
         ),
       ];
     case '4':
@@ -511,17 +541,12 @@ List<FactDrill> factDrills(String grade) {
         FactDrill(
           title: 'Two-digit multiplication',
           sample: '26 × 4 = ?',
-          config: drill('multiplication', digits: 2, mode: 'time', limit: 180),
+          config: drill('multiplication', digits: 2),
         ),
         FactDrill(
           title: 'Division',
           sample: '72 ÷ 8 = ?',
-          config: drill('division', digits: 2, mode: 'time', limit: 180),
-        ),
-        FactDrill(
-          title: 'Mixed within 100',
-          sample: '36 + 48 = ?',
-          config: drill('mixed', digits: 2, mode: 'time', limit: 180),
+          config: drill('division', digits: 2),
         ),
       ];
     default:
@@ -529,12 +554,17 @@ List<FactDrill> factDrills(String grade) {
         FactDrill(
           title: '10%, 5%, and 1%',
           sample: '10% of \$80 = ?',
-          config: drill('percent', digits: 3, mode: 'time', limit: 180),
+          config: drill('percent'),
         ),
         FactDrill(
-          title: 'Mixed review',
-          sample: '5% of \$40 = ?',
-          config: drill('percent', digits: 3, mode: 'time', limit: 180),
+          title: 'Decimal tenths',
+          sample: '1.4 + 2.5 = ?',
+          config: drill('decimal'),
+        ),
+        FactDrill(
+          title: 'Fraction tenths',
+          sample: '1/2 + 1/5 = ?',
+          config: drill('fraction'),
         ),
       ];
   }
@@ -822,6 +852,7 @@ class DeviceSettings {
     required this.language,
     required this.soundEnabled,
     required this.readAloudEnabled,
+    required this.bookWrongs,
     required this.pinFailCount,
     required this.pinLockedUntil,
     required this.createdAt,
@@ -844,6 +875,7 @@ class DeviceSettings {
   final String language;
   final bool soundEnabled;
   final bool readAloudEnabled;
+  final bool bookWrongs;
   final int pinFailCount;
   final DateTime? pinLockedUntil;
   final DateTime createdAt;
@@ -879,6 +911,7 @@ class DeviceSettings {
       language: 'zh',
       soundEnabled: true,
       readAloudEnabled: false,
+      bookWrongs: true,
       pinFailCount: 0,
       pinLockedUntil: null,
       createdAt: time,
@@ -904,6 +937,7 @@ class DeviceSettings {
     String? language,
     bool? soundEnabled,
     bool? readAloudEnabled,
+    bool? bookWrongs,
     int? pinFailCount,
     DateTime? pinLockedUntil,
     bool clearLock = false,
@@ -930,6 +964,7 @@ class DeviceSettings {
       language: language ?? this.language,
       soundEnabled: soundEnabled ?? this.soundEnabled,
       readAloudEnabled: readAloudEnabled ?? this.readAloudEnabled,
+      bookWrongs: bookWrongs ?? this.bookWrongs,
       pinFailCount: pinFailCount ?? this.pinFailCount,
       pinLockedUntil: clearLock
           ? null

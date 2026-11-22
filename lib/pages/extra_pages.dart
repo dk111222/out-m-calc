@@ -296,14 +296,6 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
                       ),
                     const SizedBox(height: AppSpace.s16),
                   ],
-                if (!app.childMode && _trickId != null)
-                  AppButton(
-                    label: 'Worksheet',
-                    secondary: true,
-                    onPressed: () => context.go(
-                      '/export/worksheet?trickId=$_trickId&learner=${app.activeLearnerId}',
-                    ),
-                  ),
               ],
             ),
     );

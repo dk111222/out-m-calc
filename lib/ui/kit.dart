@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../app/theme.dart';
@@ -16,6 +17,7 @@ class PageFrame extends StatelessWidget {
     this.bottom,
     this.banner,
     this.scroll = true,
+    this.padding = const EdgeInsets.all(AppSpace.s16),
   });
 
   final String title;
@@ -25,15 +27,13 @@ class PageFrame extends StatelessWidget {
   final Widget? bottom;
   final String? banner;
   final bool scroll;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final width = MediaQuery.sizeOf(context).width;
-    final padded = Padding(
-      padding: const EdgeInsets.all(AppSpace.s16),
-      child: body,
-    );
+    final padded = Padding(padding: padding, child: body);
     final content = width >= AppSpace.wide
         ? Align(
             alignment: Alignment.topCenter,
@@ -264,17 +264,24 @@ class Keypad extends StatelessWidget {
     required this.onKey,
     required this.onSubmit,
     this.enabled = true,
+    this.showSubmit = true,
+    this.showDelete = true,
+    this.keyExtent,
   });
 
   final ValueChanged<String> onKey;
   final VoidCallback onSubmit;
   final bool enabled;
+  final bool showSubmit;
+  final bool showDelete;
+  final double? keyExtent;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final scale = MediaQuery.textScalerOf(context).scale(1);
-    final keyHeight = math.max(AppSpace.minTarget, AppSpace.minTarget * scale);
+    final keyHeight =
+        keyExtent ?? math.max(AppSpace.minTarget, AppSpace.minTarget * scale);
     Widget key(String label, String value, {String? semantics}) {
       return Padding(
         padding: const EdgeInsets.all(AppSpace.s4),
@@ -288,13 +295,20 @@ class Keypad extends StatelessWidget {
               button: true,
               enabled: enabled,
               label: semantics ?? label,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: keyHeight),
+              child: SizedBox(
+                height: keyHeight,
                 child: Center(
-                  child: Text(
-                    label,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: value == 'delete' ? colors.textMuted : colors.text,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
+                        color: value == 'delete'
+                            ? colors.textMuted
+                            : colors.text,
+                      ),
                     ),
                   ),
                 ),
@@ -332,24 +346,253 @@ class Keypad extends StatelessWidget {
                   Expanded(child: key('.', '.')),
                   Expanded(child: key('0', '0')),
                   Expanded(
-                    child: key(
-                      Copy.of(context).delete,
-                      'delete',
-                      semantics: Copy.of(context).delete,
-                    ),
+                    child: showDelete
+                        ? key(
+                            Copy.of(context).delete,
+                            'delete',
+                            semantics: Copy.of(context).delete,
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpace.s8),
-              AppButton(
-                label: Copy.of(context).submit,
-                onPressed: enabled ? onSubmit : null,
-              ),
+              if (showSubmit) ...[
+                const SizedBox(height: AppSpace.s8),
+                AppButton(
+                  label: Copy.of(context).submit,
+                  onPressed: enabled ? onSubmit : null,
+                ),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class DrillBoard extends StatelessWidget {
+  const DrillBoard({
+    super.key,
+    required this.title,
+    required this.onBack,
+    required this.prompt,
+    required this.value,
+    required this.onKey,
+    required this.onSubmit,
+    this.status,
+    this.action,
+    this.previousPrompt,
+    this.previousAnswer,
+    this.previousCorrect,
+    this.mark,
+    this.detail,
+    this.nextPrompt,
+    this.keysEnabled = true,
+    this.showAnswer = true,
+  });
+
+  final String title;
+  final VoidCallback onBack;
+  final Widget? status;
+  final Widget? action;
+  final String? previousPrompt;
+  final String? previousAnswer;
+  final bool? previousCorrect;
+  final String prompt;
+  final String value;
+  final String? mark;
+  final Widget? detail;
+  final String? nextPrompt;
+  final bool keysEnabled;
+  final bool showAnswer;
+  final ValueChanged<String> onKey;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Copy.of(context);
+    final colors = AppColors.of(context);
+    final previous = previousPrompt != null &&
+        previousAnswer != null &&
+        previousCorrect != null;
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    final naturalKey = math.max(AppSpace.minTarget, AppSpace.minTarget * scale);
+    final previousHeight = _previousHeight(scale);
+    final equationHeight = _equationHeight(scale);
+    final nextHeight = _nextHeight(scale);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final keyExtent = _keyExtent(
+          height: constraints.maxHeight,
+          natural: naturalKey,
+          scale: scale,
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpace.s16,
+                  AppSpace.s8,
+                  AppSpace.s16,
+                  0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      height: 56,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            tooltip: t.back,
+                            onPressed: onBack,
+                            icon: const Icon(Icons.arrow_back),
+                          ),
+                          Expanded(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          ?status,
+                          ?action,
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height: previousHeight,
+                      child: previous
+                          ? Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _settledLine(
+                                      previousPrompt!,
+                                      previousAnswer!,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                ),
+                                Icon(
+                                  previousCorrect!
+                                      ? Icons.check
+                                      : Icons.close,
+                                  color: previousCorrect!
+                                      ? colors.success
+                                      : colors.danger,
+                                ),
+                              ],
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: AppSpace.s12),
+                    SizedBox(
+                      height: equationHeight,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: EquationLine(
+                          prompt: prompt,
+                          value: value,
+                          mark: mark,
+                          showAnswer: showAnswer,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.s8),
+                    SizedBox(
+                      height: nextHeight,
+                      child: nextPrompt == null
+                          ? null
+                          : Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                _settledLine(nextPrompt!, '( )'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(color: colors.textMuted),
+                              ),
+                            ),
+                    ),
+                    Expanded(
+                      child: detail == null
+                          ? const SizedBox.shrink()
+                          : SingleChildScrollView(
+                              clipBehavior: Clip.none,
+                              child: detail,
+                            ),
+                    ),
+                    const Divider(height: AppSpace.s16),
+                    Keypad(
+                      enabled: keysEnabled,
+                      onKey: onKey,
+                      onSubmit: onSubmit,
+                      showSubmit: false,
+                      showDelete: true,
+                      keyExtent: keyExtent,
+                    ),
+                    const SizedBox(height: AppSpace.s8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        label: t.submit,
+                        onPressed: keysEnabled ? onSubmit : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  double _previousHeight(double scale) => math.max(36.0, 32 * scale);
+
+  double _equationHeight(double scale) => 48 * scale;
+
+  double _nextHeight(double scale) => math.max(32.0, 28 * scale);
+
+  double _keyExtent({
+    required double height,
+    required double natural,
+    required double scale,
+  }) {
+    if (!height.isFinite) return natural;
+    final submit = math.max(AppSpace.minTarget, AppSpace.minTarget * scale);
+    final used =
+        AppSpace.s8 +
+        56 +
+        _previousHeight(scale) +
+        AppSpace.s12 +
+        _equationHeight(scale) +
+        AppSpace.s8 +
+        _nextHeight(scale) +
+        AppSpace.s16 +
+        AppSpace.s8 +
+        submit;
+    final fitted = (height - used - 48) / 4;
+    if (!fitted.isFinite) return natural;
+    return fitted.clamp(32.0, natural);
+  }
+
+  static String _settledLine(String prompt, String blank) {
+    final equals = prompt.contains('=') ? '' : ' = ';
+    return '$prompt$equals$blank';
   }
 }
 
@@ -359,69 +602,215 @@ class EquationLine extends StatelessWidget {
     required this.prompt,
     required this.value,
     this.mark,
+    this.showAnswer = true,
   });
 
   final String prompt;
   final String value;
   final String? mark;
+  final bool showAnswer;
 
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.displaySmall;
+    if (!showAnswer) {
+      return Text(
+        prompt,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      );
+    }
     final showEquals = prompt.isNotEmpty && !prompt.contains('=');
+    return _BleedRight(
+      extra: AppSpace.s16,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SizedBox(
+            width: constraints.maxWidth,
+            child: _fittedEquation(
+              maxWidth: constraints.maxWidth,
+              style: style,
+              showEquals: showEquals,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _fittedEquation({
+    required double maxWidth,
+    required TextStyle? style,
+    required bool showEquals,
+  }) {
+    final base = style ?? const TextStyle(fontSize: 40);
+    var low = 0.45;
+    var high = 1.0;
+    var scale = low;
+    for (var i = 0; i < 12; i++) {
+      final mid = (low + high) / 2;
+      if (_equationFits(base, mid, maxWidth, showEquals)) {
+        scale = mid;
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+    final fitted = base.copyWith(fontSize: (base.fontSize ?? 40) * scale);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Flexible(child: Text(prompt, style: style)),
+        Text(prompt, style: fitted, maxLines: 1, softWrap: false),
         if (showEquals) ...[
           const SizedBox(width: AppSpace.s8),
-          Text('=', style: style),
+          Text('=', style: fitted),
         ],
         const SizedBox(width: AppSpace.s8),
         Expanded(
-          child: AnswerReadout(value: value, mark: mark),
+          child: AnswerReadout(value: value, mark: mark, style: fitted),
         ),
       ],
     );
   }
+
+  bool _equationFits(
+    TextStyle base,
+    double scale,
+    double maxWidth,
+    bool showEquals,
+  ) {
+    final fitted = base.copyWith(fontSize: (base.fontSize ?? 40) * scale);
+    final promptWidth = _textWidth(prompt, fitted);
+    final equalsWidth = showEquals
+        ? _textWidth('=', fitted) + AppSpace.s8
+        : 0;
+    final parenWidth = _textWidth('()', fitted);
+    final middle = _textWidth(value.isEmpty ? '0' : value, fitted);
+    final needed =
+        promptWidth + equalsWidth + AppSpace.s8 + parenWidth + middle;
+    return needed + 4 <= maxWidth;
+  }
+}
+
+double _textWidth(String text, TextStyle style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
+}
+
+class _BleedRight extends SingleChildRenderObjectWidget {
+  const _BleedRight({required this.extra, required super.child});
+
+  final double extra;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderBleedRight(extra);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderBleedRight renderObject,
+  ) {
+    renderObject.extra = extra;
+  }
+}
+
+class _RenderBleedRight extends RenderShiftedBox {
+  _RenderBleedRight(this._extra) : super(null);
+
+  double _extra;
+
+  double get extra => _extra;
+
+  set extra(double value) {
+    if (_extra == value) return;
+    _extra = value;
+    markNeedsLayout();
+  }
+
+  BoxConstraints _childConstraints(BoxConstraints constraints) {
+    return BoxConstraints(
+      minWidth: 0,
+      maxWidth: constraints.maxWidth + extra,
+      minHeight: 0,
+      maxHeight: constraints.maxHeight,
+    );
+  }
+
+  @override
+  void performLayout() {
+    final child = this.child;
+    if (child == null) {
+      size = constraints.smallest;
+      return;
+    }
+    child.layout(_childConstraints(constraints), parentUsesSize: true);
+    size = constraints.constrain(
+      Size(math.max(0, child.size.width - extra), child.size.height),
+    );
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final child = this.child;
+    if (child == null) return constraints.smallest;
+    final childSize = child.getDryLayout(_childConstraints(constraints));
+    return constraints.constrain(
+      Size(math.max(0, childSize.width - extra), childSize.height),
+    );
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final child = this.child;
+    if (child != null) context.paintChild(child, offset);
+  }
 }
 
 class AnswerReadout extends StatelessWidget {
-  const AnswerReadout({super.key, required this.value, this.mark});
+  const AnswerReadout({super.key, required this.value, this.mark, this.style});
 
   final String value;
   final String? mark;
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final border = mark == 'wrong'
+    final color = mark == 'wrong'
         ? colors.danger
-        : (mark == 'correct' ? colors.success : colors.borderInput);
+        : (mark == 'correct' ? colors.success : colors.text);
+    final textStyle = (style ?? Theme.of(context).textTheme.displaySmall)
+        ?.copyWith(color: color);
     final t = Copy.of(context);
     return Semantics(
       textField: true,
       label: t.yourAnswer,
       value: value.isEmpty ? t.pick('空', 'Empty') : value,
       liveRegion: true,
-      child: AnimatedContainer(
-        duration: motionFast,
-        curve: Curves.easeOut,
-        width: double.infinity,
-        constraints: const BoxConstraints(minHeight: AppSpace.minTarget),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
-        alignment: Alignment.centerLeft,
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppSpace.rSm),
-          border: Border.all(color: border, width: 2),
-        ),
-        child: Text(
-          value.isEmpty ? Copy.of(context).yourAnswer : value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: value.isEmpty ? colors.textMuted : colors.text,
+      child: Row(
+        children: [
+          Text('(', style: textStyle),
+          Expanded(
+            child: Text(
+              value,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.clip,
+              textAlign: TextAlign.center,
+              style: textStyle,
+            ),
           ),
-        ),
+          Text(')', style: textStyle),
+        ],
       ),
     );
   }
@@ -627,6 +1016,320 @@ class StepperRow extends StatelessWidget {
       icon: Icon(icon),
       style: IconButton.styleFrom(
         minimumSize: const Size(AppSpace.minTarget, AppSpace.minTarget),
+      ),
+    );
+  }
+}
+
+Future<bool> showTrainingReport(
+  BuildContext context, {
+  required int correct,
+  required int wrong,
+  required String elapsed,
+  Future<void> Function()? onSaveWrongs,
+  bool bookWrongs = true,
+  Future<void> Function(bool value)? onBookWrongs,
+}) async {
+  final again = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => TrainingReportDialog(
+      correct: correct,
+      wrong: wrong,
+      elapsed: elapsed,
+      onSaveWrongs: onSaveWrongs,
+      bookWrongs: bookWrongs,
+      onBookWrongs: onBookWrongs,
+    ),
+  );
+  return again ?? false;
+}
+
+/// Whole-number percent, or null when the round had no answers.
+int? accuracyPercent(int correct, int wrong) {
+  final total = correct + wrong;
+  if (total <= 0) return null;
+  return ((correct * 100) / total).round();
+}
+
+/// Another round is offered only when accuracy is under 80 percent.
+bool offerAnotherRound(int correct, int wrong) {
+  final total = correct + wrong;
+  if (total <= 0) return false;
+  return correct / total < 0.8;
+}
+
+class TrainingReportDialog extends StatefulWidget {
+  const TrainingReportDialog({
+    super.key,
+    required this.correct,
+    required this.wrong,
+    required this.elapsed,
+    this.onSaveWrongs,
+    this.bookWrongs = true,
+    this.onBookWrongs,
+  });
+
+  final int correct;
+  final int wrong;
+  final String elapsed;
+  final Future<void> Function()? onSaveWrongs;
+  final bool bookWrongs;
+  final Future<void> Function(bool value)? onBookWrongs;
+
+  @override
+  State<TrainingReportDialog> createState() => _TrainingReportDialogState();
+}
+
+class _TrainingReportDialogState extends State<TrainingReportDialog> {
+  late bool _book;
+  bool _leaving = false;
+
+  bool get _offerBook => widget.wrong > 0 && widget.onSaveWrongs != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _book = widget.bookWrongs;
+  }
+
+  Future<void> _close(bool again) async {
+    if (_leaving) return;
+    setState(() => _leaving = true);
+    try {
+      if (_offerBook && _book) await widget.onSaveWrongs?.call();
+      if (_offerBook) await widget.onBookWrongs?.call(_book);
+    } catch (_) {}
+    if (!mounted) return;
+    Navigator.pop(context, again);
+  }
+
+  _ReportCheer _cheer(Copy t, AppColors colors, int? percent) {
+    if (widget.wrong == 0 && widget.correct > 0) {
+      return _ReportCheer(
+        t.pick('全部做对了', 'All correct'),
+        Icons.emoji_events_rounded,
+        colors.success,
+      );
+    }
+    if (percent != null && percent >= 80) {
+      return _ReportCheer(
+        t.pick('做得很好', 'Well done'),
+        Icons.star_rounded,
+        colors.success,
+      );
+    }
+    if (percent != null && percent > 0) {
+      return _ReportCheer(
+        null,
+        Icons.favorite_rounded,
+        colors.warning,
+      );
+    }
+    return _ReportCheer(
+      t.pick('训练结束', 'Round finished'),
+      Icons.flag_rounded,
+      colors.accent,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Copy.of(context);
+    final colors = AppColors.of(context);
+    final percent = accuracyPercent(widget.correct, widget.wrong);
+    final again = offerAnotherRound(widget.correct, widget.wrong);
+    final cheer = _cheer(t, colors, percent);
+    final width = math.min(400, MediaQuery.sizeOf(context).width - 32);
+    return Dialog(
+      backgroundColor: colors.surface,
+      elevation: 0,
+      insetPadding: const EdgeInsets.all(AppSpace.s16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpace.rLg),
+        side: BorderSide(color: colors.border),
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: width.toDouble(),
+          maxHeight: MediaQuery.sizeOf(context).height - 48,
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(AppSpace.rLg),
+            boxShadow: colors.popShadow,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpace.s24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  t.pick('训练报告', 'Training report'),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: AppSpace.s16),
+                Center(child: _ReportMark(color: cheer.tone, icon: cheer.icon)),
+                if (cheer.title != null) ...[
+                  const SizedBox(height: AppSpace.s12),
+                  Text(
+                    cheer.title!,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ],
+                if (percent != null) ...[
+                  const SizedBox(height: AppSpace.s8),
+                  Text(
+                    t.pick('正确率 $percent%', '$percent% correct'),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
+                const SizedBox(height: AppSpace.s16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ReportStat(
+                      label: t.pick(
+                        '正确 ${widget.correct} 题',
+                        '${widget.correct} correct',
+                      ),
+                      color: colors.success,
+                    ),
+                    const SizedBox(width: AppSpace.s8),
+                    _ReportStat(
+                      label: t.pick(
+                        '错误 ${widget.wrong} 题',
+                        '${widget.wrong} wrong',
+                      ),
+                      color: widget.wrong == 0 ? colors.success : colors.warning,
+                    ),
+                    const SizedBox(width: AppSpace.s8),
+                    _ReportStat(
+                      label: t.pick(
+                        '用时 ${widget.elapsed}',
+                        'Time ${widget.elapsed}',
+                      ),
+                      color: colors.accent,
+                    ),
+                  ],
+                ),
+                if (_offerBook) ...[
+                  const SizedBox(height: AppSpace.s16),
+                  Material(
+                    color: colors.sunken,
+                    borderRadius: BorderRadius.circular(AppSpace.rMd),
+                    clipBehavior: Clip.antiAlias,
+                    child: CheckboxListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.s8,
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: _book,
+                      onChanged: _leaving
+                          ? null
+                          : (value) => setState(() => _book = value ?? false),
+                      title: Text(
+                        t.pick('加入错题本', 'Add to the wrong-problem book'),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpace.s24),
+                if (again) ...[
+                  AppButton(
+                    label: t.pick('再练一次', 'Practice again'),
+                    busy: _leaving,
+                    onPressed: _leaving ? null : () => _close(true),
+                  ),
+                  const SizedBox(height: AppSpace.s8),
+                ],
+                AppButton(
+                  label: t.backToToday,
+                  secondary: again,
+                  busy: _leaving,
+                  onPressed: _leaving ? null : () => _close(false),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportCheer {
+  const _ReportCheer(this.title, this.icon, this.tone);
+
+  final String? title;
+  final IconData icon;
+  final Color tone;
+}
+
+class _ReportMark extends StatelessWidget {
+  const _ReportMark({required this.color, required this.icon});
+
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.86, end: 1),
+      duration: motionBase,
+      curve: Curves.easeOut,
+      builder: (context, scale, child) {
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.16),
+          shape: BoxShape.circle,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.s12),
+          child: Icon(icon, size: 36, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportStat extends StatelessWidget {
+  const _ReportStat({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppSpace.rMd),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.s8,
+            vertical: AppSpace.s12,
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }

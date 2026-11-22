@@ -510,11 +510,16 @@ Problem speedDiv(int a, int b) {
 
 String pickSpeedOperation(String selected, String grade, Random rng) {
   if (selected != 'mixed') return selected;
-  if (grade == '5') return 'percent';
-  if (grade == '3' || grade == '4') {
-    return rng.nextBool() ? 'multiplication' : 'division';
+  switch (canonicalGrade(grade)) {
+    case '5':
+      const choices = ['percent', 'decimal', 'fraction'];
+      return choices[rng.nextInt(choices.length)];
+    case '3':
+    case '4':
+      return rng.nextBool() ? 'multiplication' : 'division';
+    default:
+      return rng.nextBool() ? 'addition' : 'subtraction';
   }
-  return rng.nextBool() ? 'addition' : 'subtraction';
 }
 
 int _rollDigits(Random rng, int digits, {int minValue = 0, int maxValue = 9999}) {
@@ -543,56 +548,129 @@ Problem nextSpeedProblem(SpeedConfig config, String grade, Random rng) {
       final rate = [10, 5, 1][rng.nextInt(3)];
       final dollars = 10 * (1 + rng.nextInt(20));
       return percentOf(rate, dollars).copyWith(trickId: 'speed:percent');
+    case 'decimal':
+      return _speedDecimal(rng);
+    case 'fraction':
+      return _speedFraction(rng);
     default:
       return _speedAdd(config, grade, rng);
   }
 }
 
+Problem _speedDecimal(Random rng) {
+  final kind = rng.nextInt(3);
+  if (kind == 2) {
+    final tenths = 1 + rng.nextInt(9);
+    final whole = 1 + rng.nextInt(9);
+    final answer = formatNum(tenths * whole / 10);
+    final left = formatNum(tenths / 10);
+    return Problem(
+      trickId: 'speed:decimal',
+      prompt: '$left × $whole',
+      finalAnswer: answer,
+      steps: [StepAsk(1, 'What is $left × $whole?', answer)],
+    );
+  }
+  final a = 1 + rng.nextInt(50);
+  final b = 1 + rng.nextInt(50);
+  if (kind == 1) {
+    final left = max(a, b);
+    final right = min(a, b);
+    final answer = formatNum((left - right) / 10);
+    final shownLeft = formatNum(left / 10);
+    final shownRight = formatNum(right / 10);
+    return Problem(
+      trickId: 'speed:decimal',
+      prompt: '$shownLeft − $shownRight',
+      finalAnswer: answer,
+      steps: [
+        StepAsk(1, 'What is $shownLeft − $shownRight?', answer),
+      ],
+    );
+  }
+  final answer = formatNum((a + b) / 10);
+  final shownLeft = formatNum(a / 10);
+  final shownRight = formatNum(b / 10);
+  return Problem(
+    trickId: 'speed:decimal',
+    prompt: '$shownLeft + $shownRight',
+    finalAnswer: answer,
+    steps: [StepAsk(1, 'What is $shownLeft + $shownRight?', answer)],
+  );
+}
+
+Problem _speedFraction(Random rng) {
+  const denominators = [2, 5, 10];
+  final denominator = denominators[rng.nextInt(denominators.length)];
+  var left = 1 + rng.nextInt(denominator);
+  var right = 1 + rng.nextInt(denominator);
+  final subtract = rng.nextBool() && left != right;
+  if (subtract && right > left) {
+    final swap = left;
+    left = right;
+    right = swap;
+  }
+  final numer = subtract ? left - right : left + right;
+  final answer = formatNum(numer / denominator);
+  final sign = subtract ? '−' : '+';
+  final prompt = '$left/$denominator $sign $right/$denominator';
+  return Problem(
+    trickId: 'speed:fraction',
+    prompt: prompt,
+    finalAnswer: answer,
+    steps: [StepAsk(1, 'What is $prompt?', answer)],
+  );
+}
+
 Problem _speedAdd(SpeedConfig config, String grade, Random rng) {
-  if (grade == 'K') {
-    final a = rng.nextInt(11);
-    return speedAdd(a, rng.nextInt(11 - a));
+  switch (canonicalGrade(grade)) {
+    case 'K':
+      final a = rng.nextInt(11);
+      return speedAdd(a, rng.nextInt(11 - a));
+    case '1':
+      final a = _rollDigits(rng, config.digitMax, minValue: 0, maxValue: 20);
+      final room = 20 - a;
+      final b = room == 0 ? 0 : rng.nextInt(room + 1);
+      return speedAdd(a, b);
+    case '2':
+    case '3':
+    case '4':
+      final a = _rollDigits(rng, 2, minValue: 10, maxValue: 90);
+      final room = 100 - a;
+      var b = rng.nextInt(room + 1);
+      if (b < 10 && room >= 10) b = 10 + rng.nextInt(room - 9);
+      return speedAdd(a, b);
+    default:
+      final a = _rollDigits(rng, config.digitMin);
+      final b = _rollDigits(rng, config.digitMax);
+      return speedAdd(a, b);
   }
-  if (grade == '1') {
-    final a = _rollDigits(rng, config.digitMax, minValue: 0, maxValue: 20);
-    final room = 20 - a;
-    final b = room == 0 ? 0 : rng.nextInt(room + 1);
-    return speedAdd(a, b);
-  }
-  if (grade == '2') {
-    final a = _rollDigits(rng, 2, minValue: 10, maxValue: 90);
-    final room = 100 - a;
-    var b = rng.nextInt(room + 1);
-    if (b < 10 && room >= 10) b = 10 + rng.nextInt(room - 9);
-    return speedAdd(a, b);
-  }
-  final a = _rollDigits(rng, config.digitMin);
-  final b = _rollDigits(rng, config.digitMax);
-  return speedAdd(a, b);
 }
 
 Problem _speedSub(SpeedConfig config, String grade, Random rng) {
-  if (grade == 'K') {
-    final a = rng.nextInt(11);
-    return speedSub(a, rng.nextInt(a + 1));
+  switch (canonicalGrade(grade)) {
+    case 'K':
+      final a = rng.nextInt(11);
+      return speedSub(a, rng.nextInt(a + 1));
+    case '1':
+      final a = _rollDigits(rng, config.digitMax, maxValue: 20);
+      return speedSub(a, rng.nextInt(a + 1));
+    case '2':
+    case '3':
+    case '4':
+      final a = _rollDigits(rng, 2, minValue: 20, maxValue: 99);
+      var b = _rollDigits(rng, 2, minValue: 10, maxValue: a);
+      if (b > a) b = a;
+      return speedSub(a, b);
+    default:
+      final a = _rollDigits(rng, config.digitMax, minValue: 1);
+      final b = _rollDigits(rng, config.digitMin, maxValue: a);
+      return speedSub(max(a, b), min(a, b));
   }
-  if (grade == '1') {
-    final a = _rollDigits(rng, config.digitMax, maxValue: 20);
-    return speedSub(a, rng.nextInt(a + 1));
-  }
-  if (grade == '2') {
-    final a = _rollDigits(rng, 2, minValue: 20, maxValue: 99);
-    var b = _rollDigits(rng, 2, minValue: 10, maxValue: a);
-    if (b > a) b = a;
-    return speedSub(a, b);
-  }
-  final a = _rollDigits(rng, config.digitMax, minValue: 1);
-  final b = _rollDigits(rng, config.digitMin, maxValue: a);
-  return speedSub(max(a, b), min(a, b));
 }
 
 Problem _speedMul(SpeedConfig config, String grade, Random rng) {
-  if (grade == '4' || config.digitMax >= 2) {
+  if (canonicalGrade(grade) == '4' || config.digitMax >= 2) {
     final a = 10 + rng.nextInt(90);
     final b = 2 + rng.nextInt(8);
     return speedMul(a, b);
@@ -603,7 +681,7 @@ Problem _speedMul(SpeedConfig config, String grade, Random rng) {
 }
 
 Problem _speedDiv(SpeedConfig config, String grade, Random rng) {
-  if (grade == '4' || config.digitMax >= 2) {
+  if (canonicalGrade(grade) == '4' || config.digitMax >= 2) {
     final divisor = 2 + rng.nextInt(8);
     final quotient = 2 + rng.nextInt(10);
     final dividend = divisor * quotient;
@@ -716,6 +794,13 @@ String spokenPrompt(String prompt, {String language = 'zh'}) {
       .replaceAll('–', zh ? ' 减 ' : ' minus ')
       .replaceAll('÷', zh ? ' 除以 ' : ' divided by ')
       .replaceAll('²', zh ? '的平方' : ' squared')
+      .replaceAllMapped(RegExp(r'(\d+)/(\d+)'), (match) {
+        final numerator = int.parse(match.group(1)!);
+        final denominator = int.parse(match.group(2)!);
+        return zh
+            ? '${_zhInt(denominator)}分之${_zhInt(numerator)}'
+            : '${_enInt(numerator)} over ${_enInt(denominator)}';
+      })
       .replaceAll('+', zh ? ' 加 ' : ' plus ')
       .replaceAll('=', zh ? ' 等于 ' : ' equals ')
       .replaceAll('?', zh ? '几' : ' what ');

@@ -27,7 +27,7 @@ NoTransitionPage<void> _tabs({
 
 GoRouter buildRouter(AppController app) {
   return GoRouter(
-    initialLocation: '/loading',
+    initialLocation: app.openLocation(),
     refreshListenable: app,
     redirect: (context, state) => app.redirect(state.uri.path),
     routes: [

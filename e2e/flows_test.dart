@@ -117,7 +117,11 @@ void main() {
     await tester.tap(find.text('开始练习'));
     await settle(tester);
     expect(find.text('提交'), findsOneWidget);
-    expect(find.text('你的答案'), findsOneWidget);
+    expect(find.byType(AnswerReadout), findsOneWidget);
+    expect(
+      tester.widget<AnswerReadout>(find.byType(AnswerReadout)).value,
+      isEmpty,
+    );
     expect(find.text('删除'), findsOneWidget);
 
     final practice = ProviderScope.containerOf(
@@ -214,6 +218,10 @@ void main() {
     GoRouter.of(tester.element(find.text('首页'))).go('/speed/run');
     await settle(tester);
     expect(find.text('总用时'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1300));
+    final shown = clockLabel(speed.view!.elapsedMs);
+    expect(shown, isNot('00:00'));
+    expect(find.text(shown), findsOneWidget);
     final prompt = speed.view!.current!.prompt;
     expect(find.text(prompt), findsOneWidget);
     await tester.tap(find.byTooltip('暂停'));
@@ -221,6 +229,59 @@ void main() {
     expect(find.text('计时已暂停。同一道题还在。'), findsOneWidget);
     expect(find.text(prompt), findsNothing);
     await speed.leave();
+  });
+
+  testWidgets('F03-H1b a second daily round keeps counting', (tester) async {
+    final app = await boot();
+    await app.createLearner(name: 'Ava', grade: '1');
+    await app.enterChild(app.learners.single.id);
+    final speed = SpeedController(app);
+    addTearDown(speed.dispose);
+    final config = dailyPractice('1').copyWith(limitValue: 1);
+    await speed.start(config);
+    final answer = speed.view!.current!.finalAnswer;
+    for (final digit in answer.split('')) {
+      if (RegExp(r'^\d$').hasMatch(digit) || digit == '.') speed.key(digit);
+    }
+    await speed.submit();
+    expect(speed.view!.done, isTrue);
+    await speed.start(config);
+    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    expect(clockLabel(speed.view!.elapsedMs), isNot('00:00'));
+  });
+
+  testWidgets('F03-H2 the training report opens on the speed drill', (
+    tester,
+  ) async {
+    final app = await boot();
+    await app.createLearner(name: 'Ava', grade: '3');
+    await app.enterChild(app.learners.single.id);
+    await show(tester, app);
+    final speed = ProviderScope.containerOf(
+      tester.element(find.text('首页')),
+    ).read(speedProvider);
+    await speed.start(
+      speedDefault('3').copyWith(limitMode: 'count', limitValue: 1),
+    );
+    GoRouter.of(tester.element(find.text('首页'))).go('/speed/run');
+    await settle(tester);
+    final answer = speed.view!.current!.finalAnswer;
+    for (final digit in answer.split('')) {
+      if (!RegExp(r'^\d$').hasMatch(digit)) continue;
+      await tester.tap(
+        find.descendant(of: find.byType(Keypad), matching: find.text(digit)),
+      );
+      await tester.pump();
+    }
+    await tester.tap(find.text('提交'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(find.text('训练报告'), findsOneWidget);
+    expect(find.textContaining('正确 1 题'), findsOneWidget);
+    expect(find.textContaining('错误 0 题'), findsOneWidget);
+    await tester.tap(find.text('返回首页'));
+    await settle(tester);
+    expect(find.text('首页'), findsOneWidget);
   });
 
   testWidgets('F05-H1 a repaired miss leaves the open queue', (tester) async {

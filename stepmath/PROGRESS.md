@@ -15,7 +15,7 @@
 - [x] Phase 2 Wave 2 评价与社区
 - [x] Phase 2 Wave 3 获客与战略信号
 - [ ] Phase 2 研究后对齐。等用户确认名单后再写综合报告
-- [ ] Phase 3 综合
+- [ ] Phase 3 综合。2026-11-22 先写了决定备忘 `grade-vs-level.md`（年级还是三级），整份 competitors-report 仍未写
 - [ ] Phase 3.5 核对
 
 ## Research Depth

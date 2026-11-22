@@ -63,6 +63,11 @@ class AppController extends ChangeNotifier {
     store.setSession(childMode: childMode, learnerId: activeLearnerId);
   }
 
+  String openLocation() {
+    final target = redirect('/loading');
+    return target ?? '/loading';
+  }
+
   String? redirect(String loc) {
     if (!ready || bootError != null) {
       return loc == '/loading' ? null : '/loading';
@@ -208,6 +213,7 @@ class AppController extends ChangeNotifier {
     bool guest = false,
   }) async {
     if (childMode) return copy.parentNeedsThis;
+    grade = canonicalGrade(grade);
     if (!grades.contains(grade)) return copy.chooseGrade;
     if (learners.isNotEmpty && !settings.extraLearnersUnlocked) {
       return copy.anotherLearner;
@@ -549,7 +555,7 @@ class AppController extends ChangeNotifier {
         createdAt: now,
       ),
     );
-    if (!draft.correct) {
+    if (!draft.correct && draft.bookWrong) {
       await store.putWrong(
         WrongItem(
           id: newId(),
@@ -743,6 +749,38 @@ class AppController extends ChangeNotifier {
     await finishRound(view.learnerId);
   }
 
+  Future<void> bookRoundMisses(List<RoundMiss> misses) async {
+    final learner = active;
+    if (learner == null || misses.isEmpty) return;
+    final existing = await store.wrongs(learner.id);
+    final seen = {
+      for (final item in existing)
+        '${item.prompt}\u0000${item.userAnswer}\u0000${item.correctAnswer}',
+    };
+    final now = clock.now().toUtc();
+    for (final miss in misses) {
+      final key =
+          '${miss.prompt}\u0000${miss.userAnswer}\u0000${miss.correctAnswer}';
+      if (!seen.add(key)) continue;
+      await store.putWrong(
+        WrongItem(
+          id: newId(),
+          learnerId: learner.id,
+          attemptId: '',
+          trickId: miss.trickId,
+          prompt: miss.prompt,
+          userAnswer: miss.userAnswer,
+          correctAnswer: miss.correctAnswer,
+          failedStep: miss.failedStep,
+          stepsJson: jsonEncode(miss.steps.map((step) => step.toJson()).toList()),
+          reviewedOk: false,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    }
+  }
+
   Future<int> bestFor(String learnerId, SpeedConfig config) async {
     final rounds = await store.speeds(learnerId);
     return personalBest(
@@ -775,6 +813,9 @@ class PracticeController extends ChangeNotifier {
   final AppController app;
   PracticeView? view;
   Timer? _timer;
+  DateTime? _clockAt;
+  int _bankedMs = 0;
+  bool reportDue = false;
 
   Future<void> startLearn(String trickId) async {
     final learner = app.active;
@@ -795,6 +836,7 @@ class PracticeController extends ChangeNotifier {
       trickId: trickId,
       items: items,
     );
+    _beginClock();
     await _persist();
     notifyListeners();
     final prompt = view?.current?.prompt;
@@ -811,6 +853,7 @@ class PracticeController extends ChangeNotifier {
       trickId: items.first.trickId,
       items: items,
     );
+    _beginClock();
     await _persist();
     notifyListeners();
   }
@@ -839,6 +882,7 @@ class PracticeController extends ChangeNotifier {
       items: [problem],
       repairWrongId: item.id,
     );
+    _beginClock();
     await _persist();
     notifyListeners();
   }
@@ -846,6 +890,7 @@ class PracticeController extends ChangeNotifier {
   Future<void> resume(SessionSnapshot snapshot) async {
     final decoded = jsonDecode(snapshot.payload) as Map<String, dynamic>;
     view = PracticeView.fromJson(decoded);
+    _resumeClock();
     if (view!.repairWrongId != null && !app.errorTrainingOpen) {
       view = null;
       notifyListeners();
@@ -854,6 +899,9 @@ class PracticeController extends ChangeNotifier {
     if (view!.pending != null) {
       view = practiceAdvance(view!).view;
       if (view!.phase == 'done') {
+        _captureElapsed();
+        view = view!.copy(elapsedMs: _bankedMs);
+        reportDue = true;
         await app.finishRound(view!.learnerId);
       } else {
         await _persist();
@@ -903,6 +951,9 @@ class PracticeController extends ChangeNotifier {
       if (latest == null) return;
       view = practiceAdvance(latest).view;
       if (view!.phase == 'done') {
+        _captureElapsed();
+        view = view!.copy(elapsedMs: _bankedMs);
+        reportDue = true;
         await app.finishRound(view!.learnerId);
       } else {
         await _persist();
@@ -932,7 +983,26 @@ class PracticeController extends ChangeNotifier {
 
   Future<void> leave() async {
     _timer?.cancel();
+    _captureElapsed();
+    if (view != null) view = view!.copy(elapsedMs: _bankedMs);
     await _persist();
+  }
+
+  void _beginClock() {
+    _bankedMs = 0;
+    _clockAt = DateTime.now();
+    reportDue = false;
+  }
+
+  void _resumeClock() {
+    _bankedMs = view?.elapsedMs ?? 0;
+    _clockAt = DateTime.now();
+  }
+
+  void _captureElapsed() {
+    if (_clockAt == null) return;
+    _bankedMs += DateTime.now().difference(_clockAt!).inMilliseconds;
+    _clockAt = null;
   }
 
   @override
@@ -951,6 +1021,7 @@ class SpeedController extends ChangeNotifier {
   Timer? _ticker;
   DateTime? _clockAt;
   int _bankedMs = 0;
+  bool reportDue = false;
   final Random _rng = Random();
 
   Future<void> start(SpeedConfig config) async {
@@ -970,6 +1041,7 @@ class SpeedController extends ChangeNotifier {
     );
     _bankedMs = 0;
     _clockAt = DateTime.now();
+    reportDue = false;
     await _persist();
     _ensureTicker();
     notifyListeners();
@@ -1066,7 +1138,9 @@ class SpeedController extends ChangeNotifier {
   }
 
   void _ensureTicker() {
-    _ticker ??= Timer.periodic(
+    if (_ticker != null && _ticker!.isActive) return;
+    _ticker?.cancel();
+    _ticker = Timer.periodic(
       const Duration(milliseconds: 200),
       (_) => _tick(),
     );
@@ -1075,16 +1149,9 @@ class SpeedController extends ChangeNotifier {
   void _tick() {
     final current = view;
     if (current == null || current.paused || current.done) return;
-    final now = DateTime.now();
-    final elapsed = _clockAt == null
-        ? 200
-        : now.difference(_clockAt!).inMilliseconds;
-    _clockAt = now;
-    final effect = speedTick(current, elapsed);
-    view = effect.view.copy(elapsedMs: _elapsedNow());
-    if (effect.finished) {
-      unawaited(_finish());
-    }
+    final elapsed = _elapsedNow();
+    if (elapsed == current.elapsedMs) return;
+    view = current.copy(elapsedMs: elapsed);
     notifyListeners();
   }
 
@@ -1106,9 +1173,11 @@ class SpeedController extends ChangeNotifier {
     final current = view;
     if (current == null) return;
     _ticker?.cancel();
+    _ticker = null;
     _flash?.cancel();
     _captureElapsed();
     view = current.copy(done: true, elapsedMs: _bankedMs);
+    reportDue = true;
     notifyListeners();
     try {
       await app.finishSpeed(view!, durationMs: _bankedMs);
@@ -1149,7 +1218,6 @@ class SpeedController extends ChangeNotifier {
 }
 
 int _gradeRank(String grade) {
-  const order = ['K', '1', '2', '3', '4', '5'];
-  final index = order.indexOf(grade);
+  final index = grades.indexOf(canonicalGrade(grade));
   return index < 0 ? 0 : index;
 }

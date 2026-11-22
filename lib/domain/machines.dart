@@ -3,6 +3,46 @@ import 'dart:math';
 import 'core.dart';
 import 'engine.dart';
 
+class RoundMiss {
+  const RoundMiss({
+    required this.trickId,
+    required this.prompt,
+    required this.userAnswer,
+    required this.correctAnswer,
+    required this.steps,
+    this.failedStep,
+  });
+
+  final String trickId;
+  final String prompt;
+  final String userAnswer;
+  final String correctAnswer;
+  final int? failedStep;
+  final List<StepAsk> steps;
+
+  Map<String, Object?> toJson() => {
+    'trickId': trickId,
+    'prompt': prompt,
+    'userAnswer': userAnswer,
+    'correctAnswer': correctAnswer,
+    'failedStep': failedStep,
+    'steps': steps.map((step) => step.toJson()).toList(),
+  };
+
+  factory RoundMiss.fromJson(Map<String, dynamic> json) {
+    return RoundMiss(
+      trickId: json['trickId'] as String? ?? '',
+      prompt: json['prompt'] as String? ?? '',
+      userAnswer: json['userAnswer'] as String? ?? '',
+      correctAnswer: json['correctAnswer'] as String? ?? '',
+      failedStep: json['failedStep'] as int?,
+      steps: (json['steps'] as List? ?? const [])
+          .map((item) => StepAsk.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
 class PracticeView {
   const PracticeView({
     required this.learnerId,
@@ -23,6 +63,11 @@ class PracticeView {
     required this.missedNotes,
     required this.repairWrongId,
     required this.active,
+    this.previousPrompt,
+    this.previousAnswer,
+    this.previousCorrect,
+    this.misses = const [],
+    this.elapsedMs = 0,
   });
 
   final String learnerId;
@@ -43,6 +88,11 @@ class PracticeView {
   final List<String> missedNotes;
   final String? repairWrongId;
   final bool active;
+  final String? previousPrompt;
+  final String? previousAnswer;
+  final bool? previousCorrect;
+  final List<RoundMiss> misses;
+  final int elapsedMs;
 
   Problem? get current =>
       index >= 0 && index < items.length ? items[index] : null;
@@ -100,6 +150,11 @@ class PracticeView {
     bool clearPending = false,
     List<String>? missedNotes,
     bool? active,
+    String? previousPrompt,
+    String? previousAnswer,
+    bool? previousCorrect,
+    List<RoundMiss>? misses,
+    int? elapsedMs,
   }) {
     return PracticeView(
       learnerId: learnerId,
@@ -124,6 +179,11 @@ class PracticeView {
       missedNotes: missedNotes ?? this.missedNotes,
       repairWrongId: repairWrongId,
       active: active ?? this.active,
+      previousPrompt: previousPrompt ?? this.previousPrompt,
+      previousAnswer: previousAnswer ?? this.previousAnswer,
+      previousCorrect: previousCorrect ?? this.previousCorrect,
+      misses: misses ?? this.misses,
+      elapsedMs: elapsedMs ?? this.elapsedMs,
     );
   }
 
@@ -146,6 +206,11 @@ class PracticeView {
     'missedNotes': missedNotes,
     'repairWrongId': repairWrongId,
     'active': active,
+    'previousPrompt': previousPrompt,
+    'previousAnswer': previousAnswer,
+    'previousCorrect': previousCorrect,
+    'misses': misses.map((miss) => miss.toJson()).toList(),
+    'elapsedMs': elapsedMs,
   };
 
   factory PracticeView.fromJson(Map<String, dynamic> json) {
@@ -170,6 +235,13 @@ class PracticeView {
       missedNotes: (json['missedNotes'] as List?)?.cast<String>() ?? const [],
       repairWrongId: json['repairWrongId'] as String?,
       active: json['active'] as bool? ?? true,
+      previousPrompt: json['previousPrompt'] as String?,
+      previousAnswer: json['previousAnswer'] as String?,
+      previousCorrect: json['previousCorrect'] as bool?,
+      misses: (json['misses'] as List? ?? const [])
+          .map((item) => RoundMiss.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      elapsedMs: json['elapsedMs'] as int? ?? 0,
     );
   }
 }
@@ -186,6 +258,7 @@ class AttemptDraft {
     required this.steps,
     required this.reviewSlot,
     required this.repairWrongId,
+    this.bookWrong = true,
   });
 
   final String trickId;
@@ -198,6 +271,7 @@ class AttemptDraft {
   final List<StepAsk> steps;
   final int? reviewSlot;
   final String? repairWrongId;
+  final bool bookWrong;
 }
 
 class PracticeEffect {
@@ -289,6 +363,13 @@ PracticeEffect practiceAdvance(PracticeView view) {
     );
   }
   final next = view.index + 1;
+  final finished = view.current;
+  final correct = view.mark == 'correct';
+  final answer = finished == null
+      ? null
+      : (correct
+            ? finished.finalAnswer
+            : (view.firstWrongInput ?? view.shownWrongFinal ?? view.draft));
   if (next >= view.items.length) {
     return PracticeEffect(
       view.copy(
@@ -298,6 +379,9 @@ PracticeEffect practiceAdvance(PracticeView view) {
         clearMark: true,
         locked: false,
         clearPending: true,
+        previousPrompt: finished?.prompt,
+        previousAnswer: answer,
+        previousCorrect: finished == null ? null : correct,
       ),
     );
   }
@@ -316,6 +400,9 @@ PracticeEffect practiceAdvance(PracticeView view) {
       clearShown: true,
       clearPending: true,
       clearFirst: true,
+      previousPrompt: finished?.prompt,
+      previousAnswer: answer,
+      previousCorrect: finished == null ? null : correct,
     ),
   );
 }
@@ -326,12 +413,23 @@ PracticeView _afterItem(
   required bool correct,
 }) {
   final notes = [...view.missedNotes];
+  final misses = [...view.misses];
   if (!correct) {
     final step = view.failedStep;
     notes.add(
       step == null
           ? 'Final answer on ${item.prompt}'
           : 'Step $step on ${item.prompt}',
+    );
+    misses.add(
+      RoundMiss(
+        trickId: item.trickId,
+        prompt: item.prompt,
+        userAnswer: view.firstWrongInput ?? view.shownWrongFinal ?? view.draft,
+        correctAnswer: item.finalAnswer,
+        failedStep: view.failedStep,
+        steps: item.steps,
+      ),
     );
   }
   return view.copy(
@@ -341,6 +439,7 @@ PracticeView _afterItem(
     pending: 'item',
     correctCount: view.correctCount + (correct ? 1 : 0),
     missedNotes: notes,
+    misses: misses,
   );
 }
 
@@ -366,6 +465,7 @@ AttemptDraft _draft(
     steps: item.steps,
     reviewSlot: item.reviewSlot,
     repairWrongId: view.repairWrongId,
+    bookWrong: false,
   );
 }
 
@@ -387,6 +487,10 @@ class SpeedView {
     required this.mark,
     required this.active,
     required this.previousBest,
+    this.previousPrompt,
+    this.previousAnswer,
+    this.previousCorrect,
+    this.misses = const [],
   });
 
   final String learnerId;
@@ -408,6 +512,10 @@ class SpeedView {
 
   Problem? get current =>
       index >= 0 && index < items.length ? items[index] : null;
+  final String? previousPrompt;
+  final String? previousAnswer;
+  final bool? previousCorrect;
+  final List<RoundMiss> misses;
 
   int get problemsLeft =>
       config.limitMode == 'count' ? max(0, config.limitValue - answered) : 0;
@@ -457,6 +565,10 @@ class SpeedView {
     String? mark,
     bool clearMark = false,
     bool? active,
+    String? previousPrompt,
+    String? previousAnswer,
+    bool? previousCorrect,
+    List<RoundMiss>? misses,
   }) {
     return SpeedView(
       learnerId: learnerId,
@@ -475,6 +587,10 @@ class SpeedView {
       mark: clearMark ? null : (mark ?? this.mark),
       active: active ?? this.active,
       previousBest: previousBest,
+      previousPrompt: previousPrompt ?? this.previousPrompt,
+      previousAnswer: previousAnswer ?? this.previousAnswer,
+      previousCorrect: previousCorrect ?? this.previousCorrect,
+      misses: misses ?? this.misses,
     );
   }
 
@@ -495,6 +611,10 @@ class SpeedView {
     'mark': mark,
     'active': active,
     'previousBest': previousBest,
+    'previousPrompt': previousPrompt,
+    'previousAnswer': previousAnswer,
+    'previousCorrect': previousCorrect,
+    'misses': misses.map((miss) => miss.toJson()).toList(),
   };
 
   factory SpeedView.fromJson(Map<String, dynamic> json) {
@@ -517,6 +637,12 @@ class SpeedView {
       mark: json['mark'] as String?,
       active: json['active'] as bool? ?? true,
       previousBest: json['previousBest'] as int? ?? 0,
+      previousPrompt: json['previousPrompt'] as String?,
+      previousAnswer: json['previousAnswer'] as String?,
+      previousCorrect: json['previousCorrect'] as bool?,
+      misses: (json['misses'] as List? ?? const [])
+          .map((item) => RoundMiss.fromJson(item as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
@@ -565,13 +691,29 @@ SpeedEffect speedSubmit(SpeedView view) {
   final item = view.current!;
   final correct = sameNumber(view.draft, item.finalAnswer);
   final answered = view.answered + 1;
+  final misses = [
+    ...view.misses,
+    if (!correct)
+      RoundMiss(
+        trickId: item.trickId,
+        prompt: item.prompt,
+        userAnswer: view.draft,
+        correctAnswer: item.finalAnswer,
+        failedStep: 1,
+        steps: item.steps,
+      ),
+  ];
   final next = view.copy(
     draft: '',
     correct: view.correct + (correct ? 1 : 0),
     answered: answered,
-    mark: correct ? 'correct' : 'wrong',
+    clearMark: true,
     locked: true,
     index: view.index + 1,
+    previousPrompt: item.prompt,
+    previousAnswer: view.draft,
+    previousCorrect: correct,
+    misses: misses,
   );
   final finished = speedEnded(next);
   return SpeedEffect(
@@ -587,6 +729,7 @@ SpeedEffect speedSubmit(SpeedView view) {
       steps: item.steps,
       reviewSlot: null,
       repairWrongId: null,
+      bookWrong: false,
     ),
     wait: !finished,
     finished: finished,
