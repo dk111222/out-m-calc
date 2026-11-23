@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../app/theme.dart';
 
-/// Cute anime / chibi looks kids enjoy.
+/// Cute anime / chibi looks kids enjoy (not picture-book flat).
 /// Keep [id] values stable — they are stored on learners.
 enum _Hair { fringe, bob, curls, ponytail, bun, sweep, waves, crop }
 
@@ -44,13 +44,13 @@ const _looks = <_Look>[
   _Look(
     id: 'sunny',
     skin: Color(0xFFFFE0C2),
-    blush: Color(0xFFFF9AA8),
+    blush: Color(0xFFFF8FA8),
     hair: Color(0xFFFFC94A),
     hairLight: Color(0xFFFFE08A),
     shirt: Color(0xFF7FE0B0),
     backdrop: Color(0xFFFFF3B0),
     backdropDeep: Color(0xFFFFE8E0),
-    iris: Color(0xFF4ECB71),
+    iris: Color(0xFF3DBE66),
     irisLight: Color(0xFFB6F5C8),
     hairStyle: _Hair.fringe,
     freckles: true,
@@ -58,13 +58,13 @@ const _looks = <_Look>[
   _Look(
     id: 'maple',
     skin: Color(0xFFFFE4CE),
-    blush: Color(0xFFFF8FA3),
+    blush: Color(0xFFFF7A96),
     hair: Color(0xFFFF6B3D),
     hairLight: Color(0xFFFFA07A),
     shirt: Color(0xFFFF8A65),
     backdrop: Color(0xFFFFD6E0),
     backdropDeep: Color(0xFFFFF0F4),
-    iris: Color(0xFF5B8DEF),
+    iris: Color(0xFF4A7DE8),
     irisLight: Color(0xFFC5D9FF),
     hairStyle: _Hair.bob,
   ),
@@ -77,7 +77,7 @@ const _looks = <_Look>[
     shirt: Color(0xFF64B5F6),
     backdrop: Color(0xFFD4EEFF),
     backdropDeep: Color(0xFFEEF7FF),
-    iris: Color(0xFF4A90D9),
+    iris: Color(0xFF3F86D4),
     irisLight: Color(0xFFB8DCFF),
     hairStyle: _Hair.curls,
     glasses: true,
@@ -98,13 +98,13 @@ const _looks = <_Look>[
   _Look(
     id: 'wren',
     skin: Color(0xFFFFDEC8),
-    blush: Color(0xFFFF8FA8),
+    blush: Color(0xFFFF7A9C),
     hair: Color(0xFFE8913A),
     hairLight: Color(0xFFFFC078),
     shirt: Color(0xFFFF6B9D),
     backdrop: Color(0xFFFFD0E0),
     backdropDeep: Color(0xFFFFEEF4),
-    iris: Color(0xFF6BCB77),
+    iris: Color(0xFF55C265),
     irisLight: Color(0xFFC8F5CE),
     hairStyle: _Hair.ponytail,
   ),
@@ -117,20 +117,20 @@ const _looks = <_Look>[
     shirt: Color(0xFF5C7CFA),
     backdrop: Color(0xFFD8E4FF),
     backdropDeep: Color(0xFFEEF2FF),
-    iris: Color(0xFF4C6EF5),
+    iris: Color(0xFF3F5FF0),
     irisLight: Color(0xFFC5D0FF),
     hairStyle: _Hair.sweep,
   ),
   _Look(
     id: 'piper',
     skin: Color(0xFFFFE2CC),
-    blush: Color(0xFFFF9AB0),
+    blush: Color(0xFFFF8FB0),
     hair: Color(0xFFFFD54F),
     hairLight: Color(0xFFFFECB3),
     shirt: Color(0xFFB388FF),
     backdrop: Color(0xFFE8D8FF),
     backdropDeep: Color(0xFFF6F0FF),
-    iris: Color(0xFF9775FA),
+    iris: Color(0xFF8B6CF7),
     irisLight: Color(0xFFDDCFFC),
     hairStyle: _Hair.waves,
   ),
@@ -143,7 +143,7 @@ const _looks = <_Look>[
     shirt: Color(0xFF38B2A8),
     backdrop: Color(0xFFC8F0E8),
     backdropDeep: Color(0xFFE8FAF6),
-    iris: Color(0xFF2F9E8A),
+    iris: Color(0xFF2A9B88),
     irisLight: Color(0xFFA8E8DC),
     hairStyle: _Hair.bun,
   ),
@@ -227,39 +227,39 @@ class _AvatarPainter extends CustomPainter {
 
     final bg = Paint()
       ..shader = RadialGradient(
-        center: const Alignment(-0.2, -0.4),
-        radius: 1.2,
+        center: const Alignment(-0.15, -0.45),
+        radius: 1.25,
         colors: [look.backdropDeep, look.backdrop],
       ).createShader(const Rect.fromLTWH(0, 0, 100, 100));
     canvas.drawRect(const Rect.fromLTWH(0, 0, 100, 100), bg);
 
-    // Soft sparkles in backdrop — playful anime kids vibe.
-    final spark = Paint()..color = Colors.white.withValues(alpha: 0.55);
+    final spark = Paint()..color = Colors.white.withValues(alpha: 0.65);
     for (final c in const [
-      Offset(14, 18),
-      Offset(86, 22),
-      Offset(18, 78),
-      Offset(84, 72),
+      Offset(12, 16),
+      Offset(88, 20),
+      Offset(16, 80),
+      Offset(86, 74),
+      Offset(50, 8),
     ]) {
-      _star(canvas, c, 3.2, spark);
+      _star(canvas, c, 3.6, spark);
     }
 
-    final shirt = Paint()..color = look.shirt;
+    // Shirt
     canvas.drawRRect(
       RRect.fromRectAndCorners(
-        const Rect.fromLTWH(16, 74, 68, 40),
-        topLeft: const Radius.circular(24),
-        topRight: const Radius.circular(24),
+        const Rect.fromLTWH(14, 76, 72, 40),
+        topLeft: const Radius.circular(26),
+        topRight: const Radius.circular(26),
       ),
-      shirt,
+      Paint()..color = look.shirt,
     );
     canvas.drawPath(
       Path()
-        ..moveTo(40, 76)
-        ..lineTo(50, 88)
-        ..lineTo(60, 76)
+        ..moveTo(38, 78)
+        ..lineTo(50, 92)
+        ..lineTo(62, 78)
         ..close(),
-      Paint()..color = Color.lerp(look.shirt, Colors.white, 0.28)!,
+      Paint()..color = Color.lerp(look.shirt, Colors.white, 0.32)!,
     );
 
     final skin = Paint()..color = look.skin;
@@ -268,26 +268,23 @@ class _AvatarPainter extends CustomPainter {
 
     _backHair(canvas, hair, hairLight);
 
-    // Short neck
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        const Rect.fromLTWH(44, 66, 12, 12),
+        const Rect.fromLTWH(44, 68, 12, 12),
         const Radius.circular(6),
       ),
       skin,
     );
+    canvas.drawOval(const Rect.fromLTWH(20, 40, 10, 13), skin);
+    canvas.drawOval(const Rect.fromLTWH(70, 40, 10, 13), skin);
 
-    // Anime ears (small)
-    canvas.drawOval(const Rect.fromLTWH(22, 42, 9, 12), skin);
-    canvas.drawOval(const Rect.fromLTWH(69, 42, 9, 12), skin);
+    // Oversized chibi head
+    canvas.drawOval(const Rect.fromLTWH(18, 14, 64, 62), skin);
 
-    // Big chibi head
-    canvas.drawOval(const Rect.fromLTWH(22, 18, 56, 58), skin);
-
-    // Round blush patches
-    final blush = Paint()..color = look.blush.withValues(alpha: 0.42);
-    canvas.drawOval(const Rect.fromLTWH(26, 52, 15, 10), blush);
-    canvas.drawOval(const Rect.fromLTWH(59, 52, 15, 10), blush);
+    // Strong anime blush
+    final blush = Paint()..color = look.blush.withValues(alpha: 0.48);
+    canvas.drawOval(const Rect.fromLTWH(22, 54, 18, 12), blush);
+    canvas.drawOval(const Rect.fromLTWH(60, 54, 18, 12), blush);
 
     _frontHair(canvas, hair, hairLight);
     _face(canvas);
@@ -299,8 +296,8 @@ class _AvatarPainter extends CustomPainter {
       final a = -math.pi / 2 + i * math.pi / 2;
       final outer = Offset(c.dx + math.cos(a) * r, c.dy + math.sin(a) * r);
       final mid = Offset(
-        c.dx + math.cos(a + math.pi / 4) * r * 0.35,
-        c.dy + math.sin(a + math.pi / 4) * r * 0.35,
+        c.dx + math.cos(a + math.pi / 4) * r * 0.32,
+        c.dy + math.sin(a + math.pi / 4) * r * 0.32,
       );
       if (i == 0) {
         path.moveTo(outer.dx, outer.dy);
@@ -316,246 +313,256 @@ class _AvatarPainter extends CustomPainter {
   void _backHair(Canvas canvas, Paint hair, Paint light) {
     switch (look.hairStyle) {
       case _Hair.ponytail:
-        canvas.drawOval(const Rect.fromLTWH(68, 44, 20, 34), hair);
-        canvas.drawOval(const Rect.fromLTWH(72, 50, 12, 24), light);
-        canvas.drawCircle(const Offset(76, 42), 7, hair);
+        canvas.drawOval(const Rect.fromLTWH(70, 42, 22, 40), hair);
+        canvas.drawOval(const Rect.fromLTWH(74, 50, 12, 28), light);
+        canvas.drawCircle(const Offset(78, 40), 8, hair);
       case _Hair.bun:
-        canvas.drawCircle(const Offset(50, 14), 13, hair);
-        canvas.drawCircle(const Offset(50, 14), 8, light);
+        canvas.drawCircle(const Offset(50, 10), 14, hair);
+        canvas.drawCircle(const Offset(50, 10), 8, light);
       case _Hair.curls:
         for (final center in const [
-          Offset(24, 30),
-          Offset(76, 30),
-          Offset(18, 46),
-          Offset(82, 46),
-          Offset(28, 18),
-          Offset(72, 18),
-          Offset(20, 60),
-          Offset(80, 60),
+          Offset(22, 28),
+          Offset(78, 28),
+          Offset(14, 46),
+          Offset(86, 46),
+          Offset(26, 14),
+          Offset(74, 14),
+          Offset(16, 62),
+          Offset(84, 62),
         ]) {
-          canvas.drawCircle(center, 9.5, hair);
+          canvas.drawCircle(center, 10.5, hair);
         }
       case _Hair.waves:
-        canvas.drawOval(const Rect.fromLTWH(14, 36, 20, 40), hair);
-        canvas.drawOval(const Rect.fromLTWH(66, 36, 20, 40), hair);
-        canvas.drawOval(const Rect.fromLTWH(16, 48, 14, 26), light);
-        canvas.drawOval(const Rect.fromLTWH(70, 48, 14, 26), light);
+        canvas.drawOval(const Rect.fromLTWH(10, 32, 22, 46), hair);
+        canvas.drawOval(const Rect.fromLTWH(68, 32, 22, 46), hair);
+        canvas.drawOval(const Rect.fromLTWH(12, 46, 16, 30), light);
+        canvas.drawOval(const Rect.fromLTWH(72, 46, 16, 30), light);
       case _Hair.bob:
-        canvas.drawOval(const Rect.fromLTWH(14, 30, 18, 42), hair);
-        canvas.drawOval(const Rect.fromLTWH(68, 30, 18, 42), hair);
+        canvas.drawOval(const Rect.fromLTWH(10, 26, 20, 48), hair);
+        canvas.drawOval(const Rect.fromLTWH(70, 26, 20, 48), hair);
       case _Hair.sweep:
-        canvas.drawOval(const Rect.fromLTWH(14, 28, 16, 36), hair);
+        canvas.drawOval(const Rect.fromLTWH(10, 24, 18, 40), hair);
       default:
         break;
     }
   }
 
   void _frontHair(Canvas canvas, Paint hair, Paint light) {
-    // Anime crown volume + ahoge-friendly top.
-    canvas.drawOval(const Rect.fromLTWH(20, 10, 60, 36), hair);
+    canvas.drawOval(const Rect.fromLTWH(16, 6, 68, 38), hair);
 
-    // Cute little ahoge for most styles.
-    final ahoge = Path()
-      ..moveTo(48, 12)
-      ..quadraticBezierTo(56, 0, 62, 10)
-      ..quadraticBezierTo(54, 8, 48, 14)
-      ..close();
+    // Ahoge
     if (look.hairStyle != _Hair.bun) {
-      canvas.drawPath(ahoge, hair);
+      canvas.drawPath(
+        Path()
+          ..moveTo(46, 8)
+          ..quadraticBezierTo(58, -4, 68, 10)
+          ..quadraticBezierTo(56, 6, 46, 12)
+          ..close(),
+        hair,
+      );
+    }
+
+    Path pointedFringe() {
+      return Path()
+        ..moveTo(22, 30)
+        ..lineTo(30, 46)
+        ..lineTo(38, 30)
+        ..lineTo(46, 48)
+        ..lineTo(54, 30)
+        ..lineTo(62, 48)
+        ..lineTo(70, 30)
+        ..lineTo(78, 44)
+        ..lineTo(82, 28)
+        ..quadraticBezierTo(50, 16, 22, 30)
+        ..close();
     }
 
     switch (look.hairStyle) {
       case _Hair.fringe:
-        final fringe = Path()
-          ..moveTo(26, 34)
-          ..quadraticBezierTo(34, 48, 42, 34)
-          ..quadraticBezierTo(50, 50, 58, 34)
-          ..quadraticBezierTo(66, 48, 74, 32)
-          ..quadraticBezierTo(50, 22, 26, 34)
-          ..close();
+      case _Hair.ponytail:
+      case _Hair.crop:
+        final fringe = pointedFringe();
         canvas.drawPath(fringe, hair);
         canvas.drawPath(
           fringe,
-          Paint()..color = look.hairLight.withValues(alpha: 0.35),
+          Paint()..color = look.hairLight.withValues(alpha: 0.28),
         );
       case _Hair.bob:
-        canvas.drawPath(
-          Path()
-            ..moveTo(28, 30)
-            ..quadraticBezierTo(40, 46, 48, 32)
-            ..quadraticBezierTo(56, 46, 72, 30)
-            ..quadraticBezierTo(50, 22, 28, 30)
-            ..close(),
-          hair,
-        );
+        canvas.drawPath(pointedFringe(), hair);
+        canvas.drawOval(const Rect.fromLTWH(12, 34, 14, 34), hair);
+        canvas.drawOval(const Rect.fromLTWH(74, 34, 14, 34), hair);
       case _Hair.sweep:
         final sweep = Path()
-          ..moveTo(24, 32)
-          ..quadraticBezierTo(50, 14, 78, 28)
-          ..quadraticBezierTo(58, 36, 30, 40)
+          ..moveTo(20, 28)
+          ..quadraticBezierTo(48, 8, 84, 26)
+          ..lineTo(78, 40)
+          ..quadraticBezierTo(50, 30, 24, 42)
           ..close();
         canvas.drawPath(sweep, hair);
         canvas.drawPath(
           sweep,
-          Paint()..color = look.hairLight.withValues(alpha: 0.4),
-        );
-      case _Hair.crop:
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            const Rect.fromLTWH(30, 28, 40, 12),
-            const Radius.circular(10),
-          ),
-          hair,
+          Paint()..color = look.hairLight.withValues(alpha: 0.35),
         );
       case _Hair.curls:
         for (final center in const [
-          Offset(36, 26),
-          Offset(50, 20),
-          Offset(64, 26),
-          Offset(42, 34),
-          Offset(58, 34),
+          Offset(34, 24),
+          Offset(50, 16),
+          Offset(66, 24),
+          Offset(40, 34),
+          Offset(60, 34),
+          Offset(50, 28),
         ]) {
-          canvas.drawCircle(center, 7, hair);
-          canvas.drawCircle(center.translate(-1.5, -1.5), 2.2, light);
+          canvas.drawCircle(center, 8, hair);
+          canvas.drawCircle(center.translate(-2, -2), 2.4, light);
         }
-      case _Hair.ponytail:
-        canvas.drawPath(
-          Path()
-            ..moveTo(28, 30)
-            ..quadraticBezierTo(40, 44, 50, 32)
-            ..quadraticBezierTo(60, 44, 72, 30)
-            ..quadraticBezierTo(50, 22, 28, 30)
-            ..close(),
-          hair,
-        );
       case _Hair.waves:
-        final wave = Path()
-          ..moveTo(26, 32)
-          ..quadraticBezierTo(34, 46, 42, 32)
-          ..quadraticBezierTo(50, 46, 58, 32)
-          ..quadraticBezierTo(66, 44, 74, 30)
-          ..quadraticBezierTo(50, 20, 26, 32)
-          ..close();
-        canvas.drawPath(wave, hair);
+        canvas.drawPath(pointedFringe(), hair);
       case _Hair.bun:
-        canvas.drawPath(
-          Path()
-            ..moveTo(30, 30)
-            ..quadraticBezierTo(42, 42, 50, 32)
-            ..quadraticBezierTo(58, 42, 70, 30)
-            ..quadraticBezierTo(50, 22, 30, 30)
-            ..close(),
-          hair,
-        );
+        canvas.drawPath(pointedFringe(), hair);
     }
   }
 
   void _face(Canvas canvas) {
     void animeEye(Offset center, {required bool left}) {
-      // Large anime white
-      canvas.drawOval(
-        Rect.fromCenter(center: center, width: 15, height: 16),
-        Paint()..color = const Color(0xFFFFFDFB),
-      );
-      // Iris gradient disc
+      // Tall anime eye white
+      final white = Path()
+        ..addOval(
+          Rect.fromCenter(center: center, width: 17, height: 20),
+        );
+      canvas.drawPath(white, Paint()..color = const Color(0xFFFFFDFB));
+
+      // Iris
+      final irisCenter = center.translate(0, 1.4);
       canvas.drawCircle(
-        center.translate(0, 0.8),
-        5.6,
+        irisCenter,
+        6.4,
         Paint()
           ..shader = RadialGradient(
-            colors: [look.irisLight, look.iris],
-          ).createShader(
-            Rect.fromCircle(center: center.translate(0, 0.8), radius: 5.6),
-          ),
+            colors: [look.irisLight, look.iris, look.iris],
+            stops: const [0.0, 0.55, 1.0],
+          ).createShader(Rect.fromCircle(center: irisCenter, radius: 6.4)),
       );
       // Pupil
       canvas.drawCircle(
-        center.translate(0, 1.0),
-        2.4,
-        Paint()..color = const Color(0xFF1A1210),
+        irisCenter.translate(0, 0.4),
+        2.8,
+        Paint()..color = const Color(0xFF140E0C),
       );
-      // Big catchlight + small sparkle
+      // Triple sparkles
       canvas.drawCircle(
-        center.translate(left ? -2.2 : 2.2, -2.4),
-        2.0,
+        irisCenter.translate(left ? -2.6 : 2.6, -2.8),
+        2.3,
         Paint()..color = Colors.white,
       );
       canvas.drawCircle(
-        center.translate(left ? 2.0 : -2.0, 1.6),
-        1.0,
-        Paint()..color = Colors.white.withValues(alpha: 0.9),
+        irisCenter.translate(left ? 2.4 : -2.4, 1.8),
+        1.2,
+        Paint()..color = Colors.white.withValues(alpha: 0.95),
       );
-      // Soft upper lid / lash arc
+      canvas.drawCircle(
+        irisCenter.translate(left ? -0.2 : 0.2, 3.4),
+        0.7,
+        Paint()..color = Colors.white.withValues(alpha: 0.8),
+      );
+
+      // Thick upper lash
       canvas.drawArc(
         Rect.fromCenter(
-          center: center.translate(0, -1.2),
-          width: 16,
-          height: 14,
+          center: center.translate(0, -1.5),
+          width: 18,
+          height: 16,
         ),
-        math.pi * 1.05,
-        math.pi * 0.9,
+        math.pi * 1.02,
+        math.pi * 0.96,
         false,
         Paint()
-          ..color = const Color(0xFF2A1E1A)
+          ..color = const Color(0xFF1A1210)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.8
+          ..strokeWidth = 2.2
           ..strokeCap = StrokeCap.round,
       );
+      // Lower lash dots
+      final lash = Paint()..color = const Color(0xFF1A1210);
+      canvas.drawCircle(center.translate(left ? -6.5 : 6.5, 6.5), 0.9, lash);
+      canvas.drawCircle(center.translate(left ? -3.5 : 3.5, 7.8), 0.7, lash);
     }
 
-    animeEye(const Offset(37, 44), left: true);
-    animeEye(const Offset(63, 44), left: false);
-
-    // Tiny anime nose (dot)
-    canvas.drawCircle(
-      const Offset(50, 54),
-      1.15,
-      Paint()..color = Color.lerp(look.skin, look.blush, 0.55)!,
+    // Eyebrows
+    final brow = Paint()
+      ..color = Color.lerp(look.hair, const Color(0xFF1A1210), 0.35)!
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      const Rect.fromLTWH(26, 28, 18, 10),
+      math.pi * 1.15,
+      math.pi * 0.55,
+      false,
+      brow,
+    );
+    canvas.drawArc(
+      const Rect.fromLTWH(56, 28, 18, 10),
+      math.pi * 1.3,
+      math.pi * 0.55,
+      false,
+      brow,
     );
 
-    // Soft open smile
-    canvas.drawArc(
-      const Rect.fromLTWH(42, 58, 16, 11),
-      0.25,
-      2.6,
-      false,
+    animeEye(const Offset(36, 44), left: true);
+    animeEye(const Offset(64, 44), left: false);
+
+    // Tiny nose
+    canvas.drawCircle(
+      const Offset(50, 56),
+      1.3,
+      Paint()..color = Color.lerp(look.skin, look.blush, 0.6)!,
+    );
+
+    // Cute filled smile
+    final mouth = Path()
+      ..moveTo(43, 62)
+      ..quadraticBezierTo(50, 72, 57, 62)
+      ..quadraticBezierTo(50, 66, 43, 62)
+      ..close();
+    canvas.drawPath(mouth, Paint()..color = const Color(0xFFE86A7A));
+    canvas.drawPath(
+      mouth,
       Paint()
-        ..color = const Color(0xFF2A1E1A)
+        ..color = const Color(0xFF1A1210)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.7
-        ..strokeCap = StrokeCap.round,
+        ..strokeWidth = 1.2,
     );
 
     if (look.freckles) {
-      final dot = Paint()..color = const Color(0xFFE09A6A).withValues(alpha: 0.9);
+      final dot = Paint()..color = const Color(0xFFE09A6A);
       for (final c in const [
-        Offset(30, 56),
-        Offset(34, 59),
-        Offset(29, 60),
-        Offset(70, 56),
-        Offset(66, 59),
-        Offset(71, 60),
+        Offset(28, 58),
+        Offset(32, 61),
+        Offset(27, 62),
+        Offset(72, 58),
+        Offset(68, 61),
+        Offset(73, 62),
       ]) {
-        canvas.drawCircle(c, 0.9, dot);
+        canvas.drawCircle(c, 0.95, dot);
       }
     }
 
     if (look.glasses) {
       final frames = Paint()
-        ..color = const Color(0xFF2A1E1A)
+        ..color = const Color(0xFF1A1210)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.7;
+        ..strokeWidth = 1.8;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          const Rect.fromLTWH(27, 36, 19, 16),
-          const Radius.circular(7),
+          const Rect.fromLTWH(24, 34, 22, 20),
+          const Radius.circular(9),
         ),
         frames,
       );
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          const Rect.fromLTWH(54, 36, 19, 16),
-          const Radius.circular(7),
+          const Rect.fromLTWH(54, 34, 22, 20),
+          const Radius.circular(9),
         ),
         frames,
       );
