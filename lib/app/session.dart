@@ -64,8 +64,9 @@ class AppController extends ChangeNotifier {
   }
 
   String openLocation() {
-    final target = redirect('/loading');
-    return target ?? '/loading';
+    if (!ready || bootError != null) return '/loading';
+    if (learners.isEmpty || childMode) return '/child';
+    return '/adult';
   }
 
   String? redirect(String loc) {
@@ -106,6 +107,7 @@ class AppController extends ChangeNotifier {
     bootError = null;
     try {
       settings = await store.readSettings();
+      // Streak rolls need adult access across every learner.
       childMode = false;
       activeLearnerId = settings.activeLearnerId;
       _session();
@@ -117,14 +119,12 @@ class AppController extends ChangeNotifier {
         activeLearnerId = learners.isEmpty ? null : learners.first.id;
       }
       await _roll();
-      await refreshToday();
-      await refreshSnapshot();
+      // Enter the child session once, then load today's card a single time.
       if (activeLearnerId != null) {
         childMode = true;
         _session();
-        await refreshToday();
-        await refreshSnapshot();
       }
+      await Future.wait([refreshToday(), refreshSnapshot()]);
       ready = true;
     } catch (_) {
       bootError = copy.couldNotSave;
@@ -136,34 +136,41 @@ class AppController extends ChangeNotifier {
   Future<void> _roll() async {
     final today = clock.today;
     final week = clock.week;
-    for (final learner in [...learners]) {
-      final rolled = rollStreak(
-        count: learner.streakCount,
-        lastDate: learner.lastPracticeDate,
-        skipWeek: learner.streakSkipWeek,
-        skipUsed: learner.streakSkipUsed,
-        notice: learner.streakNotice,
-        today: today,
-        thisWeek: week,
-      );
-      if (rolled.changed) {
-        final next = learner.copyWith(
-          streakCount: rolled.count,
-          lastPracticeDate: rolled.lastDate,
-          clearLastDate: rolled.lastDate == null,
-          streakSkipWeek: rolled.skipWeek,
-          streakSkipUsed: rolled.skipUsed,
-          streakNotice: rolled.notice,
-          clearNotice: rolled.notice == null,
-          updatedAt: clock.now().toUtc(),
-        );
-        await store.saveLearner(next);
-        _replace(next);
-      }
-      final snap = await store.snapshot(learner.id);
-      if (snap != null && snap.localDate != today) {
-        await store.clearSnapshot(learner.id);
-      }
+    final updates = <Learner>[];
+    await Future.wait([
+      for (final learner in [...learners])
+        () async {
+          final rolled = rollStreak(
+            count: learner.streakCount,
+            lastDate: learner.lastPracticeDate,
+            skipWeek: learner.streakSkipWeek,
+            skipUsed: learner.streakSkipUsed,
+            notice: learner.streakNotice,
+            today: today,
+            thisWeek: week,
+          );
+          if (rolled.changed) {
+            final next = learner.copyWith(
+              streakCount: rolled.count,
+              lastPracticeDate: rolled.lastDate,
+              clearLastDate: rolled.lastDate == null,
+              streakSkipWeek: rolled.skipWeek,
+              streakSkipUsed: rolled.skipUsed,
+              streakNotice: rolled.notice,
+              clearNotice: rolled.notice == null,
+              updatedAt: clock.now().toUtc(),
+            );
+            await store.saveLearner(next);
+            updates.add(next);
+          }
+          final snap = await store.snapshot(learner.id);
+          if (snap != null && snap.localDate != today) {
+            await store.clearSnapshot(learner.id);
+          }
+        }(),
+    ]);
+    for (final next in updates) {
+      _replace(next);
     }
   }
 
@@ -186,8 +193,12 @@ class AppController extends ChangeNotifier {
     final ids = childMode && activeLearnerId != null
         ? [activeLearnerId!]
         : learners.map((learner) => learner.id).toList();
-    for (final id in ids) {
-      today[id] = await store.openAssignment(id, clock.today);
+    final date = clock.today;
+    final loaded = await Future.wait([
+      for (final id in ids) store.openAssignment(id, date),
+    ]);
+    for (var i = 0; i < ids.length; i++) {
+      today[ids[i]] = loaded[i];
     }
   }
 

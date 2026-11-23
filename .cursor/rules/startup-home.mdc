@@ -13,4 +13,5 @@ Measured on this phone: the Dart isolate is up in well under a second. A cold st
 - Do not call `allowFirstFrame`, or a delayed timer, in order to show `LaunchCover`, a splash widget, or `LoadingPage` while storage or the next route is still pending. Hold the system window until the home page itself can paint.
 - Do not add a new startup route, overlay, or placeholder to hide a slow first build. Fix the first frame so it is the home page.
 - `LoadingPage` stays only for a failed boot, not for a normal open.
+- Keep Dart boot work short enough that a cold open reaches home within three seconds: open only the Hive boxes home needs before the first frame, roll streaks once, and refresh today's card once.
 - Do not raise the Gradle heap in `android/gradle.properties` (`-Xmx448m`) to chase this. A debug install still carries `kernel_blob.bin`; do not paper over that with another waiting screen.

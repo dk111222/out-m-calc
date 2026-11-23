@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stepmath/app/session.dart';
 import 'package:stepmath/app/theme.dart';
 import 'package:stepmath/ui/kit.dart';
 import 'package:stepmath/data/hive_store.dart';
@@ -431,6 +432,26 @@ void main() {
     expect(learnerAvatarIds, hasLength(8));
   });
 
+  test('boot lands on home and finishes under three seconds', () async {
+    final directory = await Directory.systemTemp.createTemp('stepmath-boot');
+    final store = HiveAppStore();
+    final catalog = Catalog.parse(
+      await File('assets/tricks/catalog.json').readAsString(),
+    );
+    final started = Stopwatch()..start();
+    await store.init(path: directory.path);
+    final app = AppController(store: store, catalog: catalog);
+    await app.boot();
+    started.stop();
+    expect(app.ready, isTrue);
+    expect(app.bootError, isNull);
+    expect(app.openLocation(), '/child');
+    expect(started.elapsedMilliseconds, lessThan(3000));
+    await store.ensureFull();
+    await store.close();
+    await directory.delete(recursive: true);
+  });
+
   test('store ignores a second submit and keeps learners apart', () async {
     final directory = await Directory.systemTemp.createTemp('stepmath');
     final store = HiveAppStore();
@@ -468,10 +489,7 @@ void main() {
     await store.putAttempt(attempt);
     expect(await store.attempts('child-a'), hasLength(1));
     store.setSession(childMode: true, learnerId: 'child-a');
-    expect(
-      () => store.attempts('child-b'),
-      throwsStateError,
-    );
+    await expectLater(store.attempts('child-b'), throwsStateError);
     store.setSession(childMode: false, learnerId: null);
     await store.wipe();
     expect(await store.readLearners(), isEmpty);

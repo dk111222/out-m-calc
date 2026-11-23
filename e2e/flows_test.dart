@@ -15,6 +15,7 @@ import 'package:stepmath/domain/engine.dart';
 import 'package:stepmath/domain/machines.dart';
 import 'package:stepmath/export/pdfs.dart';
 import 'package:stepmath/main.dart';
+import 'package:stepmath/pages/home_pages.dart';
 import 'package:stepmath/ui/kit.dart';
 
 void main() {
@@ -77,6 +78,10 @@ void main() {
         child: const StepMathApp(),
       ),
     );
+    await tester.pump();
+    // First Flutter frame after boot must already be home, not the loading page.
+    expect(find.byType(LoadingPage), findsNothing);
+    expect(find.textContaining('正在这台设备上打开练习'), findsNothing);
     await settle(tester);
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -55,14 +57,17 @@ class _BootAppState extends State<BootApp> {
   }
 
   Future<void> _start() async {
+    final started = Stopwatch()..start();
     try {
       final store = HiveAppStore();
+      // Catalog parse is cheap; overlap it with opening home-critical Hive boxes.
       final catalogText = rootBundle.loadString('assets/tricks/catalog.json');
       final ready = await Future.wait([store.init(), catalogText]);
       final catalog = Catalog.parse(ready[1] as String);
       final app = AppController(store: store, catalog: catalog);
       await app.boot();
       if (!mounted) return;
+      // Assign home before allowing the first frame so LaunchCover never paints.
       setState(() {
         _child = ProviderScope(
           overrides: [
@@ -72,9 +77,14 @@ class _BootAppState extends State<BootApp> {
           child: const StepMathApp(),
         );
       });
+      // History boxes finish after home is on screen.
+      unawaited(store.ensureFull());
+      debugPrint('StepMath boot ${started.elapsedMilliseconds}ms');
     } catch (error, stack) {
       debugPrint('$error\n$stack');
-      if (mounted) setState(() => _error = error);
+      if (mounted) {
+        setState(() => _error = error);
+      }
     } finally {
       _showFrame();
     }
@@ -83,7 +93,9 @@ class _BootAppState extends State<BootApp> {
   @override
   Widget build(BuildContext context) {
     if (_error != null) return StartupFailed(message: '$_error');
-    return _child ?? const LaunchCover();
+    // While deferred, never paint a Flutter splash. The native launch window
+    // stays up until [_showFrame] after [_child] is the home page.
+    return _child ?? const SizedBox.shrink();
   }
 }
 
