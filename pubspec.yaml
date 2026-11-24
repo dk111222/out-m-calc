@@ -76,6 +76,7 @@ flutter:
     - assets/tricks/catalog.json
     - assets/audio/
     - assets/fonts/
+    - assets/avatars/
 
   fonts:
     - family: Source Sans 3

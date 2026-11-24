@@ -428,7 +428,8 @@ void main() {
     expect(catalog.byId('g1-make-10')?.title, 'Make 10');
     expect(avatarIdFor('maple', 'child-a'), 'maple');
     expect(avatarIdFor('nope', 'child-a'), avatarIdFor(null, 'child-a'));
-    expect(learnerAvatarIds, hasLength(8));
+    expect(learnerAvatarIds, hasLength(12));
+    expect(learnerAvatarIds.toSet(), hasLength(12));
   });
 
   test('store ignores a second submit and keeps learners apart', () async {
