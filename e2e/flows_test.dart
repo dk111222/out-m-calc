@@ -15,6 +15,7 @@ import 'package:stepmath/domain/engine.dart';
 import 'package:stepmath/domain/machines.dart';
 import 'package:stepmath/export/pdfs.dart';
 import 'package:stepmath/main.dart';
+import 'package:stepmath/ui/avatars.dart';
 import 'package:stepmath/ui/kit.dart';
 
 void main() {
@@ -87,9 +88,13 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('家长或老师'));
     await settle(tester);
+    // Avatar chips must be visible on the add-learner form.
+    expect(find.byType(ChildAvatar), findsWidgets);
+    expect(find.byType(Image), findsWidgets);
     await tester.enterText(find.byType(TextField), 'Ava');
     await tester.tap(find.text('一年级'));
     await tester.pump();
+    await tester.ensureVisible(find.text('保存'));
     await tester.tap(find.text('保存'));
     await settle(tester);
     expect(find.text('布置'), findsOneWidget);

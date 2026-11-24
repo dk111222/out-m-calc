@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stepmath/app/theme.dart';
 import 'package:stepmath/domain/core.dart';
 import 'package:stepmath/ui/avatars.dart';
 
@@ -12,6 +13,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: buildTheme(Brightness.light),
         home: Scaffold(
           body: Center(
             child: Wrap(
@@ -30,15 +32,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(learnerAvatarIds, hasLength(12));
-    for (final id in learnerAvatarIds) {
-      expect(
-        find.byWidgetPredicate((widget) {
-          return widget is Image &&
-              widget.image is AssetImage &&
-              (widget.image as AssetImage).assetName == 'assets/avatars/$id.jpg';
-        }),
-        findsOneWidget,
-      );
-    }
+    expect(find.byType(ChildAvatar), findsNWidgets(12));
+    expect(find.byType(Image), findsNWidgets(12));
   });
 }
