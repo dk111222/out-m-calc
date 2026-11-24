@@ -6,7 +6,7 @@ import 'package:stepmath/ui/avatars.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('renders all twelve age-band avatars', (tester) async {
+  testWidgets('renders all learner avatars', (tester) async {
     await tester.binding.setSurfaceSize(const Size(720, 960));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -29,7 +29,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(learnerAvatarIds, hasLength(12));
+    expect(learnerAvatarIds, hasLength(20));
     for (final id in learnerAvatarIds) {
       expect(
         find.byWidgetPredicate((widget) {

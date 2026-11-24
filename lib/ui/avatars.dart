@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../app/theme.dart';
 import '../domain/core.dart';
 
-/// Illustrated kid portraits spanning toddler → preteen.
+/// Illustrated kid + kawaii animal portraits.
 /// Asset files live at `assets/avatars/<id>.jpg`.
 String avatarAssetPath(String id) => 'assets/avatars/$id.jpg';
 
