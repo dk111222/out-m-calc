@@ -768,20 +768,12 @@ String newId([Random? random]) {
   return '$time-${source.nextInt(1 << 32)}';
 }
 
-/// Kid portraits (age bands) plus kawaii animal portraits.
+/// Kawaii animal portraits used as child profile pictures.
 const learnerAvatarIds = [
-  'sprout',
-  'petal',
-  'acorn',
-  'daisy',
-  'sunny',
-  'maple',
-  'river',
-  'cedar',
-  'wren',
-  'noah',
-  'piper',
-  'leo',
+  'lion',
+  'seal',
+  'squirrel',
+  'zebra',
   'owl',
   'whale',
   'giraffe',
@@ -803,7 +795,7 @@ class Learner {
     required this.id,
     required this.displayName,
     required this.grade,
-    this.avatar = 'sunny',
+    this.avatar = 'lion',
     required this.isGuest,
     required this.streakCount,
     required this.lastPracticeDate,

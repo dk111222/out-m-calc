@@ -426,10 +426,10 @@ void main() {
     expect(catalog.tricks, hasLength(15));
     expect(catalog.tricks.every((trick) => trick.ready), isTrue);
     expect(catalog.byId('g1-make-10')?.title, 'Make 10');
-    expect(avatarIdFor('maple', 'child-a'), 'maple');
+    expect(avatarIdFor('owl', 'child-a'), 'owl');
     expect(avatarIdFor('nope', 'child-a'), avatarIdFor(null, 'child-a'));
-    expect(learnerAvatarIds, hasLength(20));
-    expect(learnerAvatarIds.toSet(), hasLength(20));
+    expect(learnerAvatarIds, hasLength(12));
+    expect(learnerAvatarIds.toSet(), hasLength(12));
   });
 
   test('store ignores a second submit and keeps learners apart', () async {

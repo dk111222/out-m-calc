@@ -29,7 +29,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(learnerAvatarIds, hasLength(20));
+    expect(learnerAvatarIds, hasLength(12));
     for (final id in learnerAvatarIds) {
       expect(
         find.byWidgetPredicate((widget) {
