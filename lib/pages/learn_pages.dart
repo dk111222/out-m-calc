@@ -294,7 +294,7 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
             t.grade(trick.grade),
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: AppSpace.s16),
+          const SizedBox(height: AppSpace.s12),
           if (_loading)
             const SkeletonBlock(height: 48)
           else
@@ -303,40 +303,52 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
               answered: _answered,
               mastered: _mastered,
             ),
-          const SizedBox(height: AppSpace.s24),
-          Text(t.useThisWhen, style: Theme.of(context).textTheme.titleMedium),
-          Text(trick.appliesWhen),
           const SizedBox(height: AppSpace.s16),
-          Text(t.notFor, style: Theme.of(context).textTheme.titleMedium),
-          Text(trick.notWhen),
+          // Example first — kids scan the worked sample, then the short how-to.
+          _Diagram(trick: trick),
+          const SizedBox(height: AppSpace.s16),
+          _TipLine(label: t.useThisWhen, text: trick.appliesWhen),
+          const SizedBox(height: AppSpace.s8),
+          _TipLine(
+            label: t.notFor,
+            text: trick.notWhen,
+            muted: true,
+          ),
           const SizedBox(height: AppSpace.s16),
           Text(t.steps, style: Theme.of(context).textTheme.titleMedium),
-          for (final step in trick.steps) ...[
-            const SizedBox(height: AppSpace.s8),
-            Text(
-              '${step.number}. ${step.title}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colors.step(step.number),
-                fontWeight: FontWeight.w600,
+          const SizedBox(height: AppSpace.s8),
+          for (final step in trick.steps)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpace.s8),
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '${step.number}  ',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colors.step(step.number),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    TextSpan(
+                      text: step.title,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '  ·  ${step.body}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            Text(step.body),
-          ],
-          const SizedBox(height: AppSpace.s16),
-          _Diagram(trick: trick),
           const SizedBox(height: AppSpace.s8),
           Text(
-            t.pick(
-              '短范围：${trick.shortRange}',
-              'Short range: ${trick.shortRange}',
-            ),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          Text(
-            t.pick(
-              '标准范围：${trick.standardRange}',
-              'Standard range: ${trick.standardRange}',
-            ),
+            '${t.trickRange} · ${trick.standardRange}',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: AppSpace.s24),
@@ -357,6 +369,37 @@ class _TrickDetailPageState extends ConsumerState<TrickDetailPage> {
                 }
               },
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TipLine extends StatelessWidget {
+  const _TipLine({
+    required this.label,
+    required this.text,
+    this.muted = false,
+  });
+
+  final String label;
+  final String text;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: muted ? colors.textMuted : null,
+    );
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: '$label · ',
+            style: style?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          TextSpan(text: text, style: style),
         ],
       ),
     );

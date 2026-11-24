@@ -5,18 +5,18 @@
       "grade": "K",
       "operation": "addition",
       "title": "Pairs to 10",
-      "appliesWhen": "You know one number from 0 to 9 and need the partner that makes 10.",
-      "notWhen": "The two numbers do not make 10, such as 6 + 6. Add those directly.",
+      "appliesWhen": "Find the partner that makes 10.",
+      "notWhen": "Sums that are not 10.",
       "steps": [
         {
           "n": 1,
           "title": "Find the gap",
-          "body": "Subtract the number you have from 10."
+          "body": "10 − n."
         },
         {
           "n": 2,
-          "title": "Check the pair",
-          "body": "Add your number and the gap. The total is 10."
+          "title": "Check",
+          "body": "n + gap = 10."
         }
       ],
       "example": {
@@ -46,8 +46,8 @@
           }
         ]
       },
-      "shortRange": "Partners for 1 through 5.",
-      "standardRange": "Partners for 0 through 9.",
+      "shortRange": "1–5",
+      "standardRange": "0–9",
       "ready": true,
       "acceptance": [
         {
@@ -107,23 +107,23 @@
       "grade": "1",
       "operation": "addition",
       "title": "Make 10",
-      "appliesWhen": "You add two one-digit numbers and the total is more than 10.",
-      "notWhen": "The total is 10 or less, such as 4 + 5. Add those in one move.",
+      "appliesWhen": "Two digits that sum past 10.",
+      "notWhen": "Sum ≤ 10.",
       "steps": [
         {
           "n": 1,
-          "title": "Reach 10",
-          "body": "See how many the first number still needs to make 10."
+          "title": "To 10",
+          "body": "Gap to 10."
         },
         {
           "n": 2,
-          "title": "Split the other number",
-          "body": "Take that many away from the second number."
+          "title": "Split",
+          "body": "Take that from the other."
         },
         {
           "n": 3,
-          "title": "Add the leftover",
-          "body": "Add what remains to 10."
+          "title": "Add rest",
+          "body": "10 + remainder."
         }
       ],
       "example": {
@@ -149,7 +149,7 @@
           },
           {
             "step": 2,
-            "text": "7 leaves 5"
+            "text": "7 → 5 left"
           },
           {
             "step": 3,
@@ -157,8 +157,8 @@
           }
         ]
       },
-      "shortRange": "The first number is 8 or 9.",
-      "standardRange": "Both numbers are from 2 to 9, and the total is over 10.",
+      "shortRange": "First digit 8–9",
+      "standardRange": "Digits 2–9, sum > 10",
       "ready": true,
       "acceptance": [
         {
@@ -228,23 +228,23 @@
       "grade": "1",
       "operation": "addition",
       "title": "Add within 20",
-      "appliesWhen": "You add two one-digit numbers, the total stays within 20, and it crosses 10.",
-      "notWhen": "The total is 10 or less. Those sums do not need a split.",
+      "appliesWhen": "Two digits crossing 10, sum ≤ 20.",
+      "notWhen": "Sum ≤ 10.",
       "steps": [
         {
           "n": 1,
-          "title": "Reach 10",
-          "body": "Find the gap from the first number up to 10."
+          "title": "To 10",
+          "body": "Gap to 10."
         },
         {
           "n": 2,
-          "title": "Leftover",
-          "body": "Subtract that gap from the second number."
+          "title": "Rest",
+          "body": "Other − gap."
         },
         {
           "n": 3,
           "title": "Finish",
-          "body": "Add the leftover to 10. The total stays under 20."
+          "body": "10 + rest."
         }
       ],
       "example": {
@@ -270,7 +270,7 @@
           },
           {
             "step": 2,
-            "text": "6 leaves 5"
+            "text": "6 → 5 left"
           },
           {
             "step": 3,
@@ -278,8 +278,8 @@
           }
         ]
       },
-      "shortRange": "One number is 8 or 9.",
-      "standardRange": "Totals from 11 through 18.",
+      "shortRange": "One digit is 8–9",
+      "standardRange": "Sums 11–18",
       "ready": true,
       "acceptance": [
         {
@@ -349,28 +349,28 @@
       "grade": "2",
       "operation": "addition",
       "title": "Near 100",
-      "appliesWhen": "Both numbers are from 91 to 99.",
-      "notWhen": "A number is more than 10 away from 100, such as 80 + 70.",
+      "appliesWhen": "Both numbers 91–99.",
+      "notWhen": "Either is ≤ 90.",
       "steps": [
         {
           "n": 1,
-          "title": "First gap",
-          "body": "See how far the first number is under 100."
+          "title": "Gap 1",
+          "body": "100 − a."
         },
         {
           "n": 2,
-          "title": "Second gap",
-          "body": "See how far the second number is under 100."
+          "title": "Gap 2",
+          "body": "100 − b."
         },
         {
           "n": 3,
-          "title": "Combine the gaps",
-          "body": "Add the two gaps."
+          "title": "Add gaps",
+          "body": "Gap1 + gap2."
         },
         {
           "n": 4,
-          "title": "Take them off 200",
-          "body": "Subtract that sum from 200."
+          "title": "From 200",
+          "body": "200 − sum."
         }
       ],
       "example": {
@@ -392,24 +392,24 @@
         "notes": [
           {
             "step": 1,
-            "text": "97 is 3 under 100"
+            "text": "97 → −3"
           },
           {
             "step": 2,
-            "text": "96 is 4 under 100"
+            "text": "96 → −4"
           },
           {
             "step": 3,
-            "text": "The gaps add to 7"
+            "text": "Gaps = 7"
           },
           {
             "step": 4,
-            "text": "200 \u2212 7 = 193"
+            "text": "200 − 7 = 193"
           }
         ]
       },
-      "shortRange": "Both numbers are from 95 to 99.",
-      "standardRange": "Both numbers are from 91 to 99.",
+      "shortRange": "95–99",
+      "standardRange": "91–99",
       "ready": true,
       "acceptance": [
         {
@@ -484,34 +484,34 @@
       "grade": "2",
       "operation": "subtraction",
       "title": "Subtract near 100",
-      "appliesWhen": "You subtract a number from 91 to 99 from a number that is at least 100.",
-      "notWhen": "You subtract a small number, such as 150 \u2212 6.",
+      "appliesWhen": "Subtract 91–99 from ≥ 100.",
+      "notWhen": "Subtrahend is small.",
       "steps": [
         {
           "n": 1,
-          "title": "Gap under 100",
-          "body": "See how far the number you subtract is under 100."
+          "title": "Gap",
+          "body": "100 − b."
         },
         {
           "n": 2,
-          "title": "Drop a hundred",
-          "body": "Take 100 off the starting number."
+          "title": "Drop 100",
+          "body": "a − 100."
         },
         {
           "n": 3,
-          "title": "Give the gap back",
-          "body": "Add that gap to what you have left."
+          "title": "Add back",
+          "body": "Rest + gap."
         }
       ],
       "example": {
-        "prompt": "150 \u2212 97",
+        "prompt": "150 − 97",
         "pieces": [
           {
             "text": "150",
             "step": 2
           },
           {
-            "text": " \u2212 ",
+            "text": " − ",
             "step": 0
           },
           {
@@ -522,11 +522,11 @@
         "notes": [
           {
             "step": 1,
-            "text": "97 is 3 under 100"
+            "text": "97 → −3"
           },
           {
             "step": 2,
-            "text": "150 \u2212 100 = 50"
+            "text": "150 − 100 = 50"
           },
           {
             "step": 3,
@@ -534,8 +534,8 @@
           }
         ]
       },
-      "shortRange": "The starting number is from 100 to 130.",
-      "standardRange": "The starting number is from 100 to 199.",
+      "shortRange": "a in 100–130",
+      "standardRange": "a in 100–199",
       "ready": true,
       "acceptance": [
         {
@@ -604,46 +604,46 @@
       "id": "g3-times-5",
       "grade": "3",
       "operation": "multiplication",
-      "title": "Multiply by 5",
-      "appliesWhen": "You multiply a whole number by 5.",
-      "notWhen": "You multiply by 10 or by 50. Those are different moves.",
+      "title": "× 5",
+      "appliesWhen": "Multiply by 5.",
+      "notWhen": "×10 or ×50.",
       "steps": [
         {
           "n": 1,
-          "title": "Times 10",
-          "body": "Multiply the number by 10."
+          "title": "×10",
+          "body": "n × 10."
         },
         {
           "n": 2,
-          "title": "Half",
-          "body": "Take half of that. The half is the product."
+          "title": "Halve",
+          "body": "Half of that."
         }
       ],
       "example": {
-        "prompt": "48 \u00d7 5",
+        "prompt": "48 × 5",
         "pieces": [
           {
             "text": "48",
             "step": 1
           },
           {
-            "text": " \u00d7 5",
+            "text": " × 5",
             "step": 2
           }
         ],
         "notes": [
           {
             "step": 1,
-            "text": "48 \u00d7 10 = 480"
+            "text": "48 × 10 = 480"
           },
           {
             "step": 2,
-            "text": "Half of 480 is 240"
+            "text": "Half = 240"
           }
         ]
       },
-      "shortRange": "The number is from 10 to 40.",
-      "standardRange": "The number is from 12 to 99.",
+      "shortRange": "10–40",
+      "standardRange": "12–99",
       "ready": true,
       "acceptance": [
         {
@@ -702,23 +702,23 @@
       "id": "g3-times-11",
       "grade": "3",
       "operation": "multiplication",
-      "title": "Multiply by 11",
-      "appliesWhen": "You multiply a two-digit number by 11 and the digits add to less than 10.",
-      "notWhen": "The digits add to 10 or more, such as 48 \u00d7 11. That product needs a carry.",
+      "title": "× 11",
+      "appliesWhen": "2-digit × 11, digit sum < 10.",
+      "notWhen": "Digit sum ≥ 10 (needs carry).",
       "steps": [
         {
           "n": 1,
-          "title": "Add the digits",
-          "body": "Add the tens digit and the ones digit."
+          "title": "Add digits",
+          "body": "Tens + ones."
         },
         {
           "n": 2,
-          "title": "Place the sum",
-          "body": "Write the tens digit, the sum, then the ones digit."
+          "title": "Sandwich",
+          "body": "Tens · sum · ones."
         }
       ],
       "example": {
-        "prompt": "35 \u00d7 11",
+        "prompt": "35 × 11",
         "pieces": [
           {
             "text": "3",
@@ -729,7 +729,7 @@
             "step": 1
           },
           {
-            "text": " \u00d7 11",
+            "text": " × 11",
             "step": 2
           }
         ],
@@ -740,12 +740,12 @@
           },
           {
             "step": 2,
-            "text": "The product is 385"
+            "text": "385"
           }
         ]
       },
-      "shortRange": "The tens digit is 1, 2, or 3.",
-      "standardRange": "Any two-digit number whose digits add to less than 10.",
+      "shortRange": "Tens 1–3",
+      "standardRange": "Digit sum < 10",
       "ready": true,
       "acceptance": [
         {
@@ -804,46 +804,46 @@
       "id": "g3-div-5",
       "grade": "3",
       "operation": "division",
-      "title": "Divide by 5",
-      "appliesWhen": "You divide a whole number by 5.",
-      "notWhen": "You divide by 10 or by 2. Use those facts directly.",
+      "title": "÷ 5",
+      "appliesWhen": "Divide by 5.",
+      "notWhen": "÷10 or ÷2.",
       "steps": [
         {
           "n": 1,
-          "title": "Double",
-          "body": "Multiply the number by 2."
+          "title": "×2",
+          "body": "n × 2."
         },
         {
           "n": 2,
-          "title": "Move the decimal",
-          "body": "Divide that double by 10."
+          "title": "÷10",
+          "body": "Move the decimal."
         }
       ],
       "example": {
-        "prompt": "35 \u00f7 5",
+        "prompt": "35 ÷ 5",
         "pieces": [
           {
             "text": "35",
             "step": 1
           },
           {
-            "text": " \u00f7 5",
+            "text": " ÷ 5",
             "step": 2
           }
         ],
         "notes": [
           {
             "step": 1,
-            "text": "35 \u00d7 2 = 70"
+            "text": "35 × 2 = 70"
           },
           {
             "step": 2,
-            "text": "70 \u00f7 10 = 7"
+            "text": "70 ÷ 10 = 7"
           }
         ]
       },
-      "shortRange": "Multiples of 5.",
-      "standardRange": "Whole numbers from 10 to 99. Some answers use one decimal place.",
+      "shortRange": "Multiples of 5",
+      "standardRange": "10–99",
       "ready": true,
       "acceptance": [
         {
@@ -902,28 +902,28 @@
       "id": "g4-times-11-carry",
       "grade": "4",
       "operation": "multiplication",
-      "title": "Multiply by 11 with a carry",
-      "appliesWhen": "You multiply a two-digit number by 11 and the digits add to 10 or more.",
-      "notWhen": "The digits add to less than 10. Those products do not carry.",
+      "title": "× 11 with carry",
+      "appliesWhen": "2-digit × 11, digit sum ≥ 10.",
+      "notWhen": "Digit sum < 10.",
       "steps": [
         {
           "n": 1,
-          "title": "Add the digits",
-          "body": "Add the tens digit and the ones digit."
+          "title": "Add digits",
+          "body": "Tens + ones."
         },
         {
           "n": 2,
-          "title": "Middle digit",
-          "body": "Keep the ones digit of that sum. The tens digit is a carry."
+          "title": "Keep ones",
+          "body": "Ones of the sum."
         },
         {
           "n": 3,
-          "title": "Build the product",
-          "body": "Add the carry to the first digit, then write the middle and last digits."
+          "title": "Write",
+          "body": "Carry + middle + ones."
         }
       ],
       "example": {
-        "prompt": "48 \u00d7 11",
+        "prompt": "48 × 11",
         "pieces": [
           {
             "text": "4",
@@ -934,7 +934,7 @@
             "step": 1
           },
           {
-            "text": " \u00d7 11",
+            "text": " × 11",
             "step": 3
           }
         ],
@@ -945,16 +945,16 @@
           },
           {
             "step": 2,
-            "text": "The middle digit is 2"
+            "text": "Middle 2"
           },
           {
             "step": 3,
-            "text": "The product is 528"
+            "text": "528"
           }
         ]
       },
-      "shortRange": "The tens digit is 2, 3, or 4.",
-      "standardRange": "Any two-digit number whose digits add to 10 or more.",
+      "shortRange": "Tens 2–4",
+      "standardRange": "Digit sum ≥ 10",
       "ready": true,
       "acceptance": [
         {
@@ -1018,33 +1018,33 @@
       "id": "g4-complements",
       "grade": "4",
       "operation": "multiplication",
-      "title": "Ends that add to 10",
-      "appliesWhen": "Two two-digit numbers share a tens digit, and the ones digits add to 10.",
-      "notWhen": "The ones digits do not add to 10, such as 26 \u00d7 23.",
+      "title": "Ends add to 10",
+      "appliesWhen": "Same tens; ones add to 10.",
+      "notWhen": "Ones do not add to 10.",
       "steps": [
         {
           "n": 1,
-          "title": "Check the ones",
-          "body": "Add the ones digits. They should make 10."
+          "title": "Check ones",
+          "body": "Ones sum = 10."
         },
         {
           "n": 2,
-          "title": "Front part",
-          "body": "Multiply the tens digit by the next whole number."
+          "title": "Front",
+          "body": "Tens × next."
         },
         {
           "n": 3,
-          "title": "Back part",
-          "body": "Multiply the ones digits. If the product is one digit, the tens place is 0."
+          "title": "Back",
+          "body": "Ones × ones."
         },
         {
           "n": 4,
           "title": "Join",
-          "body": "Write the front part, then the back part as two digits."
+          "body": "Front then two-digit back."
         }
       ],
       "example": {
-        "prompt": "26 \u00d7 24",
+        "prompt": "26 × 24",
         "pieces": [
           {
             "text": "2",
@@ -1055,7 +1055,7 @@
             "step": 3
           },
           {
-            "text": " \u00d7 ",
+            "text": " × ",
             "step": 0
           },
           {
@@ -1074,20 +1074,20 @@
           },
           {
             "step": 2,
-            "text": "2 \u00d7 3 = 6"
+            "text": "2 × 3 = 6"
           },
           {
             "step": 3,
-            "text": "6 \u00d7 4 = 24"
+            "text": "6 × 4 = 24"
           },
           {
             "step": 4,
-            "text": "The product is 624"
+            "text": "624"
           }
         ]
       },
-      "shortRange": "The tens digit is 1, 2, or 3.",
-      "standardRange": "The tens digit is from 1 to 9.",
+      "shortRange": "Tens 1–3",
+      "standardRange": "Tens 1–9",
       "ready": true,
       "acceptance": [
         {
@@ -1166,46 +1166,46 @@
       "id": "g4-square-5",
       "grade": "4",
       "operation": "multiplication",
-      "title": "Squares ending in 5",
-      "appliesWhen": "You square a two-digit number that ends in 5.",
-      "notWhen": "The number does not end in 5, such as 40\u00b2 or 46\u00b2.",
+      "title": "Squares ending 5",
+      "appliesWhen": "Square a 2-digit number ending in 5.",
+      "notWhen": "Does not end in 5.",
       "steps": [
         {
           "n": 1,
-          "title": "Front part",
-          "body": "Multiply the tens digit by the next whole number."
+          "title": "Front",
+          "body": "Tens × next."
         },
         {
           "n": 2,
-          "title": "Attach 25",
-          "body": "Write that product in front of 25."
+          "title": "Add 25",
+          "body": "Front then 25."
         }
       ],
       "example": {
-        "prompt": "45\u00b2",
+        "prompt": "45²",
         "pieces": [
           {
             "text": "4",
             "step": 1
           },
           {
-            "text": "5\u00b2",
+            "text": "5²",
             "step": 2
           }
         ],
         "notes": [
           {
             "step": 1,
-            "text": "4 \u00d7 5 = 20"
+            "text": "4 × 5 = 20"
           },
           {
             "step": 2,
-            "text": "20 followed by 25 is 2025"
+            "text": "2025"
           }
         ]
       },
-      "shortRange": "15, 25, 35, and 45.",
-      "standardRange": "Every two-digit number that ends in 5.",
+      "shortRange": "15, 25, 35, 45",
+      "standardRange": "Any number ending in 5",
       "ready": true,
       "acceptance": [
         {
@@ -1264,46 +1264,46 @@
       "id": "g4-div-25",
       "grade": "4",
       "operation": "division",
-      "title": "Divide by 25",
-      "appliesWhen": "You divide a whole number by 25.",
-      "notWhen": "You divide by 5 or by 50. Use those moves instead.",
+      "title": "÷ 25",
+      "appliesWhen": "Divide by 25.",
+      "notWhen": "÷5 or ÷50.",
       "steps": [
         {
           "n": 1,
-          "title": "Times 4",
-          "body": "Multiply the number by 4."
+          "title": "×4",
+          "body": "n × 4."
         },
         {
           "n": 2,
-          "title": "Move two places",
-          "body": "Divide that product by 100."
+          "title": "÷100",
+          "body": "Move two places."
         }
       ],
       "example": {
-        "prompt": "75 \u00f7 25",
+        "prompt": "75 ÷ 25",
         "pieces": [
           {
             "text": "75",
             "step": 1
           },
           {
-            "text": " \u00f7 25",
+            "text": " ÷ 25",
             "step": 2
           }
         ],
         "notes": [
           {
             "step": 1,
-            "text": "75 \u00d7 4 = 300"
+            "text": "75 × 4 = 300"
           },
           {
             "step": 2,
-            "text": "300 \u00f7 100 = 3"
+            "text": "300 ÷ 100 = 3"
           }
         ]
       },
-      "shortRange": "25, 50, 75, 100, and 125.",
-      "standardRange": "Multiples of 5 up to 250, including every multiple of 25.",
+      "shortRange": "25, 50, 75, 100, 125",
+      "standardRange": "Multiples of 5 ≤ 250",
       "ready": true,
       "acceptance": [
         {
@@ -1362,19 +1362,19 @@
       "id": "g5-percent-10",
       "grade": "5",
       "operation": "percent",
-      "title": "Ten percent",
-      "appliesWhen": "You need 10% of a whole-dollar price.",
-      "notWhen": "The percent is 15% or 20%. Those are not one tenth.",
+      "title": "10%",
+      "appliesWhen": "Find 10% of a dollar amount.",
+      "notWhen": "15% or 20%.",
       "steps": [
         {
           "n": 1,
-          "title": "The divisor",
-          "body": "10% means one tenth, so you divide by 10."
+          "title": "÷10",
+          "body": "10% = ÷10."
         },
         {
           "n": 2,
-          "title": "The part",
-          "body": "Divide the price by 10. That amount is 10%."
+          "title": "Answer",
+          "body": "Price ÷ 10."
         }
       ],
       "example": {
@@ -1396,16 +1396,16 @@
         "notes": [
           {
             "step": 1,
-            "text": "Divide by 10"
+            "text": "÷10"
           },
           {
             "step": 2,
-            "text": "80 \u00f7 10 = 8"
+            "text": "10% of 80 = 8"
           }
         ]
       },
-      "shortRange": "Prices of $100 and $200.",
-      "standardRange": "Multiples of $10 from $10 to $200.",
+      "shortRange": "$100, $200",
+      "standardRange": "$10–$200, ×10",
       "ready": true,
       "acceptance": [
         {
@@ -1464,19 +1464,19 @@
       "id": "g5-percent-5",
       "grade": "5",
       "operation": "percent",
-      "title": "Five percent",
-      "appliesWhen": "You need 5% of a whole-dollar price.",
-      "notWhen": "The question asks for 10% only, or for a percent other than 5.",
+      "title": "5%",
+      "appliesWhen": "Find 5% of a dollar amount.",
+      "notWhen": "Not asking for 5%.",
       "steps": [
         {
           "n": 1,
-          "title": "Ten percent first",
-          "body": "Find 10% of the price."
+          "title": "10% first",
+          "body": "Price ÷ 10."
         },
         {
           "n": 2,
-          "title": "Take half",
-          "body": "5% is half of that 10%."
+          "title": "Halve",
+          "body": "Half of that."
         }
       ],
       "example": {
@@ -1498,16 +1498,16 @@
         "notes": [
           {
             "step": 1,
-            "text": "10% of 80 is 8"
+            "text": "10% of 80 = 8"
           },
           {
             "step": 2,
-            "text": "Half of 8 is 4"
+            "text": "Half = 4"
           }
         ]
       },
-      "shortRange": "Multiples of $20.",
-      "standardRange": "Multiples of $10 from $10 to $200.",
+      "shortRange": "Multiples of $20",
+      "standardRange": "$10–$200, ×10",
       "ready": true,
       "acceptance": [
         {
@@ -1566,19 +1566,19 @@
       "id": "g5-percent-1",
       "grade": "5",
       "operation": "percent",
-      "title": "One percent",
-      "appliesWhen": "You need 1% of a whole-dollar price.",
-      "notWhen": "The question asks for 10%. One percent is a hundredth, not a tenth.",
+      "title": "1%",
+      "appliesWhen": "Find 1% of a dollar amount.",
+      "notWhen": "Asking for 10%.",
       "steps": [
         {
           "n": 1,
-          "title": "The divisor",
-          "body": "1% means one hundredth, so you divide by 100."
+          "title": "÷100",
+          "body": "1% = ÷100."
         },
         {
           "n": 2,
-          "title": "The part",
-          "body": "Divide the price by 100."
+          "title": "Answer",
+          "body": "Price ÷ 100."
         }
       ],
       "example": {
@@ -1600,16 +1600,16 @@
         "notes": [
           {
             "step": 1,
-            "text": "Divide by 100"
+            "text": "÷100"
           },
           {
             "step": 2,
-            "text": "80 \u00f7 100 = 0.8"
+            "text": "1% of 80 = 0.8"
           }
         ]
       },
-      "shortRange": "Multiples of $100.",
-      "standardRange": "Multiples of $10 from $10 to $200.",
+      "shortRange": "Multiples of $100",
+      "standardRange": "$10–$200, ×10",
       "ready": true,
       "acceptance": [
         {

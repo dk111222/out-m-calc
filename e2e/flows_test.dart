@@ -107,8 +107,9 @@ void main() {
     expect(find.text('首页'), findsOneWidget);
     await tester.tap(find.text('速算技巧'));
     await settle(tester);
-    expect(find.text('适合'), findsOneWidget);
-    expect(find.text('不适合'), findsOneWidget);
+    expect(find.textContaining('何时用'), findsOneWidget);
+    expect(find.textContaining('别用'), findsOneWidget);
+    expect(find.textContaining('怎么算'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('开始练习'),
       200,
