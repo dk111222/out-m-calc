@@ -21,11 +21,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 const launchBackground = Color(0xFFF4F1EA);
 
 Future<void> main() async {
-  final binding = WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
   DevicePaths.install();
-  // Hold the system window until the first Flutter frame. That frame is the
-  // home page, after storage is open. Do not release it onto a loading page.
-  binding.deferFirstFrame();
+  // Draw an opaque cover immediately. Holding the first frame, or using a
+  // transparent view, keeps the Android 12 splash up until that frame exists,
+  // so a slow open looks like the launch screen never leaves.
   runApp(const BootApp());
 }
 
@@ -46,22 +46,17 @@ class _BootAppState extends State<BootApp> {
     _start();
   }
 
-  bool _frameShown = false;
-
-  void _showFrame() {
-    if (_frameShown) return;
-    _frameShown = true;
-    WidgetsBinding.instance.allowFirstFrame();
-  }
-
   Future<void> _start() async {
     try {
       final store = HiveAppStore();
       final catalogText = rootBundle.loadString('assets/tricks/catalog.json');
-      final ready = await Future.wait([store.init(), catalogText]);
+      final ready = await Future.wait([
+        store.init(),
+        catalogText,
+      ]).timeout(const Duration(seconds: 12));
       final catalog = Catalog.parse(ready[1] as String);
       final app = AppController(store: store, catalog: catalog);
-      await app.boot();
+      await app.boot().timeout(const Duration(seconds: 12));
       if (!mounted) return;
       setState(() {
         _child = ProviderScope(
@@ -75,8 +70,6 @@ class _BootAppState extends State<BootApp> {
     } catch (error, stack) {
       debugPrint('$error\n$stack');
       if (mounted) setState(() => _error = error);
-    } finally {
-      _showFrame();
     }
   }
 

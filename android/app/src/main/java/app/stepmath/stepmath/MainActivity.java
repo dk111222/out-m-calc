@@ -4,8 +4,6 @@ import android.content.Context;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity;
-import io.flutter.embedding.android.RenderMode;
-import io.flutter.embedding.android.TransparencyMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -14,27 +12,8 @@ public class MainActivity extends FlutterActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // The system splash on this phone is a blank white window, and Flutter
-        // keeps that window up until the first frame. The first open after
-        // install spends that whole wait compiling. Put the launch artwork back
-        // on the window so the wait shows the icon.
+        // Keep the launch color behind Flutter so the handoff is not a white flash.
         getWindow().setBackgroundDrawableResource(R.drawable.launch_background);
-    }
-
-    @Override
-    @NonNull
-    public RenderMode getRenderMode() {
-        // Surface mode punches a white hole through the window and holds the
-        // system splash until the first frame. Texture mode leaves on the first
-        // draw, and the transparent texture shows the launch artwork underneath
-        // during the long first compile.
-        return RenderMode.texture;
-    }
-
-    @Override
-    @NonNull
-    public TransparencyMode getTransparencyMode() {
-        return TransparencyMode.transparent;
     }
 
     @Override
