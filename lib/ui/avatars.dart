@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../app/theme.dart';
 import '../domain/core.dart';
 
-/// Kawaii animal portraits for child profiles.
+/// Illustrated kid portraits for child profiles.
 /// Asset files live at `assets/avatars/<id>.jpg`.
 String avatarAssetPath(String id) => 'assets/avatars/$id.jpg';
 

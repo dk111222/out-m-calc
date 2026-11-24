@@ -768,20 +768,20 @@ String newId([Random? random]) {
   return '$time-${source.nextInt(1 << 32)}';
 }
 
-/// Kawaii animal portraits used as child profile pictures.
+/// Illustrated kid portraits spanning toddler → preteen.
 const learnerAvatarIds = [
-  'lion',
-  'seal',
-  'squirrel',
-  'zebra',
-  'owl',
-  'whale',
-  'giraffe',
-  'peacock',
-  'fox',
-  'panda',
-  'penguin',
-  'bunny',
+  'sprout',
+  'petal',
+  'acorn',
+  'daisy',
+  'sunny',
+  'maple',
+  'river',
+  'cedar',
+  'wren',
+  'noah',
+  'piper',
+  'leo',
 ];
 
 String avatarIdFor(String? stored, String seed) {
@@ -795,7 +795,7 @@ class Learner {
     required this.id,
     required this.displayName,
     required this.grade,
-    this.avatar = 'lion',
+    this.avatar = 'sunny',
     required this.isGuest,
     required this.streakCount,
     required this.lastPracticeDate,
