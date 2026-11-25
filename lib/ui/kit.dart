@@ -296,7 +296,14 @@ class Keypad extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpace.rSm),
           child: InkWell(
             borderRadius: BorderRadius.circular(AppSpace.rSm),
-            onTap: enabled ? () => onKey(value) : null,
+            onTap: enabled
+                ? () {
+                    if (int.tryParse(value) != null) {
+                      HapticFeedback.selectionClick();
+                    }
+                    onKey(value);
+                  }
+                : null,
             child: Semantics(
               button: true,
               enabled: enabled,
