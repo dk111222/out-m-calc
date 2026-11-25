@@ -95,7 +95,7 @@ class Copy {
   String get save => pick('保存', 'Save');
   String get learners => pick('孩子', 'Learners');
   String get settings => pick('设置', 'Settings');
-  String get scanPaper => pick('拍照识题', 'Scan a paper');
+  String get scanPaper => pick('拍照批改', 'Photo check');
   String get addLearnerToStart => pick('先添加一个孩子。', 'Add a learner to start.');
   String get nothingAssigned => pick('今天还没有布置', 'Nothing assigned today');
   String get learnATrick => pick('学一个技巧', 'Learn a trick');
@@ -104,6 +104,8 @@ class Copy {
   String dayStreak(int count) => pick('$count 天连续', '$count day streak');
   String get assign => pick('布置', 'Assign');
   String get report => pick('报告', 'Report');
+  String get trainingStatus => pick('训练情况', 'Training');
+  String get learningStage => pick('学习阶段', 'Stage');
   String get trickLibrary => pick('技巧库', 'Trick library');
   String get addLearnerFirst => pick('请先添加孩子。', 'Add a learner first.');
   String get todayPractice => pick('今天的练习', 'Today\'s practice');
@@ -112,7 +114,8 @@ class Copy {
   String get continueLabel => pick('继续', 'Continue');
   String get mathTricks => pick('速算技巧', 'Math Tricks');
   String get facts => pick('口算', 'Facts');
-  String get wrongProblems => pick('错题', 'Wrong problems');
+  String get wrongProblems => pick('错题集', 'Mistake book');
+  String todayTask(String task) => pick('今日：$task', 'Today: $task');
   String get dailyPractice => pick('每日一练', 'Daily practice');
   String get tenProblems =>
       pick('按当前年级随机出十道题。', 'Ten random problems for this grade.');

@@ -456,50 +456,34 @@ class ChildHomePage extends ConsumerWidget {
         .forGrade(learner.grade)
         .where((trick) => trick.ready)
         .take(3);
-    final colors = AppColors.of(context);
+    final todaySummary = assignment == null
+        ? t.nothingAssigned
+        : assignment.kind == 'learn'
+        ? (learnTrick == null
+              ? t.learnATrick
+              : localizeTrick(learnTrick, t).title)
+        : (speed?.summary(language: t.language) ?? t.speedDrill);
     return PageFrame(
       title: t.todayPractice,
       banner: app.banner,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              ChildAvatar(id: learner.avatar, size: 48),
-              const SizedBox(width: AppSpace.s12),
-              Expanded(
-                child: Text(
-                  learner.displayName,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpace.s12,
-                  vertical: AppSpace.s8,
-                ),
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(AppSpace.rPill),
-                  border: Border.all(color: colors.border),
-                ),
-                child: Text(t.grade(learner.grade)),
-              ),
-            ],
+          _LearnerHomeCard(
+            avatarId: learner.avatar,
+            name: learner.displayName,
+            gradeLabel: t.grade(learner.grade),
+            streakLabel: t.dayStreak(learner.streakCount),
+            todayLabel: t.todayTask(todaySummary),
+            streakNotice: learner.streakNotice == 'held'
+                ? t.skipKept
+                : learner.streakNotice == 'reset'
+                ? t.streakReset
+                : null,
+            onTraining: () => context.go('/report/${learner.id}'),
+            onWrongBook: () => context.go('/review'),
+            onPhotoGrade: () => context.go('/scan'),
           ),
-          const SizedBox(height: AppSpace.s4),
-          Text(
-            t.dayStreak(learner.streakCount),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          if (learner.streakNotice == 'held') ...[
-            const SizedBox(height: AppSpace.s8),
-            Text(t.skipKept),
-          ],
-          if (learner.streakNotice == 'reset') ...[
-            const SizedBox(height: AppSpace.s8),
-            Text(t.streakReset),
-          ],
           const SizedBox(height: AppSpace.s16),
           if (app.snapshot != null &&
               app.snapshot!.localDate == app.clock.today)
@@ -556,14 +540,6 @@ class ChildHomePage extends ConsumerWidget {
               caption: drill.sample,
               onPressed: () => _startDrill(context, ref, drill.config),
             ),
-          TextButton(
-            onPressed: () => context.go('/review'),
-            child: Text(t.wrongProblems),
-          ),
-          TextButton(
-            onPressed: () => context.go('/scan'),
-            child: Text(t.scanPaper),
-          ),
         ],
       ),
     );
@@ -631,6 +607,188 @@ class ChildHomePage extends ConsumerWidget {
   ) async {
     await ref.read(speedProvider).start(config);
     if (context.mounted) context.go('/speed/run');
+  }
+}
+
+class _LearnerHomeCard extends StatelessWidget {
+  const _LearnerHomeCard({
+    required this.avatarId,
+    required this.name,
+    required this.gradeLabel,
+    required this.streakLabel,
+    required this.todayLabel,
+    required this.onTraining,
+    required this.onWrongBook,
+    required this.onPhotoGrade,
+    this.streakNotice,
+  });
+
+  final String avatarId;
+  final String name;
+  final String gradeLabel;
+  final String streakLabel;
+  final String todayLabel;
+  final String? streakNotice;
+  final VoidCallback onTraining;
+  final VoidCallback onWrongBook;
+  final VoidCallback onPhotoGrade;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Copy.of(context);
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppSpace.rMd),
+        border: Border.all(color: colors.border),
+        boxShadow: colors.cardShadow,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.s16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ChildAvatar(id: avatarId, size: 64),
+                const SizedBox(width: AppSpace.s12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: AppSpace.s4),
+                      Text(
+                        '${t.learningStage} · $gradeLabel',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpace.s4),
+                      Text(
+                        streakLabel,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpace.s8),
+                      Text(todayLabel, style: theme.textTheme.bodyMedium),
+                      if (streakNotice != null) ...[
+                        const SizedBox(height: AppSpace.s8),
+                        Text(
+                          streakNotice!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.warning,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpace.s16),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.sunken,
+                borderRadius: BorderRadius.circular(AppSpace.rSm),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _LearnerHomeAction(
+                      icon: Icons.insights_outlined,
+                      label: t.trainingStatus,
+                      onPressed: onTraining,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 44,
+                    child: VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: colors.border,
+                    ),
+                  ),
+                  Expanded(
+                    child: _LearnerHomeAction(
+                      icon: Icons.menu_book_outlined,
+                      label: t.wrongProblems,
+                      onPressed: onWrongBook,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 44,
+                    child: VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: colors.border,
+                    ),
+                  ),
+                  Expanded(
+                    child: _LearnerHomeAction(
+                      icon: Icons.photo_camera_outlined,
+                      label: t.scanPaper,
+                      onPressed: onPhotoGrade,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LearnerHomeAction extends StatelessWidget {
+  const _LearnerHomeAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(AppSpace.rSm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpace.s12,
+            horizontal: AppSpace.s4,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: colors.accent),
+              const SizedBox(height: AppSpace.s4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: colors.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
