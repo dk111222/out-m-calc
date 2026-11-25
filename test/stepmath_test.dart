@@ -456,6 +456,43 @@ void main() {
     await directory.delete(recursive: true);
   });
 
+  test('a parent can sign in with a provider and then delete the account', () async {
+    final directory = await Directory.systemTemp.createTemp('stepmath-account');
+    final store = HiveAppStore();
+    await store.init(path: directory.path);
+    final catalog = Catalog.parse(
+      await File('assets/tricks/catalog.json').readAsString(),
+    );
+    final app = AppController(store: store, catalog: catalog);
+    await app.boot();
+    expect(
+      await app.signInWithIdentity(
+        provider: 'google',
+        subject: 'google-user-1',
+        email: 'ada@example.com',
+        name: 'Ada',
+      ),
+      isNull,
+    );
+    expect(app.settings.signedIn, isTrue);
+    expect(app.settings.accountProvider, 'google');
+    await app.signOut();
+    expect(
+      await app.signInWithIdentity(
+        provider: 'apple',
+        subject: 'apple-user-2',
+        email: 'other@example.com',
+      ),
+      app.copy.accountAlreadyOnDevice,
+    );
+    expect(await app.deleteAccount('1234', again: '1234'), isTrue);
+    expect(app.settings.signedIn, isFalse);
+    expect(app.settings.accountSubject, isNull);
+    expect(app.settings.accountEmail, isNull);
+    await store.close();
+    await directory.delete(recursive: true);
+  });
+
   test('store ignores a second submit and keeps learners apart', () async {
     final directory = await Directory.systemTemp.createTemp('stepmath');
     final store = HiveAppStore();

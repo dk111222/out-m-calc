@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 
+import '../app/platform_auth.dart';
 import '../app/providers.dart';
 import '../app/theme.dart';
 import '../domain/core.dart';
@@ -19,31 +20,98 @@ import '../ui/gates.dart';
 import '../ui/kit.dart';
 import 'home_pages.dart';
 
-class ErrorTrainingGate extends ConsumerStatefulWidget {
-  const ErrorTrainingGate({super.key});
+bool _hasAccount(DeviceSettings settings) =>
+    settings.accountSubject != null || settings.accountEmail != null;
 
-  @override
-  ConsumerState<ErrorTrainingGate> createState() => _ErrorTrainingGateState();
+String parentAccountName(DeviceSettings settings, Copy t) {
+  final email = settings.accountEmail;
+  final name = settings.accountName;
+  if (email != null && email.isNotEmpty) return email;
+  if (name != null && name.isNotEmpty) return name;
+  if (settings.accountProvider == 'apple') return t.appleAccount;
+  if (settings.accountProvider == 'google') return t.googleAccount;
+  return t.parentAccount;
 }
 
-class _ErrorTrainingGateState extends ConsumerState<ErrorTrainingGate> {
-  final _email = TextEditingController();
-  final _password = TextEditingController();
-  final _again = TextEditingController();
+class ParentSignInButton extends ConsumerStatefulWidget {
+  const ParentSignInButton({super.key});
+
+  @override
+  ConsumerState<ParentSignInButton> createState() => _ParentSignInButtonState();
+}
+
+class _ParentSignInButtonState extends ConsumerState<ParentSignInButton> {
   String? _error;
   bool _busy = false;
 
   @override
-  void dispose() {
-    _email.dispose();
-    _password.dispose();
-    _again.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final t = Copy.of(context);
+    final android = Theme.of(context).platform == TargetPlatform.android;
+    final apple = Theme.of(context).platform == TargetPlatform.iOS;
+    final label = android
+        ? t.signInWithGoogle
+        : apple
+        ? t.signInWithApple
+        : t.signInUnavailable;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppButton(
+          label: label,
+          busy: _busy,
+          onPressed: android || apple ? _signIn : null,
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: AppSpace.s12),
+          Text(_error!, style: TextStyle(color: AppColors.of(context).danger)),
+        ],
+      ],
+    );
   }
 
+  Future<void> _signIn() async {
+    final app = ref.read(appProvider);
+    final t = Copy.of(context);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final identity = await signInOnThisPhone();
+      if (!mounted) return;
+      if (identity == null) {
+        setState(() => _busy = false);
+        return;
+      }
+      final error = await app.signInWithIdentity(
+        provider: identity.provider,
+        subject: identity.subject,
+        email: identity.email,
+        name: identity.name,
+      );
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = error;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = t.signInFailed;
+      });
+    }
+  }
+}
+
+class ErrorTrainingGate extends ConsumerWidget {
+  const ErrorTrainingGate({super.key});
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final app = ref.watch(appProvider);
+    final t = Copy.of(context);
     if (app.childMode) {
       return const Text(
         'Wrong-problem practice needs a parent sign-in and a subscription. Ask a parent to turn it on in Settings.',
@@ -54,7 +122,7 @@ class _ErrorTrainingGateState extends ConsumerState<ErrorTrainingGate> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Signed in as ${app.settings.accountEmail}.',
+            t.signedInAs(parentAccountName(app.settings, t)),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpace.s8),
@@ -62,95 +130,21 @@ class _ErrorTrainingGateState extends ConsumerState<ErrorTrainingGate> {
             'Wrong-problem practice is a subscription. Lessons and speed drills stay available without it. The subscription is recorded on this device.',
           ),
           const SizedBox(height: AppSpace.s16),
-          AppButton(
-            label: 'Subscribe',
-            busy: _busy,
-            onPressed: () async {
-              setState(() {
-                _busy = true;
-                _error = null;
-              });
-              final error = await app.subscribe();
-              if (!mounted) return;
-              setState(() {
-                _busy = false;
-                _error = error;
-              });
-            },
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: AppSpace.s12),
-            Text(
-              _error!,
-              style: TextStyle(color: AppColors.of(context).danger),
-            ),
-          ],
+          AppButton(label: 'Subscribe', onPressed: () => app.subscribe()),
         ],
       );
     }
-    final creating = app.settings.accountEmail == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          creating ? 'Create a parent account' : 'Sign in',
+          t.parentAccount,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: AppSpace.s8),
-        const Text(
-          'Wrong-problem practice needs this sign-in and a subscription. The email and password stay on this device.',
-        ),
+        Text(t.wrongPracticeSignIn),
         const SizedBox(height: AppSpace.s16),
-        TextField(
-          controller: _email,
-          keyboardType: TextInputType.emailAddress,
-          autocorrect: false,
-          decoration: const InputDecoration(labelText: 'Email'),
-        ),
-        const SizedBox(height: AppSpace.s12),
-        TextField(
-          controller: _password,
-          obscureText: true,
-          decoration: const InputDecoration(labelText: 'Password'),
-        ),
-        if (creating) ...[
-          const SizedBox(height: AppSpace.s12),
-          TextField(
-            controller: _again,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Repeat password'),
-          ),
-        ],
-        if (_error != null) ...[
-          const SizedBox(height: AppSpace.s12),
-          Text(_error!, style: TextStyle(color: AppColors.of(context).danger)),
-        ],
-        const SizedBox(height: AppSpace.s16),
-        AppButton(
-          label: creating ? 'Create account' : 'Sign in',
-          busy: _busy,
-          onPressed: () async {
-            setState(() {
-              _busy = true;
-              _error = null;
-            });
-            final error = creating
-                ? await app.createAccount(
-                    email: _email.text,
-                    password: _password.text,
-                    again: _again.text,
-                  )
-                : await app.signIn(
-                    email: _email.text,
-                    password: _password.text,
-                  );
-            if (!mounted) return;
-            setState(() {
-              _busy = false;
-              _error = error;
-            });
-          },
-        ),
+        const ParentSignInButton(),
       ],
     );
   }
@@ -450,8 +444,8 @@ class SettingsPage extends ConsumerWidget {
             const SizedBox(height: AppSpace.s8),
             Text(
               settings.signedIn
-                  ? 'Signed in as ${settings.accountEmail}.'
-                  : 'Not signed in.',
+                  ? t.signedInAs(parentAccountName(settings, t))
+                  : t.notSignedIn,
             ),
             Text(
               settings.subscriptionActive
@@ -460,12 +454,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpace.s12),
             if (!settings.signedIn)
-              AppButton(
-                label: settings.accountEmail == null
-                    ? 'Create account'
-                    : 'Sign in',
-                onPressed: () => context.go('/review'),
-              )
+              const ParentSignInButton()
             else ...[
               if (!settings.subscriptionActive)
                 AppButton(label: 'Subscribe', onPressed: () => app.subscribe()),
@@ -473,7 +462,11 @@ class SettingsPage extends ConsumerWidget {
               AppButton(
                 label: 'Sign out',
                 secondary: true,
-                onPressed: () => app.signOut(),
+                onPressed: () async {
+                  final provider = settings.accountProvider;
+                  await endProviderSession(provider);
+                  await app.signOut();
+                },
               ),
             ],
             const SizedBox(height: AppSpace.s16),
@@ -489,26 +482,31 @@ class SettingsPage extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpace.s16),
             AppButton(
-              label: Copy.of(context).deleteAll,
+              label: _hasAccount(settings) ? t.deleteAccount : t.deleteAll,
               destructive: true,
               onPressed: () async {
+                final hasAccount = _hasAccount(settings);
+                final provider = settings.accountProvider;
                 final leave = await showConfirm(
                   context,
-                  title: Copy.of(context).deleteAll,
-                  body:
-                      'Learners, practice, and the parent code will be erased.',
-                  confirm: 'Delete all data',
+                  title: hasAccount ? t.deleteAccount : t.deleteAll,
+                  body: hasAccount ? t.deleteAccountBody : t.deleteAllBody,
+                  confirm: hasAccount ? t.deleteAccount : t.deleteAll,
                   destructive: true,
                 );
                 if (!leave || !context.mounted) return;
                 final ok = await requireParentCode(
                   context,
                   app,
-                  title: Copy.of(context).parentCode,
-                  body:
-                      'Enter the parent code to delete everything on this device.',
-                  action: (pin, again) => app.wipeAll(pin, again: again),
+                  title: t.parentCode,
+                  body: hasAccount
+                      ? t.deleteAccountCode
+                      : 'Enter the parent code to delete everything on this device.',
+                  action: (pin, again) => hasAccount
+                      ? app.deleteAccount(pin, again: again)
+                      : app.wipeAll(pin, again: again),
                 );
+                if (ok && hasAccount) await endProviderSession(provider, revoke: true);
                 if (ok && context.mounted) context.go('/child');
               },
             ),
@@ -536,8 +534,8 @@ class PrivacyPage extends StatelessWidget {
         children: [
           Text(
             Copy.of(context).pick(
-              'StepMath 把练习存在这台设备上。学技巧和速算不需要账号。错题练习需要家长登录。邮箱和密码只留在这台设备上。',
-              'StepMath stores practice on this device. Lessons and speed drills do not ask for an account. Wrong-problem practice asks a parent to sign in. That email and password stay on this device.',
+              'StepMath 把练习存在这台设备上。学技巧和速算不需要账号。错题练习需要家长登录：Android 使用 Google，iPhone 使用 Apple。登录只留在这台设备上。设置里的「删除账号」会清掉这个登录、孩子和练习。',
+              'StepMath stores practice on this device. Lessons and speed drills do not ask for an account. Wrong-problem practice asks a parent to sign in: Android uses Google, and iPhone uses Apple. That sign-in stays on this device. Delete account in Settings removes the sign-in, the children, and the practice.',
             ),
           ),
           const SizedBox(height: AppSpace.s12),
@@ -564,8 +562,8 @@ class PrivacyPage extends StatelessWidget {
           const SizedBox(height: AppSpace.s12),
           Text(
             Copy.of(context).pick(
-              '删除这台设备上的全部数据会清掉孩子、练习和家长密码。之后应用会重新开始。',
-              'Delete all data on this device erases learners, practice, and the parent code. After that, the app starts over.',
+              '删除账号或删除这台设备上的全部数据，都会清掉孩子、练习和家长密码。之后应用会重新开始。',
+              'Delete account, or delete all data on this device, erases learners, practice, and the parent code. After that, the app starts over.',
             ),
           ),
         ],

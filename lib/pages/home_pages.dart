@@ -485,61 +485,49 @@ class ChildHomePage extends ConsumerWidget {
             onPhotoGrade: () => context.go('/scan'),
           ),
           const SizedBox(height: AppSpace.s16),
-          if (app.snapshot != null &&
-              app.snapshot!.localDate == app.clock.today)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpace.s16),
-              child: AppButton(
-                label: t.continueLabel,
-                onPressed: () => _continue(context, ref),
+          _TrainingCard(
+            children: [
+              if (app.snapshot != null &&
+                  app.snapshot!.localDate == app.clock.today)
+                _PracticeRow(
+                  title: t.continueLabel,
+                  onPressed: () => _continue(context, ref),
+                ),
+              _PracticeRow(
+                title: t.dailyPractice,
+                caption: t.tenProblems,
+                onPressed: () => _startDaily(context, ref, learner.grade),
               ),
-            ),
-          _DailyCard(
-            learnerId: learner.id,
-            onStart: () => _startDaily(context, ref, learner.grade),
-          ),
-          const SizedBox(height: AppSpace.s16),
-          _SpeedHomeCard(
-            level: learner.grade,
-            initial: speedForLevel(
-              speed ?? speedDefault(learner.grade),
-              learner.grade,
-            ),
-            onStart: (config) => _openSpeed(context, ref, config),
-          ),
-          const SizedBox(height: AppSpace.s16),
-          InkWell(
-            onTap: () => _openLearn(context, ref, learnTrick, seen),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpace.s8),
-              child: Text(
-                t.mathTricks,
-                style: Theme.of(context).textTheme.titleMedium,
+              _SpeedHomeCard(
+                level: learner.grade,
+                initial: speedForLevel(
+                  speed ?? speedDefault(learner.grade),
+                  learner.grade,
+                ),
+                onStart: (config) => _openSpeed(context, ref, config),
               ),
-            ),
-          ),
-          for (final trick in mine)
-            TrickCard(
-              title: localizeTrick(trick, t).title,
-              caption: trick.example.prompt,
-              onPressed: () => context.go('/tricks/${trick.id}'),
-            ),
-          InkWell(
-            onTap: () => context.go('/tricks?tab=facts'),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpace.s8),
-              child: Text(
-                t.facts,
-                style: Theme.of(context).textTheme.titleMedium,
+              _SectionLabel(
+                title: t.mathTricks,
+                onPressed: () => _openLearn(context, ref, learnTrick, seen),
               ),
-            ),
+              for (final trick in mine)
+                _PracticeRow(
+                  title: localizeTrick(trick, t).title,
+                  caption: trick.example.prompt,
+                  onPressed: () => context.go('/tricks/${trick.id}'),
+                ),
+              _SectionLabel(
+                title: t.facts,
+                onPressed: () => context.go('/tricks?tab=facts'),
+              ),
+              for (final drill in drills)
+                _PracticeRow(
+                  title: t.factTitle(drill.title),
+                  caption: drill.sample,
+                  onPressed: () => _startDrill(context, ref, drill.config),
+                ),
+            ],
           ),
-          for (final drill in drills)
-            TrickCard(
-              title: t.factTitle(drill.title),
-              caption: drill.sample,
-              onPressed: () => _startDrill(context, ref, drill.config),
-            ),
         ],
       ),
     );
@@ -792,20 +780,122 @@ class _LearnerHomeAction extends StatelessWidget {
   }
 }
 
-class _DailyCard extends StatelessWidget {
-  const _DailyCard({required this.learnerId, required this.onStart});
+class _TrainingCard extends StatelessWidget {
+  const _TrainingCard({required this.children});
 
-  final String learnerId;
-  final VoidCallback onStart;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    final t = Copy.of(context);
-    return TrickCard(
-      key: ValueKey(learnerId),
-      title: t.dailyPractice,
-      caption: t.tenProblems,
-      onPressed: onStart,
+    final colors = AppColors.of(context);
+    final lines = <Widget>[];
+    Widget? previous;
+    for (final child in children) {
+      if (previous != null &&
+          (child is _SectionLabel || previous is! _SectionLabel)) {
+        lines.add(Divider(height: 1, thickness: 1, color: colors.border));
+      }
+      lines.add(child);
+      previous = child;
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSpace.rMd),
+        boxShadow: colors.cardShadow,
+      ),
+      child: Material(
+        color: colors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpace.rMd),
+          side: BorderSide(color: colors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: lines,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.title, required this.onPressed});
+
+  final String title;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpace.s16,
+          AppSpace.s16,
+          AppSpace.s16,
+          AppSpace.s8,
+        ),
+        child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      ),
+    );
+  }
+}
+
+class _PracticeRow extends StatelessWidget {
+  const _PracticeRow({
+    required this.title,
+    required this.onPressed,
+    this.caption = '',
+    this.trailing,
+  });
+
+  final String title;
+  final String caption;
+  final VoidCallback? onPressed;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final enabled = onPressed != null;
+    return InkWell(
+      onTap: onPressed,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 72),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.s16,
+            vertical: AppSpace.s12,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: enabled ? colors.text : colors.textMuted,
+                      ),
+                    ),
+                    if (caption.isNotEmpty) ...[
+                      const SizedBox(height: AppSpace.s4),
+                      Text(
+                        caption,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing!,
+              if (enabled) Icon(Icons.chevron_right, color: colors.textMuted),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -837,66 +927,24 @@ class _SpeedHomeCardState extends State<_SpeedHomeCard> {
   @override
   Widget build(BuildContext context) {
     final t = Copy.of(context);
-    final colors = AppColors.of(context);
     final summary = _config.summary(language: t.language);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(AppSpace.rMd),
-        border: Border.all(color: colors.border),
-        boxShadow: colors.cardShadow,
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppSpace.rMd),
-          onTap: () => widget.onStart(_config),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 72),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpace.s16,
-                AppSpace.s8,
-                AppSpace.s4,
-                AppSpace.s8,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          t.speedDrill,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: AppSpace.s4),
-                        Text(
-                          summary,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: t.settings,
-                    onPressed: () async {
-                    final next = await showSpeedSetupDialog(
-                      context,
-                      config: _config,
-                      level: widget.level,
-                    );
-                      if (next != null && mounted) {
-                        setState(() => _config = next);
-                      }
-                    },
-                    icon: const Icon(Icons.settings),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+    return _PracticeRow(
+      title: t.speedDrill,
+      caption: summary,
+      onPressed: () => widget.onStart(_config),
+      trailing: IconButton(
+        tooltip: t.settings,
+        onPressed: () async {
+          final next = await showSpeedSetupDialog(
+            context,
+            config: _config,
+            level: widget.level,
+          );
+          if (next != null && mounted) {
+            setState(() => _config = next);
+          }
+        },
+        icon: const Icon(Icons.settings),
       ),
     );
   }

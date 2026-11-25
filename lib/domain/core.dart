@@ -890,6 +890,9 @@ class DeviceSettings {
     required this.accountEmail,
     required this.accountPasswordHash,
     required this.accountSalt,
+    required this.accountProvider,
+    required this.accountSubject,
+    required this.accountName,
     required this.signedIn,
     required this.subscriptionActive,
     required this.themeMode,
@@ -913,6 +916,9 @@ class DeviceSettings {
   final String? accountEmail;
   final String? accountPasswordHash;
   final String? accountSalt;
+  final String? accountProvider;
+  final String? accountSubject;
+  final String? accountName;
   final bool signedIn;
   final bool subscriptionActive;
   final String themeMode;
@@ -949,6 +955,9 @@ class DeviceSettings {
       accountEmail: null,
       accountPasswordHash: null,
       accountSalt: null,
+      accountProvider: null,
+      accountSubject: null,
+      accountName: null,
       signedIn: false,
       subscriptionActive: false,
       themeMode: 'system',
@@ -975,6 +984,10 @@ class DeviceSettings {
     String? accountEmail,
     String? accountPasswordHash,
     String? accountSalt,
+    String? accountProvider,
+    String? accountSubject,
+    String? accountName,
+    bool clearPassword = false,
     bool? signedIn,
     bool? subscriptionActive,
     String? themeMode,
@@ -1000,8 +1013,13 @@ class DeviceSettings {
           extraLearnersUnlocked ?? this.extraLearnersUnlocked,
       printUnlocked: printUnlocked ?? this.printUnlocked,
       accountEmail: accountEmail ?? this.accountEmail,
-      accountPasswordHash: accountPasswordHash ?? this.accountPasswordHash,
-      accountSalt: accountSalt ?? this.accountSalt,
+      accountPasswordHash: clearPassword
+          ? null
+          : (accountPasswordHash ?? this.accountPasswordHash),
+      accountSalt: clearPassword ? null : (accountSalt ?? this.accountSalt),
+      accountProvider: accountProvider ?? this.accountProvider,
+      accountSubject: accountSubject ?? this.accountSubject,
+      accountName: accountName ?? this.accountName,
       signedIn: signedIn ?? this.signedIn,
       subscriptionActive: subscriptionActive ?? this.subscriptionActive,
       themeMode: themeMode ?? this.themeMode,

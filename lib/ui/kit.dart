@@ -471,74 +471,94 @@ class DrillBoard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    SizedBox(
-                      height: previousHeight,
-                      child: previous
-                          ? Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    _settledLine(
-                                      previousPrompt!,
-                                      previousAnswer!,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.stretch,
+                                children: [
+                                  if (previous)
+                                    SizedBox(
+                                      height: previousHeight,
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              _settledLine(
+                                                previousPrompt!,
+                                                previousAnswer!,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium,
+                                            ),
+                                          ),
+                                          Icon(
+                                            previousCorrect!
+                                                ? Icons.check
+                                                : Icons.close,
+                                            color: previousCorrect!
+                                                ? colors.success
+                                                : colors.danger,
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleMedium,
+                                  if (previous)
+                                    const SizedBox(height: AppSpace.s12),
+                                  SizedBox(
+                                    height: equationHeight,
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: EquationLine(
+                                        prompt: prompt,
+                                        value: value,
+                                        mark: mark,
+                                        showAnswer: showAnswer,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                Icon(
-                                  previousCorrect!
-                                      ? Icons.check
-                                      : Icons.close,
-                                  color: previousCorrect!
-                                      ? colors.success
-                                      : colors.danger,
-                                ),
-                              ],
-                            )
-                          : null,
-                    ),
-                    const SizedBox(height: AppSpace.s12),
-                    SizedBox(
-                      height: equationHeight,
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: EquationLine(
-                          prompt: prompt,
-                          value: value,
-                          mark: mark,
-                          showAnswer: showAnswer,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpace.s8),
-                    SizedBox(
-                      height: nextHeight,
-                      child: nextPrompt == null
-                          ? null
-                          : Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                _settledLine(nextPrompt!, '( )'),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(color: colors.textMuted),
+                                  if (nextPrompt != null) ...[
+                                    const SizedBox(height: AppSpace.s8),
+                                    SizedBox(
+                                      height: nextHeight,
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          _settledLine(nextPrompt!, '( )'),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: colors.textMuted,
+                                              ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
-                    ),
-                    Expanded(
-                      child: detail == null
-                          ? const SizedBox.shrink()
-                          : SingleChildScrollView(
-                              clipBehavior: Clip.none,
-                              child: detail,
+                          ),
+                          if (detail != null)
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: SingleChildScrollView(
+                                clipBehavior: Clip.none,
+                                child: detail,
+                              ),
                             ),
+                        ],
+                      ),
                     ),
                     const Divider(height: AppSpace.s16),
                     Keypad(

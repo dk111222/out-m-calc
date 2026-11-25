@@ -174,6 +174,37 @@ class Copy {
   String get practiceSettings => pick('练习设置', 'Practice settings');
   String get privacyPolicy => pick('隐私政策', 'Privacy policy');
   String get deleteAll => pick('删除这台设备上的全部数据', 'Delete all data on this device');
+  String get deleteAllBody => pick(
+    '孩子、练习和家长密码会被清掉。之后应用会重新开始。',
+    'Learners, practice, and the parent code will be erased. The app then starts over.',
+  );
+  String get deleteAccount => pick('删除账号', 'Delete account');
+  String get deleteAccountBody => pick(
+    '这会删除本机上的家长账号、孩子、练习和家长密码。Google 或 Apple 账号本身还在，只是 StepMath 不再保存它。',
+    'This deletes the parent account, children, practice, and the parent code on this device. The Google or Apple account itself stays; StepMath no longer keeps it.',
+  );
+  String get deleteAccountCode =>
+      pick('输入家长密码以删除账号。', 'Enter the parent code to delete the account.');
+  String get signInWithGoogle => pick('使用 Google 登录', 'Sign in with Google');
+  String get signInWithApple => pick('通过 Apple 登录', 'Sign in with Apple');
+  String get signInUnavailable => pick(
+    '请在 Android 手机或 iPhone 上登录。',
+    'Sign in on an Android phone or an iPhone.',
+  );
+  String get signInFailed => pick('登录没有完成。', 'Sign-in did not finish.');
+  String get accountAlreadyOnDevice => pick(
+    '这台设备上已有账号。请先删除账号，再用另一个登录。',
+    'This device already has an account. Delete it before using another.',
+  );
+  String get notSignedIn => pick('尚未登录。', 'Not signed in.');
+  String signedInAs(String who) => pick('已登录：$who', 'Signed in as $who.');
+  String get googleAccount => pick('Google 账号', 'Google account');
+  String get appleAccount => pick('Apple 账号', 'Apple account');
+  String get parentAccount => pick('家长账号', 'Parent account');
+  String get wrongPracticeSignIn => pick(
+    '错题练习需要家长登录。Android 使用 Google，iPhone 使用 Apple。登录只保存在这台设备上。',
+    'Wrong-problem practice needs a parent sign-in. Android uses Google. iPhone uses Apple. The sign-in stays on this device.',
+  );
   String get parentCode => pick('家长密码', 'Parent code');
   String get takePhoto => pick('拍照', 'Take a photo');
   String get choosePhoto => pick('从相册选择', 'Choose a photo');

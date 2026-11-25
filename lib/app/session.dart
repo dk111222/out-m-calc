@@ -382,6 +382,50 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Records a Google or Apple identity on this device. The password fields
+  /// are cleared so an older email account cannot sit beside the new sign-in.
+  Future<String?> signInWithIdentity({
+    required String provider,
+    required String subject,
+    String? email,
+    String? name,
+  }) async {
+    if (provider != 'google' && provider != 'apple') {
+      return copy.signInUnavailable;
+    }
+    if (subject.isEmpty) return copy.signInFailed;
+    final existing = settings.accountSubject;
+    final hasAccount = existing != null || settings.accountEmail != null;
+    if (hasAccount && existing != subject) {
+      return copy.accountAlreadyOnDevice;
+    }
+    final trimmedEmail = email?.trim();
+    final trimmedName = name?.trim();
+    settings = settings.copyWith(
+      accountProvider: provider,
+      accountSubject: subject,
+      accountEmail: trimmedEmail == null || trimmedEmail.isEmpty
+          ? settings.accountEmail
+          : trimmedEmail,
+      accountName: trimmedName == null || trimmedName.isEmpty
+          ? settings.accountName
+          : trimmedName,
+      clearPassword: true,
+      signedIn: true,
+      updatedAt: clock.now().toUtc(),
+    );
+    try {
+      await store.saveSettings(settings);
+      banner = null;
+    } catch (_) {
+      banner = copy.couldNotSave;
+      notifyListeners();
+      return banner;
+    }
+    notifyListeners();
+    return null;
+  }
+
   Future<String?> subscribe() async {
     if (!settings.signedIn) return 'Sign in first.';
     settings = settings.copyWith(
@@ -410,6 +454,10 @@ class AppController extends ChangeNotifier {
     notifyListeners();
     return true;
   }
+
+  /// Deletes the parent account and everything stored with it on this device.
+  Future<bool> deleteAccount(String pin, {String? again}) =>
+      wipeAll(pin, again: again);
 
   Future<bool> wipeAll(String pin, {String? again}) async {
     if (childMode) return false;
