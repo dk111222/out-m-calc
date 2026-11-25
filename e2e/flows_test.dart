@@ -92,6 +92,7 @@ void main() {
     expect(find.byType(ChildAvatar), findsWidgets);
     expect(find.byType(Image), findsWidgets);
     await tester.enterText(find.byType(TextField), 'Ava');
+    await tester.ensureVisible(find.text('一年级'));
     await tester.tap(find.text('一年级'));
     await tester.pump();
     await tester.ensureVisible(find.text('保存'));

@@ -8,7 +8,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('renders all learner avatars', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(720, 960));
+    await tester.binding.setSurfaceSize(const Size(720, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
@@ -31,8 +31,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(learnerAvatarIds, hasLength(12));
-    expect(find.byType(ChildAvatar), findsNWidgets(12));
-    expect(find.byType(Image), findsNWidgets(12));
+    expect(learnerAvatarIds, hasLength(24));
+    expect(find.byType(ChildAvatar), findsNWidgets(24));
+    expect(find.byType(Image), findsNWidgets(24));
   });
 }

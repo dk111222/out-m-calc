@@ -768,7 +768,7 @@ String newId([Random? random]) {
   return '$time-${source.nextInt(1 << 32)}';
 }
 
-/// Illustrated kid portraits spanning toddler → preteen.
+/// Illustrated kid portraits plus kawaii animal portraits.
 const learnerAvatarIds = [
   'sprout',
   'petal',
@@ -782,6 +782,18 @@ const learnerAvatarIds = [
   'noah',
   'piper',
   'leo',
+  'lion',
+  'seal',
+  'squirrel',
+  'zebra',
+  'owl',
+  'whale',
+  'giraffe',
+  'peacock',
+  'fox',
+  'panda',
+  'penguin',
+  'bunny',
 ];
 
 String avatarIdFor(String? stored, String seed) {

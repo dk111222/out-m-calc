@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../app/theme.dart';
 import '../domain/core.dart';
 
-/// Illustrated kid portraits for child profiles.
+/// Illustrated kid + animal portraits for child profiles.
 /// Asset files live at `assets/avatars/<id>.jpg`.
 String avatarAssetPath(String id) => 'assets/avatars/$id.jpg';
 
@@ -21,6 +21,18 @@ const _fallbackFills = <String, Color>{
   'noah': Color(0xFF5C7CFA),
   'piper': Color(0xFFB388FF),
   'leo': Color(0xFF38B2A8),
+  'lion': Color(0xFFFFC94A),
+  'seal': Color(0xFFA9D0E0),
+  'squirrel': Color(0xFFD4A574),
+  'zebra': Color(0xFFE8E4DC),
+  'owl': Color(0xFFC4A574),
+  'whale': Color(0xFF7EB6D9),
+  'giraffe': Color(0xFFE8B86D),
+  'peacock': Color(0xFF5BA88A),
+  'fox': Color(0xFFE8913A),
+  'panda': Color(0xFFD0D0D0),
+  'penguin': Color(0xFF9BB5C9),
+  'bunny': Color(0xFFE8D4E0),
 };
 
 Color _surfaceOf(BuildContext context) {
@@ -120,7 +132,7 @@ class AvatarPicker extends StatelessWidget {
         Theme.of(context).colorScheme.primary;
     final border = _borderOf(context);
     final surface = _surfaceOf(context);
-    // Four columns so all twelve portraits stay on the first screen.
+    // Four columns keeps kid + animal portraits scannable on the form.
     return Material(
       color: surface,
       elevation: 0,
@@ -136,6 +148,7 @@ class AvatarPicker extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: AppSpace.s8,
           crossAxisSpacing: AppSpace.s8,
+          childAspectRatio: 1,
           children: [
             for (final id in learnerAvatarIds)
               Semantics(
@@ -143,19 +156,29 @@ class AvatarPicker extends StatelessWidget {
                 selected: id == selected,
                 label: id,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                   onTap: () => onSelected(id),
                   child: AnimatedContainer(
                     duration: motionFast,
-                    padding: const EdgeInsets.all(3),
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: id == selected ? accent : border,
                         width: id == selected ? 3 : 1.5,
                       ),
                     ),
-                    child: Center(child: ChildAvatar(id: id, size: 56)),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final side = constraints.biggest.shortestSide - 4;
+                        return Center(
+                          child: ChildAvatar(
+                            id: id,
+                            size: side.clamp(36, 56),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),

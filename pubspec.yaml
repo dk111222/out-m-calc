@@ -88,6 +88,18 @@ flutter:
     - assets/avatars/noah.jpg
     - assets/avatars/piper.jpg
     - assets/avatars/leo.jpg
+    - assets/avatars/lion.jpg
+    - assets/avatars/seal.jpg
+    - assets/avatars/squirrel.jpg
+    - assets/avatars/zebra.jpg
+    - assets/avatars/owl.jpg
+    - assets/avatars/whale.jpg
+    - assets/avatars/giraffe.jpg
+    - assets/avatars/peacock.jpg
+    - assets/avatars/fox.jpg
+    - assets/avatars/panda.jpg
+    - assets/avatars/penguin.jpg
+    - assets/avatars/bunny.jpg
 
   fonts:
     - family: Source Sans 3
