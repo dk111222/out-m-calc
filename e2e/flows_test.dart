@@ -88,7 +88,7 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('家长或老师'));
     await settle(tester);
-    // Kid + animal sections both present (animals further down the form).
+    // Kid + animal rows both mount (horizontal strips, 12 each).
     expect(find.text('孩子'), findsWidgets);
     expect(find.text('动物'), findsOneWidget);
     expect(find.byType(ChildAvatar), findsNWidgets(24));

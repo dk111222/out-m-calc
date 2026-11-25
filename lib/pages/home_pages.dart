@@ -197,28 +197,30 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
             ),
           ),
           const SizedBox(height: AppSpace.s16),
-          Text(t.gradeWord, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpace.s8),
-          RadioGroup<String>(
-            groupValue: _grade,
-            onChanged: (value) => setState(() => _grade = value),
-            child: Column(
-              children: [
-                for (final grade in grades)
-                  RadioListTile<String>(
-                    value: grade,
-                    title: Text(t.grade(grade)),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpace.s16),
           Text(t.avatarWord, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpace.s8),
           AvatarPicker(
             selected: avatar,
             onSelected: (value) => setState(() => _avatar = value),
+          ),
+          const SizedBox(height: AppSpace.s16),
+          Text(t.gradeWord, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: AppSpace.s8),
+          // Compact chips keep grade + both avatar rows on the first screen.
+          Wrap(
+            spacing: AppSpace.s8,
+            runSpacing: AppSpace.s8,
+            children: [
+              for (final grade in grades)
+                ChoiceChip(
+                  label: Text(t.grade(grade)),
+                  selected: _grade == grade,
+                  onSelected: (selected) {
+                    if (!selected) return;
+                    setState(() => _grade = grade);
+                  },
+                ),
+            ],
           ),
         ],
       ),

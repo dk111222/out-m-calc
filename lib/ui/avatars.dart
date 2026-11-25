@@ -131,6 +131,7 @@ class AvatarPicker extends StatelessWidget {
     final t = Copy.of(context);
     final border = _borderOf(context);
     final surface = _surfaceOf(context);
+    // Two short horizontal rows keep kids + animals on the first screen.
     return Material(
       color: surface,
       elevation: 0,
@@ -139,13 +140,13 @@ class AvatarPicker extends StatelessWidget {
         side: BorderSide(color: border),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpace.s12),
+        padding: const EdgeInsets.symmetric(vertical: AppSpace.s12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _SectionLabel(t.kidAvatars),
             const SizedBox(height: AppSpace.s8),
-            _AvatarGrid(
+            _AvatarRow(
               ids: kidAvatarIds,
               selected: selected,
               onSelected: onSelected,
@@ -153,7 +154,7 @@ class AvatarPicker extends StatelessWidget {
             const SizedBox(height: AppSpace.s16),
             _SectionLabel(t.animalAvatars),
             const SizedBox(height: AppSpace.s8),
-            _AvatarGrid(
+            _AvatarRow(
               ids: animalAvatarIds,
               selected: selected,
               onSelected: onSelected,
@@ -172,18 +173,21 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s12),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 }
 
-class _AvatarGrid extends StatelessWidget {
-  const _AvatarGrid({
+class _AvatarRow extends StatelessWidget {
+  const _AvatarRow({
     required this.ids,
     required this.selected,
     required this.onSelected,
@@ -193,53 +197,52 @@ class _AvatarGrid extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelected;
 
+  static const _chip = 56.0;
+
   @override
   Widget build(BuildContext context) {
     final accent =
         Theme.of(context).extension<AppColors>()?.accent ??
         Theme.of(context).colorScheme.primary;
     final border = _borderOf(context);
-    return GridView.count(
-      crossAxisCount: 4,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: AppSpace.s8,
-      crossAxisSpacing: AppSpace.s8,
-      childAspectRatio: 1,
-      children: [
-        for (final id in ids)
-          Semantics(
-            button: true,
-            selected: id == selected,
-            label: id,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: () => onSelected(id),
-              child: AnimatedContainer(
-                duration: motionFast,
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
+    // Eager Row (not ListView.builder) so all 12 chips exist for tests and
+    // semantics; the parent page scrolls vertically if needed.
+    return SizedBox(
+      height: _chip + 8,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s12),
+        child: Row(
+          children: [
+            for (var i = 0; i < ids.length; i++) ...[
+              if (i > 0) const SizedBox(width: AppSpace.s8),
+              Semantics(
+                button: true,
+                selected: ids[i] == selected,
+                label: ids[i],
+                child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: id == selected ? accent : border,
-                    width: id == selected ? 3 : 1.5,
+                  onTap: () => onSelected(ids[i]),
+                  child: AnimatedContainer(
+                    duration: motionFast,
+                    width: _chip,
+                    height: _chip,
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: ids[i] == selected ? accent : border,
+                        width: ids[i] == selected ? 3 : 1.5,
+                      ),
+                    ),
+                    child: ChildAvatar(id: ids[i], size: _chip - 8),
                   ),
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final side = constraints.biggest.shortestSide - 4;
-                    return Center(
-                      child: ChildAvatar(
-                        id: id,
-                        size: side.clamp(36, 56),
-                      ),
-                    );
-                  },
-                ),
               ),
-            ),
-          ),
-      ],
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
