@@ -335,43 +335,45 @@ class SettingsPage extends ConsumerWidget {
             Text(t.settings, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: AppSpace.s16),
           ],
-          Text(t.languageWord, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpace.s8),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'zh', label: Text('中文')),
-              ButtonSegment(value: 'en', label: Text('English')),
-            ],
-            selected: {settings.language == 'en' ? 'en' : 'zh'},
-            onSelectionChanged: (value) =>
-                app.updateSettings(settings.copyWith(language: value.first)),
-          ),
-          const SizedBox(height: AppSpace.s16),
-          Text(t.appearance, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpace.s8),
-          SegmentedButton<String>(
-            segments: [
-              ButtonSegment(value: 'system', label: Text(t.system)),
-              ButtonSegment(value: 'light', label: Text(t.light)),
-              ButtonSegment(value: 'dark', label: Text(t.dark)),
-            ],
-            selected: {settings.themeMode},
-            onSelectionChanged: (value) =>
-                app.updateSettings(settings.copyWith(themeMode: value.first)),
-          ),
-          const SizedBox(height: AppSpace.s16),
-          Text(t.textSize, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpace.s8),
-          SegmentedButton<String>(
-            segments: [
-              ButtonSegment(value: 'small', label: Text(t.small)),
-              ButtonSegment(value: 'medium', label: Text(t.medium)),
-              ButtonSegment(value: 'large', label: Text(t.large)),
-            ],
-            selected: {settings.textScale},
-            onSelectionChanged: (value) =>
-                app.updateSettings(settings.copyWith(textScale: value.first)),
-          ),
+          if (!child) ...[
+            Text(t.languageWord, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpace.s8),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'zh', label: Text('中文')),
+                ButtonSegment(value: 'en', label: Text('English')),
+              ],
+              selected: {settings.language == 'en' ? 'en' : 'zh'},
+              onSelectionChanged: (value) =>
+                  app.updateSettings(settings.copyWith(language: value.first)),
+            ),
+            const SizedBox(height: AppSpace.s16),
+            Text(t.appearance, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpace.s8),
+            SegmentedButton<String>(
+              segments: [
+                ButtonSegment(value: 'system', label: Text(t.system)),
+                ButtonSegment(value: 'light', label: Text(t.light)),
+                ButtonSegment(value: 'dark', label: Text(t.dark)),
+              ],
+              selected: {settings.themeMode},
+              onSelectionChanged: (value) =>
+                  app.updateSettings(settings.copyWith(themeMode: value.first)),
+            ),
+            const SizedBox(height: AppSpace.s16),
+            Text(t.textSize, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpace.s8),
+            SegmentedButton<String>(
+              segments: [
+                ButtonSegment(value: 'small', label: Text(t.small)),
+                ButtonSegment(value: 'medium', label: Text(t.medium)),
+                ButtonSegment(value: 'large', label: Text(t.large)),
+              ],
+              selected: {settings.textScale},
+              onSelectionChanged: (value) =>
+                  app.updateSettings(settings.copyWith(textScale: value.first)),
+            ),
+          ],
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(t.soundEffects),
@@ -382,7 +384,6 @@ class SettingsPage extends ConsumerWidget {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(t.readProblem),
-            subtitle: Text(t.readProblemBody),
             value: settings.readAloudEnabled,
             onChanged: (value) =>
                 app.updateSettings(settings.copyWith(readAloudEnabled: value)),
