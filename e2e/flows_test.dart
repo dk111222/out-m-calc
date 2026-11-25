@@ -101,6 +101,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Ava');
     await tester.tap(find.text('一年级'));
     await tester.pump();
+    await tester.ensureVisible(find.text('保存'));
     await tester.tap(find.text('保存'));
     await settle(tester);
     expect(find.text('布置'), findsOneWidget);
