@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/theme.dart';
 import '../domain/core.dart';
+import '../l10n/copy.dart';
 
 /// Illustrated kid + animal portraits for child profiles.
 /// Asset files live at `assets/avatars/<id>.jpg`.
@@ -127,12 +128,9 @@ class AvatarPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent =
-        Theme.of(context).extension<AppColors>()?.accent ??
-        Theme.of(context).colorScheme.primary;
+    final t = Copy.of(context);
     final border = _borderOf(context);
     final surface = _surfaceOf(context);
-    // Four columns keeps kid + animal portraits scannable on the form.
     return Material(
       color: surface,
       elevation: 0,
@@ -142,49 +140,106 @@ class AvatarPicker extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpace.s12),
-        child: GridView.count(
-          crossAxisCount: 4,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: AppSpace.s8,
-          crossAxisSpacing: AppSpace.s8,
-          childAspectRatio: 1,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final id in learnerAvatarIds)
-              Semantics(
-                button: true,
-                selected: id == selected,
-                label: id,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () => onSelected(id),
-                  child: AnimatedContainer(
-                    duration: motionFast,
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: id == selected ? accent : border,
-                        width: id == selected ? 3 : 1.5,
-                      ),
-                    ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final side = constraints.biggest.shortestSide - 4;
-                        return Center(
-                          child: ChildAvatar(
-                            id: id,
-                            size: side.clamp(36, 56),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
+            _SectionLabel(t.kidAvatars),
+            const SizedBox(height: AppSpace.s8),
+            _AvatarGrid(
+              ids: kidAvatarIds,
+              selected: selected,
+              onSelected: onSelected,
+            ),
+            const SizedBox(height: AppSpace.s16),
+            _SectionLabel(t.animalAvatars),
+            const SizedBox(height: AppSpace.s8),
+            _AvatarGrid(
+              ids: animalAvatarIds,
+              selected: selected,
+              onSelected: onSelected,
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _AvatarGrid extends StatelessWidget {
+  const _AvatarGrid({
+    required this.ids,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<String> ids;
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent =
+        Theme.of(context).extension<AppColors>()?.accent ??
+        Theme.of(context).colorScheme.primary;
+    final border = _borderOf(context);
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: AppSpace.s8,
+      crossAxisSpacing: AppSpace.s8,
+      childAspectRatio: 1,
+      children: [
+        for (final id in ids)
+          Semantics(
+            button: true,
+            selected: id == selected,
+            label: id,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => onSelected(id),
+              child: AnimatedContainer(
+                duration: motionFast,
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: id == selected ? accent : border,
+                    width: id == selected ? 3 : 1.5,
+                  ),
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final side = constraints.biggest.shortestSide - 4;
+                    return Center(
+                      child: ChildAvatar(
+                        id: id,
+                        size: side.clamp(36, 56),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

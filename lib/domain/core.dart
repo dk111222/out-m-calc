@@ -768,8 +768,8 @@ String newId([Random? random]) {
   return '$time-${source.nextInt(1 << 32)}';
 }
 
-/// Illustrated kid portraits plus kawaii animal portraits.
-const learnerAvatarIds = [
+/// Soft cell-shaded kid faces (toddler → preteen).
+const kidAvatarIds = [
   'sprout',
   'petal',
   'acorn',
@@ -782,6 +782,10 @@ const learnerAvatarIds = [
   'noah',
   'piper',
   'leo',
+];
+
+/// Kawaii animal portraits offered alongside kid faces.
+const animalAvatarIds = [
   'lion',
   'seal',
   'squirrel',
@@ -795,6 +799,9 @@ const learnerAvatarIds = [
   'penguin',
   'bunny',
 ];
+
+/// All selectable child profile pictures.
+const learnerAvatarIds = [...kidAvatarIds, ...animalAvatarIds];
 
 String avatarIdFor(String? stored, String seed) {
   if (stored != null && learnerAvatarIds.contains(stored)) return stored;

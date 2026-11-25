@@ -90,6 +90,8 @@ class Copy {
       pick('留空则使用“学员”加编号。', 'Leave this blank to use Learner and a number.');
   String get gradeWord => pick('年级', 'Grade');
   String get avatarWord => pick('头像', 'Picture');
+  String get kidAvatars => pick('孩子', 'Kids');
+  String get animalAvatars => pick('动物', 'Animals');
   String get save => pick('保存', 'Save');
   String get learners => pick('孩子', 'Learners');
   String get settings => pick('设置', 'Settings');

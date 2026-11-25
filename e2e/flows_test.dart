@@ -88,14 +88,14 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('家长或老师'));
     await settle(tester);
-    // Avatar chips must be visible on the add-learner form.
-    expect(find.byType(ChildAvatar), findsWidgets);
+    // Kid + animal sections both present (animals further down the form).
+    expect(find.text('孩子'), findsWidgets);
+    expect(find.text('动物'), findsOneWidget);
+    expect(find.byType(ChildAvatar), findsNWidgets(24));
     expect(find.byType(Image), findsWidgets);
     await tester.enterText(find.byType(TextField), 'Ava');
-    await tester.ensureVisible(find.text('一年级'));
     await tester.tap(find.text('一年级'));
     await tester.pump();
-    await tester.ensureVisible(find.text('保存'));
     await tester.tap(find.text('保存'));
     await settle(tester);
     expect(find.text('布置'), findsOneWidget);

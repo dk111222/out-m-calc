@@ -197,13 +197,6 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
             ),
           ),
           const SizedBox(height: AppSpace.s16),
-          Text(t.avatarWord, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpace.s8),
-          AvatarPicker(
-            selected: avatar,
-            onSelected: (value) => setState(() => _avatar = value),
-          ),
-          const SizedBox(height: AppSpace.s16),
           Text(t.gradeWord, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpace.s8),
           RadioGroup<String>(
@@ -219,6 +212,13 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
                   ),
               ],
             ),
+          ),
+          const SizedBox(height: AppSpace.s16),
+          Text(t.avatarWord, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: AppSpace.s8),
+          AvatarPicker(
+            selected: avatar,
+            onSelected: (value) => setState(() => _avatar = value),
           ),
         ],
       ),
