@@ -98,6 +98,10 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
     super.initState();
     _name = TextEditingController();
     if (widget.guest) _grade = '1';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      precacheLearnerAvatars(context);
+    });
   }
 
   @override
@@ -124,6 +128,62 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
         tooltip: t.back,
         onPressed: () => context.go('/prefs'),
         icon: const Icon(Icons.arrow_back),
+      ),
+      bottom: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpace.s16,
+          0,
+          AppSpace.s16,
+          AppSpace.s16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpace.s8),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: AppColors.of(context).danger),
+                ),
+              ),
+            AppButton(
+              label: t.save,
+              busy: _busy,
+              onPressed: _grade == null
+                  ? null
+                  : () async {
+                      setState(() {
+                        _busy = true;
+                        _error = null;
+                      });
+                      final error = await app.createLearner(
+                        name: _name.text,
+                        grade: _grade!,
+                        avatar: avatar,
+                        guest: widget.guest,
+                      );
+                      if (!mounted) return;
+                      if (error != null) {
+                        setState(() {
+                          _busy = false;
+                          _error = error;
+                        });
+                        return;
+                      }
+                      if (!context.mounted) return;
+                      if (widget.guest) {
+                        await app.enterChild(app.activeLearnerId!);
+                        if (!context.mounted) return;
+                        context.go('/child');
+                      } else {
+                        context.go('/prefs');
+                      }
+                    },
+            ),
+          ],
+        ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,46 +219,6 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
                   ),
               ],
             ),
-          ),
-          if (_error != null)
-            Text(
-              _error!,
-              style: TextStyle(color: AppColors.of(context).danger),
-            ),
-          const SizedBox(height: AppSpace.s16),
-          AppButton(
-            label: t.save,
-            busy: _busy,
-            onPressed: _grade == null
-                ? null
-                : () async {
-                    setState(() {
-                      _busy = true;
-                      _error = null;
-                    });
-                    final error = await app.createLearner(
-                      name: _name.text,
-                      grade: _grade!,
-                      avatar: avatar,
-                      guest: widget.guest,
-                    );
-                    if (!mounted) return;
-                    if (error != null) {
-                      setState(() {
-                        _busy = false;
-                        _error = error;
-                      });
-                      return;
-                    }
-                    if (!context.mounted) return;
-                    if (widget.guest) {
-                      await app.enterChild(app.activeLearnerId!);
-                      if (!context.mounted) return;
-                      context.go('/child');
-                    } else {
-                      context.go('/prefs');
-                    }
-                  },
           ),
         ],
       ),

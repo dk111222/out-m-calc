@@ -768,7 +768,12 @@ String newId([Random? random]) {
   return '$time-${source.nextInt(1 << 32)}';
 }
 
+/// Illustrated kid portraits spanning toddler → preteen.
 const learnerAvatarIds = [
+  'sprout',
+  'petal',
+  'acorn',
+  'daisy',
   'sunny',
   'maple',
   'river',

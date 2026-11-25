@@ -76,6 +76,18 @@ flutter:
     - assets/tricks/catalog.json
     - assets/audio/
     - assets/fonts/
+    - assets/avatars/sprout.jpg
+    - assets/avatars/petal.jpg
+    - assets/avatars/acorn.jpg
+    - assets/avatars/daisy.jpg
+    - assets/avatars/sunny.jpg
+    - assets/avatars/maple.jpg
+    - assets/avatars/river.jpg
+    - assets/avatars/cedar.jpg
+    - assets/avatars/wren.jpg
+    - assets/avatars/noah.jpg
+    - assets/avatars/piper.jpg
+    - assets/avatars/leo.jpg
 
   fonts:
     - family: Source Sans 3
