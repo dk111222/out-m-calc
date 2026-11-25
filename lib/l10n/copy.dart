@@ -126,10 +126,11 @@ class Copy {
   String get laterGradeTrick => pick('这个技巧留给更高年级。', 'This trick is for a later grade.');
   String get notReady => pick('这个技巧还不能练习。', 'This trick is not ready to practice yet.');
   String get missingTrick => pick('这台设备上没有这个技巧。', 'This trick is not on this device.');
-  String get useThisWhen => pick('适合', 'Use this when');
-  String get notFor => pick('不适合', 'Not for');
-  String get steps => pick('步骤', 'Steps');
+  String get useThisWhen => pick('何时用', 'When');
+  String get notFor => pick('别用', 'Skip');
+  String get steps => pick('怎么算', 'How');
   String get startPractice => pick('开始练习', 'Start practice');
+  String get trickRange => pick('范围', 'Range');
   String get backToToday => pick('返回首页', 'Back to home');
   String get submit => pick('提交', 'Submit');
   String get yourAnswer => pick('你的答案', 'Your answer');
