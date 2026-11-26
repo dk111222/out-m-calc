@@ -40,8 +40,10 @@ class AppController extends ChangeNotifier {
   DeviceSettings settings = DeviceSettings.fresh();
   Copy get copy => Copy(settings.language);
   List<Learner> learners = [];
-  final Map<String, Assignment?> today = {};
   SessionSnapshot? snapshot;
+  DailyPracticeTally _finishedDaily = const DailyPracticeTally();
+  String? _finishedDailyLearnerId;
+  String _finishedDailyOn = '';
   String? banner;
 
   Learner? learnerById(String? id) {
@@ -53,6 +55,22 @@ class AppController extends ChangeNotifier {
   }
 
   Learner? get active => learnerById(activeLearnerId);
+
+  /// Finished daily rounds cached for the active learner, plus today's open round.
+  DailyPracticeTally get todayDaily {
+    final learner = active;
+    final today = clock.today;
+    final finished =
+        learner != null &&
+            _finishedDailyLearnerId == learner.id &&
+            _finishedDailyOn == today
+        ? _finishedDaily
+        : const DailyPracticeTally();
+    if (learner == null) return finished;
+    final open = openDailyPractice(snapshot, learner.grade, today);
+    if (open == null) return finished;
+    return finished.add(open);
+  }
 
   bool get errorTrainingOpen => errorTrainingAllowed(
     signedIn: settings.signedIn,
@@ -69,6 +87,14 @@ class AppController extends ChangeNotifier {
     return '/adult';
   }
 
+  bool _routeOpen(String loc, List<String> prefixes) {
+    const account = ['/sign-in', '/terms', '/settings/privacy'];
+    if (account.contains(loc)) return true;
+    return prefixes.any(
+      (prefix) => loc == prefix || loc.startsWith('$prefix/'),
+    );
+  }
+
   String? redirect(String loc) {
     if (!ready || bootError != null) {
       return loc == '/loading' ? null : '/loading';
@@ -83,21 +109,14 @@ class AppController extends ChangeNotifier {
       '/prefs',
       '/report',
       '/export',
-      '/assign',
       '/learner/new',
     ];
     if (learners.isEmpty) {
       const open = ['/child', '/prefs', '/learner/new', '/settings'];
-      final allowed = open.any(
-        (prefix) => loc == prefix || loc.startsWith('$prefix/'),
-      );
-      return allowed ? null : '/child';
+      return _routeOpen(loc, open) ? null : '/child';
     }
     if (childMode) {
-      final allowed = childOk.any(
-        (prefix) => loc == prefix || loc.startsWith('$prefix/'),
-      );
-      return allowed ? null : '/child';
+      return _routeOpen(loc, childOk) ? null : '/child';
     }
     if (loc == '/loading' || loc == '/start') return '/adult';
     return null;
@@ -119,12 +138,13 @@ class AppController extends ChangeNotifier {
         activeLearnerId = learners.isEmpty ? null : learners.first.id;
       }
       await _roll();
-      // Enter the child session once, then load today's card a single time.
+      // Enter the child session once, then load the open round a single time.
       if (activeLearnerId != null) {
         childMode = true;
         _session();
       }
-      await Future.wait([refreshToday(), refreshSnapshot()]);
+      await refreshSnapshot();
+      await _refreshFinishedDaily();
       ready = true;
     } catch (_) {
       bootError = copy.couldNotSave;
@@ -189,22 +209,28 @@ class AppController extends ChangeNotifier {
     if (!found) learners = [...learners, learner];
   }
 
-  Future<void> refreshToday() async {
-    final ids = childMode && activeLearnerId != null
-        ? [activeLearnerId!]
-        : learners.map((learner) => learner.id).toList();
-    final date = clock.today;
-    final loaded = await Future.wait([
-      for (final id in ids) store.openAssignment(id, date),
-    ]);
-    for (var i = 0; i < ids.length; i++) {
-      today[ids[i]] = loaded[i];
-    }
-  }
-
   Future<void> refreshSnapshot() async {
     final id = activeLearnerId;
     snapshot = id == null ? null : await store.snapshot(id);
+  }
+
+  Future<void> _refreshFinishedDaily() async {
+    final today = clock.today;
+    final learner = active;
+    if (learner == null) {
+      _finishedDaily = const DailyPracticeTally();
+      _finishedDailyLearnerId = null;
+      _finishedDailyOn = today;
+      return;
+    }
+    final rounds = await store.speeds(learner.id);
+    _finishedDaily = tallyDailyPractice(
+      rounds: rounds,
+      grade: learner.grade,
+      today: today,
+    );
+    _finishedDailyLearnerId = learner.id;
+    _finishedDailyOn = today;
   }
 
   String _nextName({required bool guest}) {
@@ -264,7 +290,6 @@ class AppController extends ChangeNotifier {
       if (wasChild) {
         store.setSession(childMode: true, learnerId: learner.id);
       }
-      await refreshToday();
       banner = null;
       notifyListeners();
       return null;
@@ -289,8 +314,8 @@ class AppController extends ChangeNotifier {
     );
     try {
       await store.saveSettings(settings);
-      await refreshToday();
       await refreshSnapshot();
+      await _refreshFinishedDaily();
       banner = null;
     } catch (_) {
       banner = copy.couldNotSave;
@@ -398,7 +423,7 @@ class AppController extends ChangeNotifier {
     String? email,
     String? name,
   }) async {
-    if (provider != 'google' && provider != 'apple') {
+    if (provider != 'google' && provider != 'apple' && provider != 'guest') {
       return copy.signInUnavailable;
     }
     if (subject.isEmpty) return copy.signInFailed;
@@ -434,6 +459,26 @@ class AppController extends ChangeNotifier {
     return null;
   }
 
+  /// A guest identity never leaves this device. The same subject is reused
+  /// after sign-out so the device still has one account.
+  Future<String?> signInAsGuest() async {
+    final existing = settings.accountSubject;
+    if (existing != null && settings.accountProvider != 'guest') {
+      return copy.accountAlreadyOnDevice;
+    }
+    final subject =
+        settings.accountProvider == 'guest' &&
+            existing != null &&
+            existing.isNotEmpty
+        ? existing
+        : newId();
+    return signInWithIdentity(
+      provider: 'guest',
+      subject: subject,
+      name: copy.localGuest,
+    );
+  }
+
   Future<String?> subscribe() async {
     if (!settings.signedIn) return 'Sign in first.';
     settings = settings.copyWith(
@@ -458,7 +503,6 @@ class AppController extends ChangeNotifier {
     childMode = false;
     _session();
     learners = await store.readLearners();
-    await refreshToday();
     notifyListeners();
     return true;
   }
@@ -474,8 +518,10 @@ class AppController extends ChangeNotifier {
     await store.wipe();
     settings = await store.readSettings();
     learners = [];
-    today.clear();
     snapshot = null;
+    _finishedDaily = const DailyPracticeTally();
+    _finishedDailyLearnerId = null;
+    _finishedDailyOn = '';
     activeLearnerId = null;
     childMode = false;
     _session();
@@ -493,7 +539,6 @@ class AppController extends ChangeNotifier {
       activeLearnerId = learners.isEmpty ? null : learners.first.id;
     }
     settings = await store.readSettings();
-    await refreshToday();
     notifyListeners();
     return true;
   }
@@ -533,19 +578,6 @@ class AppController extends ChangeNotifier {
       final next = learner.copyWith(updatedAt: clock.now().toUtc());
       await store.saveLearner(next);
       _replace(next);
-      banner = null;
-    } catch (_) {
-      banner = copy.couldNotSave;
-    }
-    notifyListeners();
-  }
-
-  Future<void> saveAssignment(Assignment assignment) async {
-    try {
-      await store.saveAssignment(assignment);
-      today[assignment.learnerId] = assignment.status == 'open'
-          ? assignment
-          : today[assignment.learnerId];
       banner = null;
     } catch (_) {
       banner = copy.couldNotSave;
@@ -818,6 +850,7 @@ class AppController extends ChangeNotifier {
         ),
       );
     }
+    await _refreshFinishedDaily();
     await finishRound(view.learnerId);
   }
 

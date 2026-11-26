@@ -19,10 +19,14 @@ class ParentIdentity {
 
 /// Android opens Google. iOS opens Apple. A cancel returns null.
 Future<ParentIdentity?> signInOnThisPhone() async {
-  if (Platform.isAndroid) return _google();
-  if (Platform.isIOS) return _apple();
+  if (Platform.isAndroid) return signInWithGoogle();
+  if (Platform.isIOS) return signInWithApple();
   return null;
 }
+
+Future<ParentIdentity?> signInWithGoogle() => _google();
+
+Future<ParentIdentity?> signInWithApple() => _apple();
 
 Future<void> endProviderSession(String? provider, {bool revoke = false}) async {
   if (provider != 'google') return;

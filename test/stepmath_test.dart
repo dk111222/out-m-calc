@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stepmath/app/session.dart';
+import 'package:stepmath/pages/extra_pages.dart';
 import 'package:stepmath/app/theme.dart';
 import 'package:stepmath/ui/handwriting.dart';
 import 'package:stepmath/ui/kit.dart';
@@ -188,6 +191,174 @@ void main() {
       expect(items.map((item) => item.prompt).toSet().length, greaterThan(1));
       expect(isDailyPractice(config, grade), isTrue);
     }
+  });
+
+  test('today\'s daily practice tally', () {
+    const grade = '1';
+    final daily = dailyPractice(grade);
+    final today = DateTime(2026, 11, 26, 9, 30);
+    final todayKey = formatYmd(today);
+    final rounds = [
+      SpeedRound(
+        id: 'daily',
+        learnerId: 'learner',
+        operation: daily.operation,
+        digitMin: daily.digitMin,
+        digitMax: daily.digitMax,
+        limitMode: 'count',
+        limitValue: daily.limitValue,
+        correctCount: 8,
+        durationMs: 40000,
+        createdAt: today.toUtc(),
+      ),
+      SpeedRound(
+        id: 'other-operation',
+        learnerId: 'learner',
+        operation: 'addition',
+        digitMin: daily.digitMin,
+        digitMax: daily.digitMax,
+        limitMode: 'count',
+        limitValue: 10,
+        correctCount: 10,
+        durationMs: 1111,
+        createdAt: today.toUtc(),
+      ),
+      SpeedRound(
+        id: 'other-day',
+        learnerId: 'learner',
+        operation: daily.operation,
+        digitMin: daily.digitMin,
+        digitMax: daily.digitMax,
+        limitMode: 'count',
+        limitValue: daily.limitValue,
+        correctCount: 10,
+        durationMs: 99999,
+        createdAt: DateTime(2026, 11, 25, 9, 30).toUtc(),
+      ),
+      SpeedRound(
+        id: 'timed',
+        learnerId: 'learner',
+        operation: daily.operation,
+        digitMin: daily.digitMin,
+        digitMax: daily.digitMax,
+        limitMode: 'time',
+        limitValue: 60,
+        correctCount: 3,
+        durationMs: 5000,
+        createdAt: today.toUtc(),
+      ),
+    ];
+
+    final finished = tallyDailyPractice(
+      rounds: rounds,
+      grade: grade,
+      today: todayKey,
+    );
+    expect(finished.answered, daily.limitValue);
+    expect(finished.correct, 8);
+    expect(finished.durationMs, 40000);
+    expect(finished.accuracyLabel, '80%');
+
+    final withOpen = tallyDailyPractice(
+      rounds: rounds,
+      grade: grade,
+      today: todayKey,
+      openAnswered: 5,
+      openCorrect: 4,
+      openDurationMs: 20000,
+    );
+    expect(withOpen.answered, daily.limitValue + 5);
+    expect(withOpen.correct, 12);
+    expect(withOpen.durationMs, 60000);
+    expect(withOpen.accuracyLabel, '80%');
+
+    expect(
+      tallyDailyPractice(
+        rounds: const [],
+        grade: grade,
+        today: todayKey,
+      ).accuracyLabel,
+      '—',
+    );
+
+    SessionSnapshot snap({
+      required String module,
+      required String day,
+      required Map<String, Object?> payload,
+    }) {
+      return SessionSnapshot(
+        learnerId: 'learner',
+        module: module,
+        trickId: null,
+        localDate: day,
+        payload: jsonEncode(payload),
+        updatedAt: today.toUtc(),
+      );
+    }
+
+    final open = openDailyPractice(
+      snap(
+        module: 'speed',
+        day: todayKey,
+        payload: {
+          'done': false,
+          'answered': 0,
+          'correct': 0,
+          'elapsedMs': 0,
+          'config': daily.toJson(),
+        },
+      ),
+      grade,
+      todayKey,
+    );
+    expect(open, isNotNull);
+    expect(
+      tallyDailyPractice(
+        rounds: const [],
+        grade: grade,
+        today: todayKey,
+        openAnswered: open!.answered,
+        openCorrect: open.correct,
+        openDurationMs: open.durationMs,
+      ).accuracyLabel,
+      '—',
+    );
+    expect(
+      openDailyPractice(
+        snap(
+          module: 'speed',
+          day: todayKey,
+          payload: {
+            'done': true,
+            'answered': 10,
+            'correct': 10,
+            'elapsedMs': 1000,
+            'config': daily.toJson(),
+          },
+        ),
+        grade,
+        todayKey,
+      ),
+      isNull,
+    );
+    expect(
+      openDailyPractice(
+        snap(
+          module: 'learn',
+          day: todayKey,
+          payload: {
+            'done': false,
+            'answered': 4,
+            'correct': 4,
+            'elapsedMs': 1000,
+            'config': daily.toJson(),
+          },
+        ),
+        grade,
+        todayKey,
+      ),
+      isNull,
+    );
   });
 
   test('wrong final opens the step check and a second submit is ignored', () {
@@ -605,6 +776,71 @@ void main() {
     await store.close();
     await directory.delete(recursive: true);
   });
+
+  testWidgets('sign-in offers Google, Apple, a local guest, and the policies', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: buildTheme(Brightness.light),
+          home: const SignInPage(),
+        ),
+      ),
+    );
+    expect(find.text('选择登录方式'), findsOneWidget);
+    expect(find.text('使用 Google 登录'), findsOneWidget);
+    expect(find.text('用于 Android 手机'), findsOneWidget);
+    expect(find.text('通过 Apple 登录'), findsOneWidget);
+    expect(find.text('用于 iPhone'), findsOneWidget);
+    expect(find.text('本地游客'), findsOneWidget);
+    expect(find.text('用户政策'), findsOneWidget);
+    expect(find.text('隐私协议'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  test(
+    'a local guest signs in on this device and a child can open it',
+    () async {
+      final directory = await Directory.systemTemp.createTemp('stepmath-login');
+      final store = HiveAppStore();
+      await store.init(path: directory.path);
+      final catalog = Catalog.parse(
+        File('assets/tricks/catalog.json').readAsStringSync(),
+      );
+      final app = AppController(store: store, catalog: catalog);
+      await app.boot();
+      expect(await app.signInAsGuest(), isNull);
+      expect(app.settings.signedIn, isTrue);
+      expect(app.settings.accountProvider, 'guest');
+      expect(app.settings.accountName, '本地游客');
+      final subject = app.settings.accountSubject;
+      await app.signOut();
+      expect(app.settings.signedIn, isFalse);
+      expect(await app.signInAsGuest(), isNull);
+      expect(app.settings.accountSubject, subject);
+      expect(
+        await app.signInWithIdentity(
+          provider: 'google',
+          subject: 'someone-else',
+        ),
+        app.copy.accountAlreadyOnDevice,
+      );
+      expect(
+        await app.createLearner(name: '访客', grade: '1', guest: true),
+        isNull,
+      );
+      await app.enterChild(app.learners.single.id);
+      expect(app.redirect('/sign-in'), isNull);
+      expect(app.redirect('/terms'), isNull);
+      expect(app.redirect('/settings/privacy'), isNull);
+      expect(app.redirect('/settings'), '/child');
+      await store.close();
+      await directory.delete(recursive: true);
+    },
+  );
 
   test('a guest session can add a learner without a parent code', () async {
     final directory = await Directory.systemTemp.createTemp('stepmath-guest');

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -119,6 +117,24 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
     if (widget.guest && !_seededName) {
       _seededName = true;
       _name.text = t.guest;
+    }
+    if (!app.settings.signedIn) {
+      return PageFrame(
+        title: t.addLearner,
+        leading: IconButton(
+          tooltip: t.back,
+          onPressed: () => context.go('/prefs'),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(t.signInToAddLearner),
+            const SizedBox(height: AppSpace.s16),
+            AppButton(label: t.signIn, onPressed: () => context.go('/sign-in')),
+          ],
+        ),
+      );
     }
     return PageFrame(
       title: widget.guest ? t.guest : t.addLearner,
@@ -301,26 +317,40 @@ class LearnerHub extends ConsumerWidget {
     final app = ref.watch(appProvider);
     final t = Copy.of(context);
     final empty = app.learners.isEmpty;
+    final signedIn = app.settings.signedIn;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(t.learners, style: Theme.of(context).textTheme.titleMedium),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                t.learners,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            if (signedIn)
+              TextButton(
+                onPressed: () => openLearnerForm(context, guest: false),
+                child: Text(t.addLearner),
+              ),
+          ],
+        ),
         const SizedBox(height: AppSpace.s8),
-        if (empty) ...[
-          Text(t.whoUsesBody, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: AppSpace.s16),
-        ] else
+        if (empty)
+          Text(
+            signedIn ? t.addLearnerFirst : t.signInToAddLearner,
+            style: Theme.of(context).textTheme.bodyMedium,
+          )
+        else
           for (final learner in app.learners) _LearnerRow(learner: learner),
-        AppButton(
-          label: empty ? t.parentOrTeacher : t.addLearner,
-          onPressed: () => openLearnerForm(context, guest: false),
-        ),
-        const SizedBox(height: AppSpace.s12),
-        AppButton(
-          label: t.tryAsGuest,
-          secondary: true,
-          onPressed: () => openLearnerForm(context, guest: true),
-        ),
+        if (!signedIn && !empty) ...[
+          const SizedBox(height: AppSpace.s8),
+          Text(
+            t.signInToAddLearner,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
       ],
     );
   }
@@ -355,16 +385,6 @@ class _LearnerRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final app = ref.watch(appProvider);
     final t = Copy.of(context);
-    final assignment = app.today[learner.id];
-    final assigned = assignment == null
-        ? null
-        : app.catalog.byId(assignment.trickId ?? '');
-    final task = assignment == null
-        ? t.nothingAssigned
-        : assignment.kind == 'learn'
-        ? (assigned == null ? t.learnATrick : localizeTrick(assigned, t).title)
-        : (assignment.parsedSpeed?.summary(language: t.language) ??
-              t.speedDrill);
     final guest = learner.isGuest ? '${t.guest} · ' : '';
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpace.s16),
@@ -375,7 +395,7 @@ class _LearnerRow extends ConsumerWidget {
             leading: ChildAvatar(id: learner.avatar, size: 48),
             title: learner.displayName,
             caption:
-                '$guest${t.grade(learner.grade)} · ${t.dayStreak(learner.streakCount)} · $task',
+                '$guest${t.grade(learner.grade)} · ${t.dayStreak(learner.streakCount)}',
             onPressed: () async {
               await app.enterChild(learner.id);
               if (context.mounted) context.go('/child');
@@ -385,11 +405,6 @@ class _LearnerRow extends ConsumerWidget {
             spacing: AppSpace.s8,
             runSpacing: AppSpace.s8,
             children: [
-              OutlinedButton(
-                onPressed: () =>
-                    _openLearner(context, ref, '/assign/${learner.id}'),
-                child: Text(t.assign),
-              ),
               OutlinedButton(
                 onPressed: () =>
                     _openLearner(context, ref, '/report/${learner.id}'),
@@ -420,26 +435,11 @@ class ChildHomePage extends ConsumerWidget {
     if (learner == null) {
       return PageFrame(title: t.todayPractice, body: Text(t.addLearnerFirst));
     }
-    final assignment = app.today[learner.id];
-    final learnTrick = assignment?.kind == 'learn'
-        ? app.catalog.byId(assignment?.trickId ?? '')
-        : null;
-    final speed = assignment?.kind == 'speed' ? assignment?.parsedSpeed : null;
-    final seen =
-        learnTrick != null &&
-        learner.seenLessons[learnTrick.id] == app.clock.today;
     final drills = factDrills(learner.grade);
     final mine = app.catalog
         .forGrade(learner.grade)
         .where((trick) => trick.ready)
         .take(3);
-    final todaySummary = assignment == null
-        ? t.nothingAssigned
-        : assignment.kind == 'learn'
-        ? (learnTrick == null
-              ? t.learnATrick
-              : localizeTrick(learnTrick, t).title)
-        : (speed?.summary(language: t.language) ?? t.speedDrill);
     return PageFrame(
       title: t.todayPractice,
       banner: app.banner,
@@ -451,7 +451,6 @@ class ChildHomePage extends ConsumerWidget {
             name: learner.displayName,
             gradeLabel: t.grade(learner.grade),
             streakLabel: t.dayStreak(learner.streakCount),
-            todayLabel: t.todayTask(todaySummary),
             streakNotice: learner.streakNotice == 'held'
                 ? t.skipKept
                 : learner.streakNotice == 'reset'
@@ -462,30 +461,24 @@ class ChildHomePage extends ConsumerWidget {
             onPhotoGrade: () => context.go('/scan'),
           ),
           const SizedBox(height: AppSpace.s16),
+          _DailyPracticeCard(
+            tally: app.todayDaily,
+            onPressed: () => _startDaily(context, ref, learner.grade),
+          ),
+          const SizedBox(height: AppSpace.s16),
           _TrainingCard(
             children: [
-              if (app.snapshot != null &&
-                  app.snapshot!.localDate == app.clock.today)
-                _PracticeRow(
-                  title: t.continueLabel,
-                  onPressed: () => _continue(context, ref),
-                ),
-              _PracticeRow(
-                title: t.dailyPractice,
-                caption: t.tenProblems,
-                onPressed: () => _startDaily(context, ref, learner.grade),
-              ),
               _SpeedHomeCard(
                 level: learner.grade,
                 initial: speedForLevel(
-                  speed ?? speedDefault(learner.grade),
+                  speedDefault(learner.grade),
                   learner.grade,
                 ),
                 onStart: (config) => _openSpeed(context, ref, config),
               ),
               _SectionLabel(
                 title: t.mathTricks,
-                onPressed: () => _openLearn(context, ref, learnTrick, seen),
+                onPressed: () => context.go('/tricks'),
               ),
               for (final trick in mine)
                 _PracticeRow(
@@ -510,43 +503,6 @@ class ChildHomePage extends ConsumerWidget {
     );
   }
 
-  Future<void> _continue(BuildContext context, WidgetRef ref) async {
-    final app = ref.read(appProvider);
-    final snapshot = app.snapshot;
-    if (snapshot == null) return;
-    if (snapshot.module == 'speed') {
-      await ref.read(speedProvider).resume(snapshot);
-      if (context.mounted) context.go('/speed/run');
-      return;
-    }
-    await ref.read(practiceProvider).resume(snapshot);
-    final view = ref.read(practiceProvider).view;
-    if (view != null && context.mounted) {
-      context.go('/practice/${view.trickId}/${view.phase}');
-    }
-  }
-
-  Future<void> _openLearn(
-    BuildContext context,
-    WidgetRef ref,
-    dynamic trick,
-    bool seen,
-  ) async {
-    if (trick == null) {
-      context.go('/tricks');
-      return;
-    }
-    if (!seen) {
-      context.go('/tricks/${trick.id}');
-      return;
-    }
-    await ref.read(practiceProvider).startLearn(trick.id as String);
-    final view = ref.read(practiceProvider).view;
-    if (view != null && context.mounted) {
-      context.go('/practice/${trick.id}/${view.phase}');
-    }
-  }
-
   Future<void> _openSpeed(
     BuildContext context,
     WidgetRef ref,
@@ -561,7 +517,14 @@ class ChildHomePage extends ConsumerWidget {
     WidgetRef ref,
     String grade,
   ) async {
-    await ref.read(speedProvider).start(dailyPractice(grade));
+    final app = ref.read(appProvider);
+    final snapshot = app.snapshot;
+    final open = openDailyPractice(snapshot, grade, app.clock.today);
+    if (snapshot != null && open != null) {
+      await ref.read(speedProvider).resume(snapshot);
+    } else {
+      await ref.read(speedProvider).start(dailyPractice(grade));
+    }
     if (context.mounted) context.go('/speed/run');
   }
 
@@ -581,7 +544,6 @@ class _LearnerHomeCard extends StatelessWidget {
     required this.name,
     required this.gradeLabel,
     required this.streakLabel,
-    required this.todayLabel,
     required this.onTraining,
     required this.onWrongBook,
     required this.onPhotoGrade,
@@ -592,7 +554,6 @@ class _LearnerHomeCard extends StatelessWidget {
   final String name;
   final String gradeLabel;
   final String streakLabel;
-  final String todayLabel;
   final String? streakNotice;
   final VoidCallback onTraining;
   final VoidCallback onWrongBook;
@@ -639,8 +600,6 @@ class _LearnerHomeCard extends StatelessWidget {
                           color: colors.textMuted,
                         ),
                       ),
-                      const SizedBox(height: AppSpace.s8),
-                      Text(todayLabel, style: theme.textTheme.bodyMedium),
                       if (streakNotice != null) ...[
                         const SizedBox(height: AppSpace.s8),
                         Text(
@@ -753,6 +712,106 @@ class _LearnerHomeAction extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DailyPracticeCard extends StatelessWidget {
+  const _DailyPracticeCard({required this.tally, required this.onPressed});
+
+  final DailyPracticeTally tally;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Copy.of(context);
+    final colors = AppColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSpace.rMd),
+        boxShadow: colors.cardShadow,
+      ),
+      child: Material(
+        color: colors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpace.rMd),
+          side: BorderSide(color: colors.border),
+        ),
+        child: InkWell(
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpace.s16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        t.dailyPractice,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: colors.textMuted),
+                  ],
+                ),
+                const SizedBox(height: AppSpace.s12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DailyFigure(
+                        value: '${tally.answered}',
+                        label: t.problemCount,
+                      ),
+                    ),
+                    Expanded(
+                      child: _DailyFigure(
+                        value: tally.accuracyLabel,
+                        label: t.accuracy,
+                      ),
+                    ),
+                    Expanded(
+                      child: _DailyFigure(
+                        value: clockLabel(tally.durationMs),
+                        label: t.practiceTime,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DailyFigure extends StatelessWidget {
+  const _DailyFigure({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(value, style: theme.textTheme.titleMedium),
+        ),
+        const SizedBox(height: AppSpace.s4),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall,
+        ),
+      ],
     );
   }
 }
@@ -923,139 +982,6 @@ class _SpeedHomeCardState extends State<_SpeedHomeCard> {
         },
         icon: const Icon(Icons.settings),
       ),
-    );
-  }
-}
-
-class AssignPage extends ConsumerStatefulWidget {
-  const AssignPage({super.key, required this.learnerId});
-
-  final String learnerId;
-
-  @override
-  ConsumerState<AssignPage> createState() => _AssignPageState();
-}
-
-class _AssignPageState extends ConsumerState<AssignPage> {
-  String _kind = 'learn';
-  String? _trickId;
-  bool _later = false;
-  late SpeedConfig _speed;
-  bool _ready = false;
-
-  @override
-  void initState() {
-    super.initState();
-    final learner = ref.read(appProvider).learnerById(widget.learnerId);
-    _speed = speedDefault(learner?.grade ?? '1');
-    _ready = true;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final app = ref.watch(appProvider);
-    final learner = app.learnerById(widget.learnerId);
-    final t = Copy.of(context);
-    if (!_ready || learner == null) {
-      return PageFrame(title: t.assign, body: const SkeletonBlock());
-    }
-    final mine = app.catalog.forGrade(learner.grade);
-    final later = app.catalog.tricks.where(
-      (trick) => canonicalGrade(trick.grade) != canonicalGrade(learner.grade),
-    );
-    return PageFrame(
-      title: t.assign,
-      banner: app.banner,
-      leading: IconButton(
-        tooltip: t.back,
-        onPressed: () => context.go('/adult'),
-        icon: const Icon(Icons.arrow_back),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            learner.displayName,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: AppSpace.s12),
-          TrickCard(
-            title: t.learnATrick,
-            caption: t.pick('先看步骤，再做几道题。', 'Steps, then a short quiz.'),
-            onPressed: () => setState(() => _kind = 'learn'),
-          ),
-          TrickCard(
-            title: t.speedDrill,
-            caption: _speed.summary(language: t.language),
-            onPressed: () => setState(() => _kind = 'speed'),
-          ),
-          if (_kind == 'learn') ...[
-            Text(t.thisGrade, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: AppSpace.s8),
-            for (final trick in mine)
-              _pick(
-                trick.id,
-                localizeTrick(trick, t).title,
-                trick.id == _trickId,
-              ),
-            ExpansionTile(
-              title: Text(t.laterGrades),
-              initiallyExpanded: _later,
-              onExpansionChanged: (value) => setState(() => _later = value),
-              children: [
-                for (final trick in later)
-                  _pick(
-                    trick.id,
-                    '${localizeTrick(trick, t).title} · ${t.grade(trick.grade)}',
-                    trick.id == _trickId,
-                  ),
-              ],
-            ),
-          ] else
-            SpeedForm(
-              level: learner.grade,
-              config: _speed,
-              onChanged: (value) => setState(() => _speed = value),
-            ),
-          const SizedBox(height: AppSpace.s16),
-          AppButton(
-            label: t.saveToday,
-            onPressed: _kind == 'learn' && _trickId == null
-                ? null
-                : () async {
-                    final now = app.clock.now().toUtc();
-                    await app.saveAssignment(
-                      Assignment(
-                        id: newId(),
-                        learnerId: learner.id,
-                        localDate: app.clock.today,
-                        kind: _kind,
-                        trickId: _kind == 'learn' ? _trickId : null,
-                        speedConfig: _kind == 'speed'
-                            ? jsonEncode(_speed.toJson())
-                            : null,
-                        status: 'open',
-                        createdAt: now,
-                        updatedAt: now,
-                      ),
-                    );
-                    if (context.mounted && app.banner == null)
-                      context.go('/adult');
-                  },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _pick(String id, String title, bool selected) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(title),
-      leading: Icon(
-        selected ? Icons.radio_button_checked : Icons.radio_button_off,
-      ),
-      onTap: () => setState(() => _trickId = id),
     );
   }
 }

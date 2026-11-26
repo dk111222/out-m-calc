@@ -544,6 +544,105 @@ bool isDailyPractice(SpeedConfig config, String grade) {
       config.limitValue == daily.limitValue;
 }
 
+/// Today's daily-practice totals. [accuracyLabel] is `—` when nothing was answered.
+class DailyPracticeTally {
+  const DailyPracticeTally({
+    this.answered = 0,
+    this.correct = 0,
+    this.durationMs = 0,
+  });
+
+  final int answered;
+  final int correct;
+  final int durationMs;
+
+  String get accuracyLabel =>
+      answered == 0 ? '—' : '${(correct * 100 / answered).round()}%';
+
+  DailyPracticeTally add(DailyPracticeTally other) {
+    return DailyPracticeTally(
+      answered: answered + other.answered,
+      correct: correct + other.correct,
+      durationMs: durationMs + other.durationMs,
+    );
+  }
+}
+
+/// Finished daily rounds for [today], plus an optional open round.
+///
+/// A finished count-mode round has no answered field; [SpeedRound.limitValue]
+/// is how many questions were asked. Other operations and other local days
+/// are left out. The open numbers are added only by the caller, so a saved
+/// round and a cleared snapshot are not both included.
+DailyPracticeTally tallyDailyPractice({
+  required Iterable<SpeedRound> rounds,
+  required String grade,
+  required String today,
+  int openAnswered = 0,
+  int openCorrect = 0,
+  int openDurationMs = 0,
+}) {
+  var answered = openAnswered;
+  var correct = openCorrect;
+  var durationMs = openDurationMs;
+  for (final round in rounds) {
+    if (formatYmd(round.createdAt.toLocal()) != today) continue;
+    if (round.limitMode != 'count') continue;
+    final config = SpeedConfig(
+      operation: round.operation,
+      digitMin: round.digitMin,
+      digitMax: round.digitMax,
+      limitMode: round.limitMode,
+      limitValue: round.limitValue,
+    );
+    if (!isDailyPractice(config, grade)) continue;
+    answered += round.limitValue;
+    correct += round.correctCount;
+    durationMs += round.durationMs;
+  }
+  return DailyPracticeTally(
+    answered: answered,
+    correct: correct,
+    durationMs: durationMs,
+  );
+}
+
+/// Today's unfinished daily speed round, or null when the snapshot is something else.
+DailyPracticeTally? openDailyPractice(
+  SessionSnapshot? snapshot,
+  String grade,
+  String today,
+) {
+  if (snapshot == null ||
+      snapshot.module != 'speed' ||
+      snapshot.localDate != today) {
+    return null;
+  }
+  try {
+    final decoded = jsonDecode(snapshot.payload);
+    if (decoded is! Map) return null;
+    final json = Map<String, dynamic>.from(decoded);
+    if (json['done'] == true) return null;
+    final rawConfig = json['config'];
+    if (rawConfig is! Map) return null;
+    final config = SpeedConfig.fromJson(Map<String, dynamic>.from(rawConfig));
+    if (!isDailyPractice(config, grade)) return null;
+    return DailyPracticeTally(
+      answered: _jsonInt(json['answered']),
+      correct: _jsonInt(json['correct']),
+      durationMs: _jsonInt(json['elapsedMs']),
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
+int _jsonInt(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return 0;
+}
+
 List<FactDrill> factDrills(String grade) {
   SpeedConfig drill(
     String operation, {

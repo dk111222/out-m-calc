@@ -65,13 +65,15 @@ class Copy {
   }
 
   String get couldNotSave => pick('没能保存。再试一次。', 'Could not save. Try again.');
-  String get parentNeedsThis => pick('需要家长打开这一页。', 'A parent needs to open this.');
+  String get parentNeedsThis =>
+      pick('需要家长打开这一页。', 'A parent needs to open this.');
   String get chooseGrade => pick('请选择年级。', 'Choose a grade.');
   String get anotherLearner => pick(
     '这台设备开放更多孩子档案后，才能再添加。',
     'Another learner can be added when profiles are included on this device.',
   );
-  String get opening => pick('正在这台设备上打开练习。', 'Opening practice on this device.');
+  String get opening =>
+      pick('正在这台设备上打开练习。', 'Opening practice on this device.');
   String get tryAgain => pick('再试一次', 'Try again');
   String get whoUses => pick('谁在用这台设备？', 'Who is using this device?');
   String get whoUsesBody => pick(
@@ -83,9 +85,12 @@ class Copy {
   String get guest => pick('访客', 'Guest');
   String get learnerStem => pick('学员', 'Learner');
   String get addLearner => pick('添加孩子', 'Add a learner');
+  String get signInToAddLearner =>
+      pick('登录后才能添加孩子。', 'Sign in to add a learner.');
   String get back => pick('返回', 'Back');
   String get name => pick('名字', 'Name');
-  String get guestNameHint => pick('留空则显示“访客”。', 'Leave this blank to use Guest.');
+  String get guestNameHint =>
+      pick('留空则显示“访客”。', 'Leave this blank to use Guest.');
   String get learnerNameHint =>
       pick('留空则使用“学员”加编号。', 'Leave this blank to use Learner and a number.');
   String get gradeWord => pick('年级', 'Grade');
@@ -109,7 +114,8 @@ class Copy {
   String get trickLibrary => pick('技巧库', 'Trick library');
   String get addLearnerFirst => pick('请先添加孩子。', 'Add a learner first.');
   String get todayPractice => pick('今天的练习', 'Today\'s practice');
-  String get skipKept => pick('本周用过一次保留连续天数。', 'This week\'s skip kept the streak.');
+  String get skipKept =>
+      pick('本周用过一次保留连续天数。', 'This week\'s skip kept the streak.');
   String get streakReset => pick('连续天数已重新开始。', 'The streak started over.');
   String get continueLabel => pick('继续', 'Continue');
   String get mathTricks => pick('速算技巧', 'Math Tricks');
@@ -119,6 +125,9 @@ class Copy {
   String get dailyPractice => pick('每日一练', 'Daily practice');
   String get tenProblems =>
       pick('按当前年级随机出十道题。', 'Ten random problems for this grade.');
+  String get problemCount => pick('题数', 'Problems');
+  String get accuracy => pick('正确率', 'Accuracy');
+  String get practiceTime => pick('练习时长', 'Time');
   String get worksheet => pick('练习页', 'Worksheet');
   String get thisGrade => pick('这个年级', 'This grade');
   String get laterGrades => pick('更高年级', 'Later grades');
@@ -126,9 +135,12 @@ class Copy {
   String get all => pick('全部', 'All');
   String get saved => pick('已收藏', 'Saved');
   String get noTricksYet => pick('这个年级还没有技巧。', 'No tricks for this grade yet');
-  String get laterGradeTrick => pick('这个技巧留给更高年级。', 'This trick is for a later grade.');
-  String get notReady => pick('这个技巧还不能练习。', 'This trick is not ready to practice yet.');
-  String get missingTrick => pick('这台设备上没有这个技巧。', 'This trick is not on this device.');
+  String get laterGradeTrick =>
+      pick('这个技巧留给更高年级。', 'This trick is for a later grade.');
+  String get notReady =>
+      pick('这个技巧还不能练习。', 'This trick is not ready to practice yet.');
+  String get missingTrick =>
+      pick('这台设备上没有这个技巧。', 'This trick is not on this device.');
   String get useThisWhen => pick('何时用', 'When');
   String get notFor => pick('别用', 'Skip');
   String get steps => pick('怎么算', 'How');
@@ -142,8 +154,7 @@ class Copy {
   String get handwriting => pick('手写', 'Handwriting');
   String get clearWriting => pick('清除', 'Clear');
   String get writeAnswer => pick('在这里写答案', 'Write the answer here');
-  String get handwritingPreparing =>
-      pick('正在准备手写。', 'Preparing handwriting.');
+  String get handwritingPreparing => pick('正在准备手写。', 'Preparing handwriting.');
   String get handwritingNeedsDownload => pick(
     '手写识别要先下载一次，之后就留在这台设备上。',
     'Handwriting downloads once, then stays on this device.',
@@ -161,8 +172,10 @@ class Copy {
   String get timeLeft => pick('剩余时间', 'Time left');
   String get elapsed => pick('总用时', 'Total time');
   String get problemsLeft => pick('剩余题数', 'Problems left');
-  String get clockStopped =>
-      pick('计时已暂停。同一道题还在。', 'The clock is stopped. The same problem is waiting.');
+  String get clockStopped => pick(
+    '计时已暂停。同一道题还在。',
+    'The clock is stopped. The same problem is waiting.',
+  );
   String nCorrect(int count) => pick('$count 题正确', '$count correct');
   String get newBest => pick('新的个人最好', 'New personal best');
   String best(int count) => pick('个人最好：$count', 'Personal best: $count');
@@ -185,7 +198,9 @@ class Copy {
   );
   String get practiceSettings => pick('练习设置', 'Practice settings');
   String get privacyPolicy => pick('隐私政策', 'Privacy policy');
-  String get deleteAll => pick('删除这台设备上的全部数据', 'Delete all data on this device');
+  String get privacyAgreement => pick('隐私协议', 'Privacy agreement');
+  String get deleteAll =>
+      pick('删除这台设备上的全部数据', 'Delete all data on this device');
   String get deleteAllBody => pick(
     '孩子、练习和家长密码会被清掉。之后应用会重新开始。',
     'Learners, practice, and the parent code will be erased. The app then starts over.',
@@ -209,6 +224,18 @@ class Copy {
     'This device already has an account. Delete it before using another.',
   );
   String get notSignedIn => pick('尚未登录。', 'Not signed in.');
+  String get notSignedInTitle => pick('未登录', 'Not signed in');
+  String get signIn => pick('登录', 'Sign in');
+  String get signOut => pick('退出登录', 'Sign out');
+  String get chooseSignIn => pick('选择登录方式', 'Choose how to sign in');
+  String get localGuest => pick('本地游客', 'Local guest');
+  String get signInWithGuest => pick('本地游客', 'Continue as a local guest');
+  String get googleOnAndroid => pick('用于 Android 手机', 'For Android phones');
+  String get appleOnIphone => pick('用于 iPhone', 'For iPhones');
+  String get guestStaysHere =>
+      pick('只保存在这台设备上，不上传。', 'Stays on this device and is not uploaded.');
+  String get userPolicy => pick('用户政策', 'User policy');
+  String get tapToSignIn => pick('点击登录', 'Tap to sign in');
   String signedInAs(String who) => pick('已登录：$who', 'Signed in as $who.');
   String get googleAccount => pick('Google 账号', 'Google account');
   String get appleAccount => pick('Apple 账号', 'Apple account');
@@ -225,8 +252,7 @@ class Copy {
   String get practice => pick('练习', 'Practice');
   String get me => pick('我的', 'Me');
   String get cancel => pick('取消', 'Cancel');
-  String masteredTitle(String title) =>
-      pick('已掌握 $title', 'Mastered $title');
+  String masteredTitle(String title) => pick('已掌握 $title', 'Mastered $title');
   String speedBestTitle(int count) =>
       pick('速算个人最好：$count 题正确', 'Speed Drill personal best: $count correct');
 }

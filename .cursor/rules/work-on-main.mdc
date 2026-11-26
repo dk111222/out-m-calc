@@ -1,0 +1,13 @@
+---
+description: Make every change on the main branch
+alwaysApply: true
+---
+
+# Work on main
+
+All edits, commits, and merges for this project happen on `main`. Do not create a branch.
+
+- Before the first edit in a session, confirm the current branch is `main`. If it is not, switch to `main` and continue there. Do not discard or stash uncommitted work to make the switch.
+- Do not run `git checkout -b`, `git switch -c`, or any other command that creates a branch. Do not ask a cloud agent or worktree to start from a new branch.
+- When the user asks to commit or merge, commit on `main` and merge into `main`. Do not open a feature branch or a pull request from a new branch unless the user explicitly asks for one.
+- Do not push unless the user asks. A push, when asked, goes to `origin/main`.

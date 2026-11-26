@@ -47,7 +47,11 @@ void main() {
 
     await tester.tap(find.text('我的'));
     await _settle(tester);
-    await tester.tap(find.text('家长或老师'));
+    await tester.tap(find.text('登录'));
+    await _settle(tester);
+    await tester.tap(find.text('本地游客'));
+    await _settle(tester);
+    await tester.tap(find.text('添加孩子'));
     await _settle(tester);
     await _shoot(tester, 'P02');
 
@@ -81,8 +85,6 @@ void main() {
     await app.updateSettings(app.settings.copyWith(themeMode: 'light'));
     await _settle(tester);
 
-    await _go(tester, '/assign/$learnerId');
-    await _shoot(tester, 'P04');
     await _go(tester, '/report/$learnerId');
     await _shoot(tester, 'report');
     await _go(tester, '/tricks?learner=$learnerId');

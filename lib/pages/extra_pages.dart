@@ -30,6 +30,7 @@ String parentAccountName(DeviceSettings settings, Copy t) {
   if (name != null && name.isNotEmpty) return name;
   if (settings.accountProvider == 'apple') return t.appleAccount;
   if (settings.accountProvider == 'google') return t.googleAccount;
+  if (settings.accountProvider == 'guest') return t.localGuest;
   return t.parentAccount;
 }
 
@@ -137,10 +138,7 @@ class ErrorTrainingGate extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          t.parentAccount,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text(t.parentAccount, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: AppSpace.s8),
         Text(t.wrongPracticeSignIn),
         const SizedBox(height: AppSpace.s16),
@@ -324,13 +322,17 @@ class SettingsPage extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (child) ...[
-            const LearnerHub(),
-            const SizedBox(height: AppSpace.s24),
-            Text(t.settings, style: Theme.of(context).textTheme.titleMedium),
+            const AccountHomeCard(),
             const SizedBox(height: AppSpace.s16),
+            const LearnerHub(),
+            const SizedBox(height: AppSpace.s16),
+            const MeSettingsCard(),
           ],
           if (!child) ...[
-            Text(t.languageWord, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              t.languageWord,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: AppSpace.s8),
             SegmentedButton<String>(
               segments: const [
@@ -368,21 +370,22 @@ class SettingsPage extends ConsumerWidget {
                   app.updateSettings(settings.copyWith(textScale: value.first)),
             ),
           ],
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(t.soundEffects),
-            value: settings.soundEnabled,
-            onChanged: (value) =>
-                app.updateSettings(settings.copyWith(soundEnabled: value)),
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(t.readProblem),
-            value: settings.readAloudEnabled,
-            onChanged: (value) =>
-                app.updateSettings(settings.copyWith(readAloudEnabled: value)),
-          ),
           if (!child) ...[
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(t.soundEffects),
+              value: settings.soundEnabled,
+              onChanged: (value) =>
+                  app.updateSettings(settings.copyWith(soundEnabled: value)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(t.readProblem),
+              value: settings.readAloudEnabled,
+              onChanged: (value) => app.updateSettings(
+                settings.copyWith(readAloudEnabled: value),
+              ),
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(Copy.of(context).pick('使用数据', 'Usage numbers')),
@@ -506,11 +509,380 @@ class SettingsPage extends ConsumerWidget {
                       ? app.deleteAccount(pin, again: again)
                       : app.wipeAll(pin, again: again),
                 );
-                if (ok && hasAccount) await endProviderSession(provider, revoke: true);
+                if (ok && hasAccount)
+                  await endProviderSession(provider, revoke: true);
                 if (ok && context.mounted) context.go('/child');
               },
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class MeSettingsCard extends ConsumerWidget {
+  const MeSettingsCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final app = ref.watch(appProvider);
+    final settings = app.settings;
+    final t = Copy.of(context);
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppSpace.rMd),
+        border: Border.all(color: colors.border),
+        boxShadow: colors.cardShadow,
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        clipBehavior: Clip.antiAlias,
+        borderRadius: BorderRadius.circular(AppSpace.rMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpace.s16,
+                AppSpace.s16,
+                AppSpace.s16,
+                AppSpace.s4,
+              ),
+              child: Text(t.settings, style: theme.textTheme.titleMedium),
+            ),
+            SwitchListTile(
+              title: Text(t.soundEffects),
+              value: settings.soundEnabled,
+              onChanged: (value) =>
+                  app.updateSettings(settings.copyWith(soundEnabled: value)),
+            ),
+            SwitchListTile(
+              title: Text(t.readProblem),
+              value: settings.readAloudEnabled,
+              onChanged: (value) => app.updateSettings(
+                settings.copyWith(readAloudEnabled: value),
+              ),
+            ),
+            ListTile(
+              title: Text(t.userPolicy),
+              trailing: Icon(Icons.chevron_right, color: colors.textMuted),
+              onTap: () => context.go('/terms?from=me'),
+            ),
+            ListTile(
+              title: Text(t.privacyAgreement),
+              trailing: Icon(Icons.chevron_right, color: colors.textMuted),
+              onTap: () => context.go('/settings/privacy?from=me'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AccountHomeCard extends ConsumerWidget {
+  const AccountHomeCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final app = ref.watch(appProvider);
+    final t = Copy.of(context);
+    final settings = app.settings;
+    final signedIn = settings.signedIn;
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+    final title = signedIn
+        ? parentAccountName(settings, t)
+        : t.notSignedInTitle;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppSpace.rMd),
+        border: Border.all(color: colors.border),
+        boxShadow: colors.cardShadow,
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppSpace.rMd),
+          onTap: signedIn ? null : () => context.go('/sign-in'),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpace.s16),
+            child: Row(
+              children: [
+                const _DefaultAvatar(),
+                const SizedBox(width: AppSpace.s12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: AppSpace.s4),
+                      Text(
+                        signedIn ? _providerLine(settings, t) : t.tapToSignIn,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (signedIn)
+                  TextButton(
+                    onPressed: () async {
+                      await endProviderSession(settings.accountProvider);
+                      await app.signOut();
+                    },
+                    child: Text(t.signOut),
+                  )
+                else ...[
+                  Text(
+                    t.signIn,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colors.accent,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: colors.textMuted),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _providerLine(DeviceSettings settings, Copy t) {
+    switch (settings.accountProvider) {
+      case 'google':
+        return t.googleAccount;
+      case 'apple':
+        return t.appleAccount;
+      case 'guest':
+        return t.guestStaysHere;
+      default:
+        return t.parentAccount;
+    }
+  }
+}
+
+class _DefaultAvatar extends StatelessWidget {
+  const _DefaultAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: colors.sunken,
+      child: Icon(Icons.person, size: 32, color: colors.textMuted),
+    );
+  }
+}
+
+class SignInPage extends ConsumerStatefulWidget {
+  const SignInPage({super.key});
+
+  @override
+  ConsumerState<SignInPage> createState() => _SignInPageState();
+}
+
+class _SignInPageState extends ConsumerState<SignInPage> {
+  String? _error;
+  String? _busy;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Copy.of(context);
+    final platform = Theme.of(context).platform;
+    final android = platform == TargetPlatform.android;
+    final apple = platform == TargetPlatform.iOS;
+    return PageFrame(
+      title: t.signIn,
+      leading: IconButton(
+        tooltip: t.back,
+        onPressed: () => context.go('/prefs'),
+        icon: const Icon(Icons.arrow_back),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(t.chooseSignIn, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: AppSpace.s16),
+          AppButton(
+            label: t.signInWithGoogle,
+            busy: _busy == 'google',
+            onPressed: android && _busy == null
+                ? () => _provider('google')
+                : null,
+          ),
+          const SizedBox(height: AppSpace.s8),
+          Text(
+            t.googleOnAndroid,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.of(context).textMuted,
+            ),
+          ),
+          const SizedBox(height: AppSpace.s16),
+          AppButton(
+            label: t.signInWithApple,
+            busy: _busy == 'apple',
+            onPressed: apple && _busy == null ? () => _provider('apple') : null,
+          ),
+          const SizedBox(height: AppSpace.s8),
+          Text(
+            t.appleOnIphone,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.of(context).textMuted,
+            ),
+          ),
+          const SizedBox(height: AppSpace.s16),
+          AppButton(
+            label: t.signInWithGuest,
+            secondary: true,
+            busy: _busy == 'guest',
+            onPressed: _busy == null ? _guest : null,
+          ),
+          const SizedBox(height: AppSpace.s8),
+          Text(
+            t.guestStaysHere,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.of(context).textMuted,
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: AppSpace.s16),
+            Text(
+              _error!,
+              style: TextStyle(color: AppColors.of(context).danger),
+            ),
+          ],
+          const SizedBox(height: AppSpace.s32),
+          Row(
+            children: [
+              TextButton(
+                onPressed: () => context.go('/terms?from=sign-in'),
+                child: Text(t.userPolicy),
+              ),
+              TextButton(
+                onPressed: () => context.go('/settings/privacy?from=sign-in'),
+                child: Text(t.privacyAgreement),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _provider(String provider) async {
+    final app = ref.read(appProvider);
+    final t = Copy.of(context);
+    setState(() {
+      _busy = provider;
+      _error = null;
+    });
+    try {
+      final identity = provider == 'google'
+          ? await signInWithGoogle()
+          : await signInWithApple();
+      if (!mounted) return;
+      if (identity == null) {
+        setState(() => _busy = null);
+        return;
+      }
+      final error = await app.signInWithIdentity(
+        provider: identity.provider,
+        subject: identity.subject,
+        email: identity.email,
+        name: identity.name,
+      );
+      if (!mounted) return;
+      if (error != null) {
+        setState(() {
+          _busy = null;
+          _error = error;
+        });
+        return;
+      }
+      context.go('/prefs');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = null;
+        _error = t.signInFailed;
+      });
+    }
+  }
+
+  Future<void> _guest() async {
+    final app = ref.read(appProvider);
+    setState(() {
+      _busy = 'guest';
+      _error = null;
+    });
+    final error = await app.signInAsGuest();
+    if (!mounted) return;
+    if (error != null) {
+      setState(() {
+        _busy = null;
+        _error = error;
+      });
+      return;
+    }
+    context.go('/prefs');
+  }
+}
+
+class TermsPage extends StatelessWidget {
+  const TermsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Copy.of(context);
+    final from = GoRouterState.of(context).uri.queryParameters['from'];
+    return PageFrame(
+      title: t.userPolicy,
+      leading: IconButton(
+        tooltip: t.back,
+        onPressed: () => context.go(from == 'sign-in' ? '/sign-in' : '/prefs'),
+        icon: const Icon(Icons.arrow_back),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t.pick(
+              'StepMath 给家长或老师在这台设备上给孩子练习口算。可以选择 Google（Android 手机）、Apple（iPhone）或本地游客登录。',
+              'StepMath lets a parent or teacher practice mental math with a child on this device. Sign in with Google on an Android phone, with Apple on an iPhone, or as a local guest.',
+            ),
+          ),
+          const SizedBox(height: AppSpace.s12),
+          Text(
+            t.pick(
+              '本地游客没有密码，也不会上传。Google 和 Apple 只用来认出这台设备上的家长，练习、孩子名字和登录都留在这台设备上。',
+              'A local guest has no password and is not uploaded. Google and Apple only identify the parent on this device. Practice, child names, and the sign-in stay on this device.',
+            ),
+          ),
+          const SizedBox(height: AppSpace.s12),
+          Text(
+            t.pick(
+              '一台设备保留一个登录。要换登录，先在设置里删除账号。删除会清掉本机上的登录、孩子和练习。',
+              'One sign-in is kept on a device. To use another, delete the account in Settings. That removes the sign-in, the children, and the practice on this device.',
+            ),
+          ),
+          const SizedBox(height: AppSpace.s12),
+          Text(
+            t.pick(
+              '学技巧和速算不需要登录。应用不显示广告。',
+              'Lessons and speed drills do not need a sign-in. The app does not show ads.',
+            ),
+          ),
         ],
       ),
     );
@@ -522,11 +894,18 @@ class PrivacyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final from = GoRouterState.of(context).uri.queryParameters['from'];
     return PageFrame(
       title: Copy.of(context).privacyPolicy,
       leading: IconButton(
         tooltip: Copy.of(context).back,
-        onPressed: () => context.go('/settings'),
+        onPressed: () => context.go(
+          from == 'sign-in'
+              ? '/sign-in'
+              : from == 'me'
+              ? '/prefs'
+              : '/settings',
+        ),
         icon: const Icon(Icons.arrow_back),
       ),
       body: Column(

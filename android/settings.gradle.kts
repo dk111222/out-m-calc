@@ -27,3 +27,13 @@ plugins {
 }
 
 include(":app")
+
+// Plugin buildscripts, such as google_sign_in_android, only declare google()
+// and mavenCentral(). Those hosts do not resolve on this network, so each
+// project's classpath also searches the mirrors first.
+gradle.beforeProject {
+    buildscript.repositories {
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+    }
+}

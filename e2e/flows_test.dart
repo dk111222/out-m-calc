@@ -56,6 +56,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
+  Future<void> signInOnMe(WidgetTester tester) async {
+    await tester.tap(find.text('我的'));
+    await settle(tester);
+    await tester.tap(find.text('登录'));
+    await settle(tester);
+    await tester.tap(find.text('本地游客'));
+    await settle(tester);
+  }
+
   Future<AppController> boot() async {
     store.setSession(childMode: false, learnerId: null);
     await store.wipe();
@@ -89,9 +98,8 @@ void main() {
   testWidgets('F01-H1 assign 凑十法 and answer the first step', (tester) async {
     final app = await boot();
     await show(tester, app);
-    await tester.tap(find.text('我的'));
-    await settle(tester);
-    await tester.tap(find.text('家长或老师'));
+    await signInOnMe(tester);
+    await tester.tap(find.text('添加孩子'));
     await settle(tester);
     // Kid + animal rows both mount (horizontal strips, 12 each).
     expect(find.text('孩子'), findsWidgets);
@@ -104,20 +112,14 @@ void main() {
     await tester.ensureVisible(find.text('保存'));
     await tester.tap(find.text('保存'));
     await settle(tester);
-    expect(find.text('布置'), findsOneWidget);
-
-    await tester.tap(find.text('布置'));
-    await settle(tester);
-    await tester.tap(find.text('凑十法'));
-    await tester.pump();
-    await tester.tap(find.text('保存今天'));
-    await settle(tester);
-    expect(find.textContaining('凑十法'), findsWidgets);
+    expect(find.text('布置'), findsNothing);
 
     await tester.tap(find.text('Ava').first);
     await settle(tester);
     expect(find.text('首页'), findsOneWidget);
     await tester.tap(find.text('速算技巧'));
+    await settle(tester);
+    await tester.tap(find.text('凑十法'));
     await settle(tester);
     expect(find.textContaining('何时用'), findsOneWidget);
     expect(find.textContaining('别用'), findsOneWidget);
@@ -166,38 +168,42 @@ void main() {
     expect(practice.view!.stepIndex, 1);
   });
 
-  testWidgets('F01-E3 grade is required and a guest blank name is Guest', (
+  testWidgets('F01-E3 a signed-out me page cannot add a learner', (
     tester,
   ) async {
     final app = await boot();
     await show(tester, app);
     await tester.tap(find.text('我的'));
     await settle(tester);
-    await tester.tap(find.text('家长或老师'));
+    expect(find.text('先试用'), findsNothing);
+    expect(find.text('添加孩子'), findsNothing);
+    expect(find.text('登录后才能添加孩子。'), findsOneWidget);
+    expect(find.text('用户政策'), findsOneWidget);
+    expect(find.text('隐私协议'), findsOneWidget);
+
+    await tester.tap(find.text('登录'));
+    await settle(tester);
+    await tester.tap(find.text('本地游客'));
+    await settle(tester);
+    await tester.tap(find.text('添加孩子'));
     await tester.pump(const Duration(milliseconds: 300));
     final save = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, '保存'),
     );
     expect(save.onPressed, isNull);
-
-    await tester.tap(find.byTooltip('返回'));
-    await settle(tester);
-    await tester.tap(find.text('先试用'));
-    await settle(tester);
-    expect(find.text('留空则显示“访客”。'), findsOneWidget);
+    await tester.tap(find.text('一年级'));
+    await tester.pump();
     await tester.enterText(find.byType(TextField), '');
     await tester.tap(find.text('保存'));
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('首页'), findsOneWidget);
-    expect(find.text('访客'), findsWidgets);
+    await settle(tester);
+    expect(find.text('学员'), findsWidgets);
   });
 
   testWidgets('F01-E2 a long accented name is kept and shown', (tester) async {
     final app = await boot();
     await show(tester, app);
-    await tester.tap(find.text('我的'));
-    await settle(tester);
-    await tester.tap(find.text('家长或老师'));
+    await signInOnMe(tester);
+    await tester.tap(find.text('添加孩子'));
     await settle(tester);
     await tester.enterText(find.byType(TextField), 'Léa 数学🎒');
     await tester.tap(find.text('幼儿园'));

@@ -35,26 +35,15 @@ GoRouter buildRouter(AppController app) {
       GoRoute(path: '/start', builder: (_, _) => const StartPage()),
       GoRoute(
         path: '/learner/new',
-        builder: (_, state) => LearnerFormPage(
-          guest: state.uri.queryParameters['guest'] == '1',
-        ),
+        builder: (_, state) =>
+            LearnerFormPage(guest: state.uri.queryParameters['guest'] == '1'),
       ),
       GoRoute(path: '/adult', builder: (_, _) => const AdultHomePage()),
-      GoRoute(
-        path: '/assign/:learnerId',
-        builder: (_, state) =>
-            AssignPage(learnerId: state.pathParameters['learnerId']!),
-      ),
-      GoRoute(
-        path: '/child',
-        pageBuilder: (_, _) => _tabs(index: 0),
-      ),
+      GoRoute(path: '/child', pageBuilder: (_, _) => _tabs(index: 0)),
       GoRoute(
         path: '/tricks',
-        pageBuilder: (_, state) => _tabs(
-          index: 1,
-          learnerId: state.uri.queryParameters['learner'],
-        ),
+        pageBuilder: (_, state) =>
+            _tabs(index: 1, learnerId: state.uri.queryParameters['learner']),
       ),
       GoRoute(
         path: '/tricks/:id',
@@ -66,19 +55,11 @@ GoRouter buildRouter(AppController app) {
       ),
       GoRoute(
         path: '/report/:learnerId',
-        pageBuilder: (_, state) => _tabs(
-          index: 2,
-          reportLearnerId: state.pathParameters['learnerId'],
-        ),
+        pageBuilder: (_, state) =>
+            _tabs(index: 2, reportLearnerId: state.pathParameters['learnerId']),
       ),
-      GoRoute(
-        path: '/prefs',
-        pageBuilder: (_, _) => _tabs(index: 3),
-      ),
-      GoRoute(
-        path: '/practice/:id/done',
-        builder: (_, _) => const DonePage(),
-      ),
+      GoRoute(path: '/prefs', pageBuilder: (_, _) => _tabs(index: 3)),
+      GoRoute(path: '/practice/:id/done', builder: (_, _) => const DonePage()),
       GoRoute(
         path: '/practice/:id/:phase',
         builder: (_, _) => const PracticePage(),
@@ -88,6 +69,8 @@ GoRouter buildRouter(AppController app) {
       GoRoute(path: '/speed/done', builder: (_, _) => const SpeedDonePage()),
       GoRoute(path: '/review', builder: (_, _) => const ReviewPage()),
       GoRoute(path: '/scan', builder: (_, _) => const ScanPage()),
+      GoRoute(path: '/sign-in', builder: (_, _) => const SignInPage()),
+      GoRoute(path: '/terms', builder: (_, _) => const TermsPage()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
       GoRoute(
         path: '/settings/privacy',
@@ -95,9 +78,8 @@ GoRouter buildRouter(AppController app) {
       ),
       GoRoute(
         path: '/export/worksheet',
-        builder: (_, state) => WorksheetPage(
-          trickId: state.uri.queryParameters['trickId'] ?? '',
-        ),
+        builder: (_, state) =>
+            WorksheetPage(trickId: state.uri.queryParameters['trickId'] ?? ''),
       ),
       GoRoute(
         path: '/export/certificate',

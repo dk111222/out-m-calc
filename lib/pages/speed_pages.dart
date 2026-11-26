@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,30 +60,6 @@ class _SpeedSetupPageState extends ConsumerState<SpeedSetupPage> {
                     if (context.mounted) context.go('/speed/run');
                   },
           ),
-          if (!app.childMode && learner != null) ...[
-            const SizedBox(height: AppSpace.s12),
-            AppButton(
-              label: Copy.of(context).saveToday,
-              secondary: true,
-              onPressed: () async {
-                final now = app.clock.now().toUtc();
-                await app.saveAssignment(
-                  Assignment(
-                    id: newId(),
-                    learnerId: learner.id,
-                    localDate: app.clock.today,
-                    kind: 'speed',
-                    trickId: null,
-                    speedConfig: jsonEncode(config.toJson()),
-                    status: 'open',
-                    createdAt: now,
-                    updatedAt: now,
-                  ),
-                );
-                if (context.mounted && app.banner == null) context.go('/adult');
-              },
-            ),
-          ],
         ],
       ),
     );
