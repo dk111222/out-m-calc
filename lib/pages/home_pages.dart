@@ -10,7 +10,6 @@ import '../domain/core.dart';
 import '../l10n/copy.dart';
 import '../l10n/trick_zh.dart';
 import '../ui/avatars.dart';
-import '../ui/gates.dart';
 import '../ui/kit.dart';
 import 'speed_form.dart';
 
@@ -312,39 +311,20 @@ class LearnerHub extends ConsumerWidget {
           for (final learner in app.learners) _LearnerRow(learner: learner),
         AppButton(
           label: empty ? t.parentOrTeacher : t.addLearner,
-          onPressed: () => openLearnerForm(context, ref, guest: false),
+          onPressed: () => openLearnerForm(context, guest: false),
         ),
         const SizedBox(height: AppSpace.s12),
         AppButton(
           label: t.tryAsGuest,
           secondary: true,
-          onPressed: () => openLearnerForm(context, ref, guest: true),
+          onPressed: () => openLearnerForm(context, guest: true),
         ),
       ],
     );
   }
 }
 
-Future<void> openLearnerForm(
-  BuildContext context,
-  WidgetRef ref, {
-  required bool guest,
-}) async {
-  final app = ref.read(appProvider);
-  if (app.childMode) {
-    final ok = await requireParentCode(
-      context,
-      app,
-      title: app.copy.parentCode,
-      body: app.copy.pick(
-        '请输入家长密码，再管理孩子。',
-        'Enter the parent code to manage learners.',
-      ),
-      action: (pin, again) => app.leaveChild(pin, again: again),
-    );
-    if (!ok || !context.mounted) return;
-  }
-  if (!context.mounted) return;
+void openLearnerForm(BuildContext context, {required bool guest}) {
   context.go(guest ? '/learner/new?guest=1' : '/learner/new');
 }
 
@@ -436,10 +416,7 @@ class ChildHomePage extends ConsumerWidget {
     final learner = app.active;
     final t = Copy.of(context);
     if (learner == null) {
-      return PageFrame(
-        title: t.todayPractice,
-        body: Text(t.addLearnerFirst),
-      );
+      return PageFrame(title: t.todayPractice, body: Text(t.addLearnerFirst));
     }
     final assignment = app.today[learner.id];
     final learnTrick = assignment?.kind == 'learn'
@@ -721,11 +698,11 @@ class _SpeedHomeCardState extends State<_SpeedHomeCard> {
                   IconButton(
                     tooltip: t.settings,
                     onPressed: () async {
-                    final next = await showSpeedSetupDialog(
-                      context,
-                      config: _config,
-                      level: widget.level,
-                    );
+                      final next = await showSpeedSetupDialog(
+                        context,
+                        config: _config,
+                        level: widget.level,
+                      );
                       if (next != null && mounted) {
                         setState(() => _config = next);
                       }

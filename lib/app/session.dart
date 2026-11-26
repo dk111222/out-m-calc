@@ -213,7 +213,6 @@ class AppController extends ChangeNotifier {
     String? avatar,
     bool guest = false,
   }) async {
-    if (childMode) return copy.parentNeedsThis;
     grade = canonicalGrade(grade);
     if (!grades.contains(grade)) return copy.chooseGrade;
     if (learners.isNotEmpty && !settings.extraLearnersUnlocked) {
@@ -228,10 +227,7 @@ class AppController extends ChangeNotifier {
       id: newId(),
       displayName: display,
       grade: grade,
-      avatar: avatarIdFor(
-        avatar,
-        '${learners.length}-${display.hashCode}',
-      ),
+      avatar: avatarIdFor(avatar, '${learners.length}-${display.hashCode}'),
       isGuest: guest,
       streakCount: 0,
       lastPracticeDate: null,
@@ -243,17 +239,29 @@ class AppController extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
     );
+    final wasChild = childMode;
+    final previousId = activeLearnerId;
+    if (wasChild) {
+      store.setSession(childMode: false, learnerId: null);
+    }
     try {
       await store.saveLearner(learner);
       _replace(learner);
       activeLearnerId = learner.id;
       settings = settings.copyWith(activeLearnerId: learner.id, updatedAt: now);
       await store.saveSettings(settings);
+      if (wasChild) {
+        store.setSession(childMode: true, learnerId: learner.id);
+      }
       await refreshToday();
       banner = null;
       notifyListeners();
       return null;
     } catch (_) {
+      if (wasChild) {
+        activeLearnerId = previousId;
+        store.setSession(childMode: true, learnerId: previousId);
+      }
       banner = copy.couldNotSave;
       notifyListeners();
       return banner;
@@ -777,7 +785,9 @@ class AppController extends ChangeNotifier {
           userAnswer: miss.userAnswer,
           correctAnswer: miss.correctAnswer,
           failedStep: miss.failedStep,
-          stepsJson: jsonEncode(miss.steps.map((step) => step.toJson()).toList()),
+          stepsJson: jsonEncode(
+            miss.steps.map((step) => step.toJson()).toList(),
+          ),
           reviewedOk: false,
           createdAt: now,
           updatedAt: now,
@@ -919,6 +929,16 @@ class PracticeController extends ChangeNotifier {
     final current = view;
     if (current == null) return;
     final effect = practiceKey(current, key);
+    if (identical(effect.view, current)) return;
+    view = effect.view;
+    notifyListeners();
+    _persist();
+  }
+
+  void replaceDraft(String draft) {
+    final current = view;
+    if (current == null) return;
+    final effect = practiceReplace(current, draft);
     if (identical(effect.view, current)) return;
     view = effect.view;
     notifyListeners();
@@ -1077,6 +1097,15 @@ class SpeedController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void replaceDraft(String draft) {
+    final current = view;
+    if (current == null) return;
+    final effect = speedReplace(current, draft);
+    if (identical(effect.view, current)) return;
+    view = effect.view;
+    notifyListeners();
+  }
+
   Future<void> submit() async {
     final current = view;
     if (current == null) return;
@@ -1145,10 +1174,7 @@ class SpeedController extends ChangeNotifier {
   void _ensureTicker() {
     if (_ticker != null && _ticker!.isActive) return;
     _ticker?.cancel();
-    _ticker = Timer.periodic(
-      const Duration(milliseconds: 200),
-      (_) => _tick(),
-    );
+    _ticker = Timer.periodic(const Duration(milliseconds: 200), (_) => _tick());
   }
 
   void _tick() {

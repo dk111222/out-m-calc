@@ -4,7 +4,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stepmath/app/session.dart';
 import 'package:stepmath/app/theme.dart';
+import 'package:stepmath/ui/handwriting.dart';
 import 'package:stepmath/ui/kit.dart';
 import 'package:stepmath/data/hive_store.dart';
 import 'package:stepmath/domain/catalog.dart';
@@ -60,6 +62,30 @@ void main() {
     expect(applyKey('12345678', '9'), isNull);
     expect(applyKey('12345678', 'delete'), '1234567');
     expect(applyKey('', '.'), '0.');
+  });
+
+  test('handwriting reads a number and replaces the draft', () {
+    expect(readHandAnswer('36'), '36');
+    expect(readHandAnswer('1O'), '10');
+    expect(readHandAnswer('S'), '5');
+    expect(readHandAnswer('6.5'), '6.5');
+    expect(readHandAnswer('hello'), '');
+    expect(pickInkAnswer(['hello', '12']), '12');
+    expect(pickInkAnswer(['.']), isNull);
+    final view = PracticeView.start(
+      learnerId: 'a',
+      trickId: 't',
+      items: const [
+        Problem(
+          trickId: 't',
+          prompt: '8 + 7',
+          finalAnswer: '15',
+          steps: [StepAsk(1, '8 + 7', '15')],
+        ),
+      ],
+    );
+    expect(practiceReplace(view, '15').view.draft, '15');
+    expect(identical(practiceReplace(view, 'no').view, view), isTrue);
   });
 
   test('mastery needs 20 finals at 90 percent', () {
@@ -184,22 +210,25 @@ void main() {
     expect(ignored.attempt, isNull);
   });
 
-  test('a correct step waits, then moves, and the attempt is recorded once', () {
-    final item = makeTen(8, 7).copyWith(guided: true);
-    var view = PracticeView.start(
-      learnerId: 'learner',
-      trickId: item.trickId,
-      items: [item],
-    );
-    view = practiceKey(view, '2').view;
-    final effect = practiceSubmit(view);
-    expect(effect.wait, isTrue);
-    expect(effect.attempt, isNull);
-    final advanced = practiceAdvance(effect.view);
-    expect(advanced.view.stepIndex, 1);
-    expect(advanced.view.previousPrompt, isNull);
-    expect(correctAdvance.inMilliseconds, lessThan(100));
-  });
+  test(
+    'a correct step waits, then moves, and the attempt is recorded once',
+    () {
+      final item = makeTen(8, 7).copyWith(guided: true);
+      var view = PracticeView.start(
+        learnerId: 'learner',
+        trickId: item.trickId,
+        items: [item],
+      );
+      view = practiceKey(view, '2').view;
+      final effect = practiceSubmit(view);
+      expect(effect.wait, isTrue);
+      expect(effect.attempt, isNull);
+      final advanced = practiceAdvance(effect.view);
+      expect(advanced.view.stepIndex, 1);
+      expect(advanced.view.previousPrompt, isNull);
+      expect(correctAdvance.inMilliseconds, lessThan(100));
+    },
+  );
 
   testWidgets('a long percent prompt stays complete on one line', (
     tester,
@@ -227,6 +256,7 @@ void main() {
   });
 
   testWidgets('the current and next problems stay on screen', (tester) async {
+    answerByHandwriting = false;
     await tester.binding.setSurfaceSize(const Size(390, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
@@ -267,6 +297,42 @@ void main() {
     expect(submit.width, 358);
     expect(submit.left, keypad.left);
     expect(submit.right, keypad.right);
+    expect(find.text('数字'), findsOneWidget);
+    expect(find.text('手写'), findsOneWidget);
+  });
+
+  testWidgets('training can switch between numbers and handwriting', (
+    tester,
+  ) async {
+    addTearDown(() => answerByHandwriting = false);
+    answerByHandwriting = false;
+    await tester.binding.setSurfaceSize(const Size(390, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        home: Scaffold(
+          body: DrillBoard(
+            title: '速算训练',
+            onBack: () {},
+            prompt: '8 + 7',
+            value: '',
+            onKey: (_) {},
+            onReplace: (_) {},
+            onSubmit: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('手写'));
+    await tester.pump();
+    expect(find.byType(Keypad), findsNothing);
+    expect(find.byType(HandwritingPad), findsOneWidget);
+    expect(find.text('清除'), findsOneWidget);
+    await tester.tap(find.text('数字'));
+    await tester.pump();
+    expect(find.byType(Keypad), findsOneWidget);
+    expect(find.byType(HandwritingPad), findsNothing);
   });
 
   testWidgets('the first problem already reserves the previous line', (
@@ -305,10 +371,7 @@ void main() {
     expect(find.textContaining('6 + 6'), findsOneWidget);
     expect(tester.getRect(find.text('8 + 7')).top, current);
     expect(tester.getRect(find.textContaining('9 + 8')).top, next);
-    expect(
-      tester.getRect(find.widgetWithText(FilledButton, '提交')).top,
-      submit,
-    );
+    expect(tester.getRect(find.widgetWithText(FilledButton, '提交')).top, submit);
     expect(tester.takeException(), isNull);
   });
 
@@ -469,10 +532,7 @@ void main() {
     await store.putAttempt(attempt);
     expect(await store.attempts('child-a'), hasLength(1));
     store.setSession(childMode: true, learnerId: 'child-a');
-    expect(
-      () => store.attempts('child-b'),
-      throwsStateError,
-    );
+    expect(() => store.attempts('child-b'), throwsStateError);
     store.setSession(childMode: false, learnerId: null);
     await store.wipe();
     expect(await store.readLearners(), isEmpty);
@@ -481,23 +541,46 @@ void main() {
     await directory.delete(recursive: true);
   });
 
-  test('a photographed page counts wrong answers and drills that operation', () {
-    const page = '8 + 7 = 15\n9 + 6 = 14 x\n12 − 5 = 7\n6 × 4 = 22';
-    final facts = parseWorksheet(page);
-    expect(facts, hasLength(4));
-    expect(facts[0].countedWrong, isFalse);
-    expect(facts[1].countedWrong, isTrue);
-    expect(facts[1].computed, '15');
-    expect(facts[3].countedWrong, isTrue);
-    expect(facts[3].operation, 'multiplication');
-    final tally = tallyFacts(facts);
-    expect(tally.counts['addition'], 1);
-    expect(tally.counts['multiplication'], 1);
-    expect(tally.focus, 'addition');
-    final drill = targetedProblems(facts, rng: Random(1));
-    expect(drill, hasLength(5));
-    expect(drill.every((problem) => problem.prompt.contains('+')), isTrue);
+  test('a guest session can add a learner without a parent code', () async {
+    final directory = await Directory.systemTemp.createTemp('stepmath-guest');
+    final store = HiveAppStore();
+    await store.init(path: directory.path);
+    final catalog = Catalog.parse(
+      File('assets/tricks/catalog.json').readAsStringSync(),
+    );
+    final app = AppController(store: store, catalog: catalog);
+    await app.boot();
+    expect(
+      await app.createLearner(name: '访客', grade: '1', guest: true),
+      isNull,
+    );
+    await app.enterChild(app.learners.single.id);
+    expect(await app.createLearner(name: 'Mia', grade: '2'), isNull);
+    expect(app.learners.map((learner) => learner.displayName), ['访客', 'Mia']);
+    await store.close();
+    await directory.delete(recursive: true);
   });
+
+  test(
+    'a photographed page counts wrong answers and drills that operation',
+    () {
+      const page = '8 + 7 = 15\n9 + 6 = 14 x\n12 − 5 = 7\n6 × 4 = 22';
+      final facts = parseWorksheet(page);
+      expect(facts, hasLength(4));
+      expect(facts[0].countedWrong, isFalse);
+      expect(facts[1].countedWrong, isTrue);
+      expect(facts[1].computed, '15');
+      expect(facts[3].countedWrong, isTrue);
+      expect(facts[3].operation, 'multiplication');
+      final tally = tallyFacts(facts);
+      expect(tally.counts['addition'], 1);
+      expect(tally.counts['multiplication'], 1);
+      expect(tally.focus, 'addition');
+      final drill = targetedProblems(facts, rng: Random(1));
+      expect(drill, hasLength(5));
+      expect(drill.every((problem) => problem.prompt.contains('+')), isTrue);
+    },
+  );
 
   test('a problem is spoken in the system language', () {
     expect(spokenPrompt('8 + 7'), '八加七');
@@ -508,7 +591,10 @@ void main() {
     expect(spokenPrompt('8 + ? = 10'), '八加几等于十');
     expect(spokenPrompt('10% of \$80'), '八十美元的百分之十');
     expect(spokenPrompt('8 + 7', language: 'en'), 'eight plus seven');
-    expect(spokenPrompt('10% of \$80', language: 'en'), 'ten percent of eighty dollars');
+    expect(
+      spokenPrompt('10% of \$80', language: 'en'),
+      'ten percent of eighty dollars',
+    );
     expect(ttsLanguageTag('zh'), 'zh-CN');
     expect(ttsLanguageTag('zh', countryCode: 'TW'), 'zh-TW');
     expect(ttsLanguageTag('en', countryCode: 'GB'), 'en-GB');

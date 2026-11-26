@@ -132,6 +132,18 @@ class Copy {
   String get submit => pick('提交', 'Submit');
   String get yourAnswer => pick('你的答案', 'Your answer');
   String get delete => pick('删除', 'Delete');
+  String get numbers => pick('数字', 'Numbers');
+  String get handwriting => pick('手写', 'Handwriting');
+  String get clearWriting => pick('清除', 'Clear');
+  String get writeAnswer => pick('在这里写答案', 'Write the answer here');
+  String get handwritingPreparing =>
+      pick('正在准备手写。', 'Preparing handwriting.');
+  String get handwritingNeedsDownload => pick(
+    '手写识别要先下载一次，之后就留在这台设备上。',
+    'Handwriting downloads once, then stays on this device.',
+  );
+  String get handwritingUnclear =>
+      pick('没看清，再写一次。', 'Could not read that. Write it again.');
   String get undo => pick('回退', 'Undo');
   String get notQuite => pick('还不对', 'Not quite');
   String get correct => pick('正确', 'Correct');

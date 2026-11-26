@@ -282,6 +282,17 @@ class PracticeEffect {
   final bool wait;
 }
 
+PracticeEffect practiceReplace(PracticeView view, String draft) {
+  if (!view.active ||
+      view.locked ||
+      view.phase == 'done' ||
+      view.current == null) {
+    return PracticeEffect(view);
+  }
+  if (!legalDraft(draft) || draft == view.draft) return PracticeEffect(view);
+  return PracticeEffect(view.copy(draft: draft, clearMark: true));
+}
+
 PracticeEffect practiceKey(PracticeView view, String key) {
   if (!view.active ||
       view.locked ||
@@ -664,6 +675,18 @@ class SpeedEffect {
 bool speedEnded(SpeedView view) {
   final limit = view.config.limitMode == 'count' ? view.config.limitValue : 10;
   return view.answered >= limit;
+}
+
+SpeedEffect speedReplace(SpeedView view, String draft) {
+  if (!view.active ||
+      view.locked ||
+      view.paused ||
+      view.done ||
+      view.current == null) {
+    return SpeedEffect(view);
+  }
+  if (!legalDraft(draft) || draft == view.draft) return SpeedEffect(view);
+  return SpeedEffect(view.copy(draft: draft, clearMark: true));
 }
 
 SpeedEffect speedKey(SpeedView view, String key) {

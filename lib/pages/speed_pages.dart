@@ -153,9 +153,7 @@ class _SpeedRunPageState extends ConsumerState<SpeedRunPage>
           bookWrongs: ref.read(appProvider).settings.bookWrongs,
           onBookWrongs: (value) {
             final app = ref.read(appProvider);
-            return app.updateSettings(
-              app.settings.copyWith(bookWrongs: value),
-            );
+            return app.updateSettings(app.settings.copyWith(bookWrongs: value));
           },
         );
         if (!context.mounted) return;
@@ -198,7 +196,8 @@ class _SpeedRunPageState extends ConsumerState<SpeedRunPage>
       );
     }
     final finished = view.done;
-    final item = view.current ??
+    final item =
+        view.current ??
         (finished && view.items.isNotEmpty ? view.items.last : null);
     final t = Copy.of(context);
     final roundTitle = isDailyPractice(view.config, view.grade)
@@ -268,6 +267,7 @@ class _SpeedRunPageState extends ConsumerState<SpeedRunPage>
             showAnswer: !finished,
             keysEnabled: !finished && !view.locked && view.current != null,
             onKey: speed.key,
+            onReplace: speed.replaceDraft,
             onSubmit: speed.submit,
           ),
         ),

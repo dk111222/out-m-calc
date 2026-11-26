@@ -150,6 +150,83 @@ bool sameNumber(String user, String expected) {
   return (left - right).abs() < 0.001;
 }
 
+/// A draft the keypad could have produced: at most 8 characters, one dot.
+bool legalDraft(String value) {
+  if (value.length > 8) return false;
+  return RegExp(r'^\d*\.?\d*$').hasMatch(value);
+}
+
+/// Reads one recognition candidate as a numeric draft.
+///
+/// A whole word is rejected. A single lookalike letter, or a short mix of
+/// digits and lookalikes such as "1O", becomes a number.
+String readHandAnswer(String raw) {
+  final compact = raw.replaceAll(RegExp(r'\s+'), '');
+  if (compact.isEmpty) return '';
+  if (RegExp(r'^\d+(\.\d+)?$').hasMatch(compact)) {
+    return compact.length <= 8 ? compact : compact.substring(0, 8);
+  }
+  if (compact.length == 1) {
+    const single = {
+      'O': '0',
+      'o': '0',
+      'Q': '0',
+      'D': '0',
+      'I': '1',
+      'l': '1',
+      '|': '1',
+      'i': '1',
+      'Z': '2',
+      'z': '2',
+      'S': '5',
+      's': '5',
+      'b': '6',
+      'G': '6',
+      'T': '7',
+      'B': '8',
+      'g': '9',
+      'q': '9',
+    };
+    return single[compact] ?? '';
+  }
+  const lookalikes = {
+    'O': '0',
+    'o': '0',
+    'l': '1',
+    'I': '1',
+    '|': '1',
+    ',': '.',
+    '·': '.',
+    '。': '.',
+  };
+  final buffer = StringBuffer();
+  var dotted = false;
+  for (final ch in compact.split('')) {
+    final mapped = lookalikes[ch] ?? ch;
+    final digit = RegExp(r'^\d$').hasMatch(mapped);
+    if (!digit && mapped != '.') return '';
+    if (mapped == '.') {
+      if (dotted) return '';
+      dotted = true;
+      if (buffer.isEmpty) buffer.write('0');
+    }
+    if (buffer.length >= 8) break;
+    buffer.write(mapped);
+  }
+  final text = buffer.toString();
+  if (text.isEmpty || text == '0.') return '';
+  return text;
+}
+
+/// First candidate that reads as a number, in the order the model returned.
+String? pickInkAnswer(Iterable<String> candidates) {
+  for (final raw in candidates) {
+    final answer = readHandAnswer(raw);
+    if (answer.isNotEmpty && legalDraft(answer)) return answer;
+  }
+  return null;
+}
+
 /// Returns the next draft, the same draft for delete-on-empty, or null when
 /// the key must be ignored.
 String? applyKey(String current, String key) {

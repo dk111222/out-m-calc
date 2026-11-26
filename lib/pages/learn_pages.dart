@@ -453,9 +453,7 @@ class PracticePage extends ConsumerWidget {
           bookWrongs: ref.read(appProvider).settings.bookWrongs,
           onBookWrongs: (value) {
             final app = ref.read(appProvider);
-            return app.updateSettings(
-              app.settings.copyWith(bookWrongs: value),
-            );
+            return app.updateSettings(app.settings.copyWith(bookWrongs: value));
           },
         );
         if (!context.mounted) return;
@@ -467,7 +465,8 @@ class PracticePage extends ConsumerWidget {
       });
     }
     final finished = view != null && view.phase == 'done';
-    final item = view?.current ??
+    final item =
+        view?.current ??
         (finished && view.items.isNotEmpty ? view.items.last : null);
     if (view == null || item == null) {
       return PageFrame(
@@ -520,6 +519,7 @@ class PracticePage extends ConsumerWidget {
             keysEnabled: !finished && !view.locked,
             showAnswer: !finished,
             onKey: practice.key,
+            onReplace: practice.replaceDraft,
             onSubmit: practice.submit,
             detail: finished ? null : _PracticeDetail(view: view, item: item),
           ),

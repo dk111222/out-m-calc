@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../app/theme.dart';
 import '../l10n/copy.dart';
+import 'handwriting.dart';
 
 class PageFrame extends StatelessWidget {
   const PageFrame({
@@ -308,13 +309,12 @@ class Keypad extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     child: Text(
                       label,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineSmall?.copyWith(
-                        color: value == 'delete'
-                            ? colors.textMuted
-                            : colors.text,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            color: value == 'delete'
+                                ? colors.textMuted
+                                : colors.text,
+                          ),
                     ),
                   ),
                 ),
@@ -396,7 +396,10 @@ class DrillBoard extends StatelessWidget {
     this.nextPrompt,
     this.keysEnabled = true,
     this.showAnswer = true,
+    this.onReplace = _ignoreReplace,
   });
+
+  static void _ignoreReplace(String _) {}
 
   final String title;
   final VoidCallback onBack;
@@ -413,13 +416,15 @@ class DrillBoard extends StatelessWidget {
   final bool keysEnabled;
   final bool showAnswer;
   final ValueChanged<String> onKey;
+  final ValueChanged<String> onReplace;
   final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
     final t = Copy.of(context);
     final colors = AppColors.of(context);
-    final previous = previousPrompt != null &&
+    final previous =
+        previousPrompt != null &&
         previousAnswer != null &&
         previousCorrect != null;
     final scale = MediaQuery.textScalerOf(context).scale(1);
@@ -490,9 +495,7 @@ class DrillBoard extends StatelessWidget {
                                   ),
                                 ),
                                 Icon(
-                                  previousCorrect!
-                                      ? Icons.check
-                                      : Icons.close,
+                                  previousCorrect! ? Icons.check : Icons.close,
                                   color: previousCorrect!
                                       ? colors.success
                                       : colors.danger,
@@ -525,9 +528,7 @@ class DrillBoard extends StatelessWidget {
                                 _settledLine(nextPrompt!, '( )'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(color: colors.textMuted),
                               ),
                             ),
@@ -541,13 +542,13 @@ class DrillBoard extends StatelessWidget {
                             ),
                     ),
                     const Divider(height: AppSpace.s16),
-                    Keypad(
+                    AnswerEntry(
+                      prompt: prompt,
                       enabled: keysEnabled,
-                      onKey: onKey,
-                      onSubmit: onSubmit,
-                      showSubmit: false,
-                      showDelete: true,
                       keyExtent: keyExtent,
+                      onKey: onKey,
+                      onReplace: onReplace,
+                      onSubmit: onSubmit,
                     ),
                     const SizedBox(height: AppSpace.s8),
                     SizedBox(
@@ -589,6 +590,8 @@ class DrillBoard extends StatelessWidget {
         AppSpace.s8 +
         _nextHeight(scale) +
         AppSpace.s16 +
+        AppSpace.minTarget +
+        AppSpace.s8 +
         AppSpace.s8 +
         submit;
     final fitted = (height - used - 48) / 4;
@@ -599,6 +602,115 @@ class DrillBoard extends StatelessWidget {
   static String _settledLine(String prompt, String blank) {
     final equals = prompt.contains('=') ? '' : ' = ';
     return '$prompt$equals$blank';
+  }
+}
+
+class AnswerEntry extends StatefulWidget {
+  const AnswerEntry({
+    super.key,
+    required this.prompt,
+    required this.enabled,
+    required this.onKey,
+    required this.onReplace,
+    required this.onSubmit,
+    this.keyExtent,
+  });
+
+  final String prompt;
+  final bool enabled;
+  final double? keyExtent;
+  final ValueChanged<String> onKey;
+  final ValueChanged<String> onReplace;
+  final VoidCallback onSubmit;
+
+  @override
+  State<AnswerEntry> createState() => _AnswerEntryState();
+}
+
+class _AnswerEntryState extends State<AnswerEntry> {
+  @override
+  Widget build(BuildContext context) {
+    final t = Copy.of(context);
+    final colors = AppColors.of(context);
+    final keyExtent = widget.keyExtent ?? AppSpace.minTarget;
+    final handwriting = answerByHandwriting;
+    Widget mode(String label, bool selected, VoidCallback onTap) {
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.s4),
+          child: Material(
+            color: selected ? colors.accent : colors.surface,
+            borderRadius: BorderRadius.circular(AppSpace.rSm),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppSpace.rSm),
+              onTap: onTap,
+              child: Semantics(
+                button: true,
+                selected: selected,
+                label: label,
+                child: SizedBox(
+                  height: AppSpace.minTarget - AppSpace.s8,
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: selected ? colors.onAccent : colors.text,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: AppSpace.keypadMax),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.sunken,
+                borderRadius: BorderRadius.circular(AppSpace.rMd),
+              ),
+              child: Row(
+                children: [
+                  mode(t.numbers, !handwriting, () {
+                    setState(() => answerByHandwriting = false);
+                  }),
+                  mode(t.handwriting, handwriting, () {
+                    setState(() => answerByHandwriting = true);
+                  }),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpace.s8),
+            if (handwriting)
+              HandwritingPad(
+                prompt: widget.prompt,
+                enabled: widget.enabled,
+                height: keyExtent * 4 + 48,
+                onReplace: widget.onReplace,
+              )
+            else
+              Keypad(
+                enabled: widget.enabled,
+                onKey: widget.onKey,
+                onSubmit: widget.onSubmit,
+                showSubmit: false,
+                showDelete: true,
+                keyExtent: keyExtent,
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -689,9 +801,7 @@ class EquationLine extends StatelessWidget {
   ) {
     final fitted = base.copyWith(fontSize: (base.fontSize ?? 40) * scale);
     final promptWidth = _textWidth(prompt, fitted);
-    final equalsWidth = showEquals
-        ? _textWidth('=', fitted) + AppSpace.s8
-        : 0;
+    final equalsWidth = showEquals ? _textWidth('=', fitted) + AppSpace.s8 : 0;
     final parenWidth = _textWidth('()', fitted);
     final middle = _textWidth(value.isEmpty ? '0' : value, fitted);
     final needed =
@@ -1126,11 +1236,7 @@ class _TrainingReportDialogState extends State<TrainingReportDialog> {
       );
     }
     if (percent != null && percent > 0) {
-      return _ReportCheer(
-        null,
-        Icons.favorite_rounded,
-        colors.warning,
-      );
+      return _ReportCheer(null, Icons.favorite_rounded, colors.warning);
     }
     return _ReportCheer(
       t.pick('训练结束', 'Round finished'),
@@ -1175,12 +1281,14 @@ class _TrainingReportDialogState extends State<TrainingReportDialog> {
                 Text(
                   t.pick('训练报告', 'Training report'),
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colors.textMuted,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelSmall?.copyWith(color: colors.textMuted),
                 ),
                 const SizedBox(height: AppSpace.s16),
-                Center(child: _ReportMark(color: cheer.tone, icon: cheer.icon)),
+                Center(
+                  child: _ReportMark(color: cheer.tone, icon: cheer.icon),
+                ),
                 if (cheer.title != null) ...[
                   const SizedBox(height: AppSpace.s12),
                   Text(
@@ -1214,7 +1322,9 @@ class _TrainingReportDialogState extends State<TrainingReportDialog> {
                         '错误 ${widget.wrong} 题',
                         '${widget.wrong} wrong',
                       ),
-                      color: widget.wrong == 0 ? colors.success : colors.warning,
+                      color: widget.wrong == 0
+                          ? colors.success
+                          : colors.warning,
                     ),
                     const SizedBox(width: AppSpace.s8),
                     _ReportStat(
