@@ -205,19 +205,21 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
           const SizedBox(height: AppSpace.s16),
           Text(t.gradeWord, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpace.s8),
-          RadioGroup<String>(
-            groupValue: _grade,
-            onChanged: (value) => setState(() => _grade = value),
-            child: Column(
-              children: [
-                for (final grade in grades)
-                  RadioListTile<String>(
-                    value: grade,
-                    title: Text(t.grade(grade)),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-              ],
-            ),
+          // Compact chips keep grade + both avatar rows on the first screen.
+          Wrap(
+            spacing: AppSpace.s8,
+            runSpacing: AppSpace.s8,
+            children: [
+              for (final grade in grades)
+                ChoiceChip(
+                  label: Text(t.grade(grade)),
+                  selected: _grade == grade,
+                  onSelected: (selected) {
+                    if (!selected) return;
+                    setState(() => _grade = grade);
+                  },
+                ),
+            ],
           ),
         ],
       ),
@@ -431,113 +433,77 @@ class ChildHomePage extends ConsumerWidget {
         .forGrade(learner.grade)
         .where((trick) => trick.ready)
         .take(3);
-    final colors = AppColors.of(context);
+    final todaySummary = assignment == null
+        ? t.nothingAssigned
+        : assignment.kind == 'learn'
+        ? (learnTrick == null
+              ? t.learnATrick
+              : localizeTrick(learnTrick, t).title)
+        : (speed?.summary(language: t.language) ?? t.speedDrill);
     return PageFrame(
       title: t.todayPractice,
       banner: app.banner,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          _LearnerHomeCard(
+            avatarId: learner.avatar,
+            name: learner.displayName,
+            gradeLabel: t.grade(learner.grade),
+            streakLabel: t.dayStreak(learner.streakCount),
+            todayLabel: t.todayTask(todaySummary),
+            streakNotice: learner.streakNotice == 'held'
+                ? t.skipKept
+                : learner.streakNotice == 'reset'
+                ? t.streakReset
+                : null,
+            onTraining: () => context.go('/report/${learner.id}'),
+            onWrongBook: () => context.go('/review'),
+            onPhotoGrade: () => context.go('/scan'),
+          ),
+          const SizedBox(height: AppSpace.s16),
+          _TrainingCard(
             children: [
-              ChildAvatar(id: learner.avatar, size: 48),
-              const SizedBox(width: AppSpace.s12),
-              Expanded(
-                child: Text(
-                  learner.displayName,
-                  style: Theme.of(context).textTheme.titleMedium,
+              if (app.snapshot != null &&
+                  app.snapshot!.localDate == app.clock.today)
+                _PracticeRow(
+                  title: t.continueLabel,
+                  onPressed: () => _continue(context, ref),
                 ),
+              _PracticeRow(
+                title: t.dailyPractice,
+                caption: t.tenProblems,
+                onPressed: () => _startDaily(context, ref, learner.grade),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpace.s12,
-                  vertical: AppSpace.s8,
+              _SpeedHomeCard(
+                level: learner.grade,
+                initial: speedForLevel(
+                  speed ?? speedDefault(learner.grade),
+                  learner.grade,
                 ),
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(AppSpace.rPill),
-                  border: Border.all(color: colors.border),
-                ),
-                child: Text(t.grade(learner.grade)),
+                onStart: (config) => _openSpeed(context, ref, config),
               ),
+              _SectionLabel(
+                title: t.mathTricks,
+                onPressed: () => _openLearn(context, ref, learnTrick, seen),
+              ),
+              for (final trick in mine)
+                _PracticeRow(
+                  title: localizeTrick(trick, t).title,
+                  caption: trick.example.prompt,
+                  onPressed: () => context.go('/tricks/${trick.id}'),
+                ),
+              _SectionLabel(
+                title: t.facts,
+                onPressed: () => context.go('/tricks?tab=facts'),
+              ),
+              for (final drill in drills)
+                _PracticeRow(
+                  title: t.factTitle(drill.title),
+                  caption: drill.sample,
+                  onPressed: () => _startDrill(context, ref, drill.config),
+                ),
             ],
-          ),
-          const SizedBox(height: AppSpace.s4),
-          Text(
-            t.dayStreak(learner.streakCount),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          if (learner.streakNotice == 'held') ...[
-            const SizedBox(height: AppSpace.s8),
-            Text(t.skipKept),
-          ],
-          if (learner.streakNotice == 'reset') ...[
-            const SizedBox(height: AppSpace.s8),
-            Text(t.streakReset),
-          ],
-          const SizedBox(height: AppSpace.s16),
-          if (app.snapshot != null &&
-              app.snapshot!.localDate == app.clock.today)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpace.s16),
-              child: AppButton(
-                label: t.continueLabel,
-                onPressed: () => _continue(context, ref),
-              ),
-            ),
-          _DailyCard(
-            learnerId: learner.id,
-            onStart: () => _startDaily(context, ref, learner.grade),
-          ),
-          const SizedBox(height: AppSpace.s16),
-          _SpeedHomeCard(
-            level: learner.grade,
-            initial: speedForLevel(
-              speed ?? speedDefault(learner.grade),
-              learner.grade,
-            ),
-            onStart: (config) => _openSpeed(context, ref, config),
-          ),
-          const SizedBox(height: AppSpace.s16),
-          InkWell(
-            onTap: () => _openLearn(context, ref, learnTrick, seen),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpace.s8),
-              child: Text(
-                t.mathTricks,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ),
-          for (final trick in mine)
-            TrickCard(
-              title: localizeTrick(trick, t).title,
-              caption: trick.example.prompt,
-              onPressed: () => context.go('/tricks/${trick.id}'),
-            ),
-          InkWell(
-            onTap: () => context.go('/tricks?tab=facts'),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpace.s8),
-              child: Text(
-                t.facts,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ),
-          for (final drill in drills)
-            TrickCard(
-              title: t.factTitle(drill.title),
-              caption: drill.sample,
-              onPressed: () => _startDrill(context, ref, drill.config),
-            ),
-          TextButton(
-            onPressed: () => context.go('/review'),
-            child: Text(t.wrongProblems),
-          ),
-          TextButton(
-            onPressed: () => context.go('/scan'),
-            child: Text(t.scanPaper),
           ),
         ],
       ),
@@ -609,20 +575,304 @@ class ChildHomePage extends ConsumerWidget {
   }
 }
 
-class _DailyCard extends StatelessWidget {
-  const _DailyCard({required this.learnerId, required this.onStart});
+class _LearnerHomeCard extends StatelessWidget {
+  const _LearnerHomeCard({
+    required this.avatarId,
+    required this.name,
+    required this.gradeLabel,
+    required this.streakLabel,
+    required this.todayLabel,
+    required this.onTraining,
+    required this.onWrongBook,
+    required this.onPhotoGrade,
+    this.streakNotice,
+  });
 
-  final String learnerId;
-  final VoidCallback onStart;
+  final String avatarId;
+  final String name;
+  final String gradeLabel;
+  final String streakLabel;
+  final String todayLabel;
+  final String? streakNotice;
+  final VoidCallback onTraining;
+  final VoidCallback onWrongBook;
+  final VoidCallback onPhotoGrade;
 
   @override
   Widget build(BuildContext context) {
     final t = Copy.of(context);
-    return TrickCard(
-      key: ValueKey(learnerId),
-      title: t.dailyPractice,
-      caption: t.tenProblems,
-      onPressed: onStart,
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppSpace.rMd),
+        border: Border.all(color: colors.border),
+        boxShadow: colors.cardShadow,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.s16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ChildAvatar(id: avatarId, size: 64),
+                const SizedBox(width: AppSpace.s12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: AppSpace.s4),
+                      Text(
+                        '${t.learningStage} · $gradeLabel',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpace.s4),
+                      Text(
+                        streakLabel,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpace.s8),
+                      Text(todayLabel, style: theme.textTheme.bodyMedium),
+                      if (streakNotice != null) ...[
+                        const SizedBox(height: AppSpace.s8),
+                        Text(
+                          streakNotice!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.warning,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpace.s16),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.sunken,
+                borderRadius: BorderRadius.circular(AppSpace.rSm),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _LearnerHomeAction(
+                      icon: Icons.insights_outlined,
+                      label: t.trainingStatus,
+                      onPressed: onTraining,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 44,
+                    child: VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: colors.border,
+                    ),
+                  ),
+                  Expanded(
+                    child: _LearnerHomeAction(
+                      icon: Icons.menu_book_outlined,
+                      label: t.wrongProblems,
+                      onPressed: onWrongBook,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 44,
+                    child: VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: colors.border,
+                    ),
+                  ),
+                  Expanded(
+                    child: _LearnerHomeAction(
+                      icon: Icons.photo_camera_outlined,
+                      label: t.scanPaper,
+                      onPressed: onPhotoGrade,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LearnerHomeAction extends StatelessWidget {
+  const _LearnerHomeAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(AppSpace.rSm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpace.s12,
+            horizontal: AppSpace.s4,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: colors.accent),
+              const SizedBox(height: AppSpace.s4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: colors.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrainingCard extends StatelessWidget {
+  const _TrainingCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final lines = <Widget>[];
+    Widget? previous;
+    for (final child in children) {
+      if (previous != null &&
+          (child is _SectionLabel || previous is! _SectionLabel)) {
+        lines.add(Divider(height: 1, thickness: 1, color: colors.border));
+      }
+      lines.add(child);
+      previous = child;
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSpace.rMd),
+        boxShadow: colors.cardShadow,
+      ),
+      child: Material(
+        color: colors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpace.rMd),
+          side: BorderSide(color: colors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: lines,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.title, required this.onPressed});
+
+  final String title;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpace.s16,
+          AppSpace.s16,
+          AppSpace.s16,
+          AppSpace.s8,
+        ),
+        child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      ),
+    );
+  }
+}
+
+class _PracticeRow extends StatelessWidget {
+  const _PracticeRow({
+    required this.title,
+    required this.onPressed,
+    this.caption = '',
+    this.trailing,
+  });
+
+  final String title;
+  final String caption;
+  final VoidCallback? onPressed;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final enabled = onPressed != null;
+    return InkWell(
+      onTap: onPressed,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 72),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.s16,
+            vertical: AppSpace.s12,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: enabled ? colors.text : colors.textMuted,
+                      ),
+                    ),
+                    if (caption.isNotEmpty) ...[
+                      const SizedBox(height: AppSpace.s4),
+                      Text(
+                        caption,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing!,
+              if (enabled) Icon(Icons.chevron_right, color: colors.textMuted),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -654,66 +904,24 @@ class _SpeedHomeCardState extends State<_SpeedHomeCard> {
   @override
   Widget build(BuildContext context) {
     final t = Copy.of(context);
-    final colors = AppColors.of(context);
     final summary = _config.summary(language: t.language);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(AppSpace.rMd),
-        border: Border.all(color: colors.border),
-        boxShadow: colors.cardShadow,
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppSpace.rMd),
-          onTap: () => widget.onStart(_config),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 72),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpace.s16,
-                AppSpace.s8,
-                AppSpace.s4,
-                AppSpace.s8,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          t.speedDrill,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: AppSpace.s4),
-                        Text(
-                          summary,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: t.settings,
-                    onPressed: () async {
-                      final next = await showSpeedSetupDialog(
-                        context,
-                        config: _config,
-                        level: widget.level,
-                      );
-                      if (next != null && mounted) {
-                        setState(() => _config = next);
-                      }
-                    },
-                    icon: const Icon(Icons.settings),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+    return _PracticeRow(
+      title: t.speedDrill,
+      caption: summary,
+      onPressed: () => widget.onStart(_config),
+      trailing: IconButton(
+        tooltip: t.settings,
+        onPressed: () async {
+          final next = await showSpeedSetupDialog(
+            context,
+            config: _config,
+            level: widget.level,
+          );
+          if (next != null && mounted) {
+            setState(() => _config = next);
+          }
+        },
+        icon: const Icon(Icons.settings),
       ),
     );
   }

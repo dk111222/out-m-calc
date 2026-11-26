@@ -491,9 +491,74 @@ void main() {
     expect(catalog.byId('g1-make-10')?.title, 'Make 10');
     expect(avatarIdFor('maple', 'child-a'), 'maple');
     expect(avatarIdFor('nope', 'child-a'), avatarIdFor(null, 'child-a'));
-    expect(learnerAvatarIds, hasLength(12));
-    expect(learnerAvatarIds.toSet(), hasLength(12));
+    expect(kidAvatarIds, hasLength(12));
+    expect(animalAvatarIds, hasLength(12));
+    expect(learnerAvatarIds, hasLength(24));
+    expect(learnerAvatarIds.toSet(), hasLength(24));
+    expect(learnerAvatarIds, containsAll(animalAvatarIds));
   });
+
+  test('boot lands on home and finishes under three seconds', () async {
+    final directory = await Directory.systemTemp.createTemp('stepmath-boot');
+    final store = HiveAppStore();
+    final catalog = Catalog.parse(
+      await File('assets/tricks/catalog.json').readAsString(),
+    );
+    final started = Stopwatch()..start();
+    await store.init(path: directory.path);
+    final app = AppController(store: store, catalog: catalog);
+    await app.boot();
+    started.stop();
+    expect(app.ready, isTrue);
+    expect(app.bootError, isNull);
+    expect(app.openLocation(), '/child');
+    expect(started.elapsedMilliseconds, lessThan(3000));
+    await store.ensureFull();
+    await store.close();
+    await directory.delete(recursive: true);
+  });
+
+  test(
+    'a parent can sign in with a provider and then delete the account',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'stepmath-account',
+      );
+      final store = HiveAppStore();
+      await store.init(path: directory.path);
+      final catalog = Catalog.parse(
+        await File('assets/tricks/catalog.json').readAsString(),
+      );
+      final app = AppController(store: store, catalog: catalog);
+      await app.boot();
+      expect(
+        await app.signInWithIdentity(
+          provider: 'google',
+          subject: 'google-user-1',
+          email: 'ada@example.com',
+          name: 'Ada',
+        ),
+        isNull,
+      );
+      expect(app.settings.signedIn, isTrue);
+      expect(app.settings.accountProvider, 'google');
+      await app.signOut();
+      expect(
+        await app.signInWithIdentity(
+          provider: 'apple',
+          subject: 'apple-user-2',
+          email: 'other@example.com',
+        ),
+        app.copy.accountAlreadyOnDevice,
+      );
+      expect(await app.deleteAccount('1234', again: '1234'), isTrue);
+      expect(app.settings.signedIn, isFalse);
+      expect(app.settings.accountSubject, isNull);
+      expect(app.settings.accountEmail, isNull);
+      await store.close();
+      await directory.delete(recursive: true);
+    },
+  );
 
   test('store ignores a second submit and keeps learners apart', () async {
     final directory = await Directory.systemTemp.createTemp('stepmath');
@@ -532,7 +597,7 @@ void main() {
     await store.putAttempt(attempt);
     expect(await store.attempts('child-a'), hasLength(1));
     store.setSession(childMode: true, learnerId: 'child-a');
-    expect(() => store.attempts('child-b'), throwsStateError);
+    await expectLater(store.attempts('child-b'), throwsStateError);
     store.setSession(childMode: false, learnerId: null);
     await store.wipe();
     expect(await store.readLearners(), isEmpty);

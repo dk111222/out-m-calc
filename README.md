@@ -1,1 +1,14 @@
 # out-m-calc
+
+美国 K–5 **计算技巧日课**（Calculation Trainer）：每天约四分钟，用凑十、补偿、拆数等技巧练速算；家长看到哪一招稳了；可导出 PDF 练习卷。
+
+## 文档
+
+| 文档 | 说明 |
+| --- | --- |
+| [docs/需求功能书.md](docs/需求功能书.md) | 产品需求与功能规格（v1.1） |
+| [docs/feature-checklist.md](docs/feature-checklist.md) | v1 实现勾选清单 |
+
+## 当前状态
+
+规格已整理；工程实现尚未开始。建议先完成美国家长访谈与 COPPA 同意方式的律师确认，再写代码。

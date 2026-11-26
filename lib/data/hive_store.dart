@@ -19,6 +19,9 @@ class HiveAppStore implements AppStore {
   late Box<Map> _snapshots;
   late Box<Map> _certificates;
 
+  /// Boxes needed only after the first home frame (practice history, etc.).
+  Future<void> _rest = Future<void>.value();
+
   @override
   void setSession({required bool childMode, String? learnerId}) {
     this.childMode = childMode;
@@ -35,6 +38,8 @@ class HiveAppStore implements AppStore {
     if (childMode) throw StateError('A parent needs to open this.');
   }
 
+  /// Opens the boxes that paint the home page. History boxes open in parallel
+  /// afterward via [ensureFull] so first launch is not blocked on nine files.
   @override
   Future<void> init({String? path}) async {
     if (_ready) return;
@@ -46,38 +51,49 @@ class HiveAppStore implements AppStore {
       }
       _hiveReady = true;
     }
-    final opened = await Future.wait([
+    final critical = await Future.wait([
       Hive.openBox<Map>('learners'),
       Hive.openBox<Map>('device_settings'),
-      Hive.openBox<Map>('attempts'),
-      Hive.openBox<Map>('wrong_items'),
-      Hive.openBox<Map>('speed_rounds'),
-      Hive.openBox<Map>('mastery'),
       Hive.openBox<Map>('assignments'),
       Hive.openBox<Map>('session_snapshots'),
-      Hive.openBox<Map>('certificates'),
     ]);
-    _learners = opened[0];
-    _settings = opened[1];
-    _attempts = opened[2];
-    _wrongs = opened[3];
-    _speeds = opened[4];
-    _mastery = opened[5];
-    _assignments = opened[6];
-    _snapshots = opened[7];
-    _certificates = opened[8];
+    _learners = critical[0];
+    _settings = critical[1];
+    _assignments = critical[2];
+    _snapshots = critical[3];
     if (_settings.get('device') == null) {
       final fresh = DeviceSettings.fresh();
       await _settings.put('device', _settingsToMap(fresh));
     }
     _ready = true;
+    _rest = _openRest();
   }
+
+  Future<void> _openRest() async {
+    final opened = await Future.wait([
+      Hive.openBox<Map>('attempts'),
+      Hive.openBox<Map>('wrong_items'),
+      Hive.openBox<Map>('speed_rounds'),
+      Hive.openBox<Map>('mastery'),
+      Hive.openBox<Map>('certificates'),
+    ]);
+    _attempts = opened[0];
+    _wrongs = opened[1];
+    _speeds = opened[2];
+    _mastery = opened[3];
+    _certificates = opened[4];
+  }
+
+  /// Wait until practice-history boxes are open. Home paint does not need this.
+  Future<void> ensureFull() => _rest;
 
   Future<void> close() async {
     if (!_ready) return;
+    await ensureFull();
     await Hive.close();
     _ready = false;
     _hiveReady = false;
+    _rest = Future<void>.value();
   }
 
   @override
@@ -95,6 +111,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<void> wipe() async {
     _adult();
+    await ensureFull();
     await _attempts.clear();
     await _wrongs.clear();
     await _speeds.clear();
@@ -124,6 +141,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<void> deleteLearner(String id) async {
     _adult();
+    await ensureFull();
     await _deleteWhere(_attempts, (map) => map['learnerId'] == id);
     await _deleteWhere(_wrongs, (map) => map['learnerId'] == id);
     await _deleteWhere(_speeds, (map) => map['learnerId'] == id);
@@ -150,6 +168,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<void> putAttempt(Attempt attempt) async {
     _check(attempt.learnerId);
+    await ensureFull();
     if (_attempts.containsKey(attempt.id)) return;
     await _attempts.put(attempt.id, {
       'id': attempt.id,
@@ -168,6 +187,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<List<Attempt>> attempts(String learnerId) async {
     _check(learnerId);
+    await ensureFull();
     return _attempts.values
         .where((map) => map['learnerId'] == learnerId)
         .map(_attemptFromMap)
@@ -178,6 +198,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<void> putWrong(WrongItem item) async {
     _check(item.learnerId);
+    await ensureFull();
     if (_wrongs.containsKey(item.id)) return;
     await _wrongs.put(item.id, _wrongToMap(item));
   }
@@ -185,12 +206,14 @@ class HiveAppStore implements AppStore {
   @override
   Future<void> saveWrong(WrongItem item) async {
     _check(item.learnerId);
+    await ensureFull();
     await _wrongs.put(item.id, _wrongToMap(item));
   }
 
   @override
   Future<List<WrongItem>> wrongs(String learnerId) async {
     _check(learnerId);
+    await ensureFull();
     return _wrongs.values
         .where((map) => map['learnerId'] == learnerId)
         .map(_wrongFromMap)
@@ -201,6 +224,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<void> saveMastery(Mastery mastery) async {
     _check(mastery.learnerId);
+    await ensureFull();
     await _mastery.put(mastery.key, {
       'learnerId': mastery.learnerId,
       'trickId': mastery.trickId,
@@ -219,6 +243,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<Mastery?> mastery(String learnerId, String trickId) async {
     _check(learnerId);
+    await ensureFull();
     final raw = _mastery.get('$learnerId:$trickId');
     if (raw == null) return null;
     return _masteryFromMap(raw);
@@ -227,6 +252,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<List<Mastery>> masteries(String learnerId) async {
     _check(learnerId);
+    await ensureFull();
     return _mastery.values
         .where((map) => map['learnerId'] == learnerId)
         .map(_masteryFromMap)
@@ -236,6 +262,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<void> saveSpeed(SpeedRound round) async {
     _check(round.learnerId);
+    await ensureFull();
     await _speeds.put(round.id, {
       'id': round.id,
       'learnerId': round.learnerId,
@@ -253,6 +280,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<List<SpeedRound>> speeds(String learnerId) async {
     _check(learnerId);
+    await ensureFull();
     return _speeds.values
         .where((map) => map['learnerId'] == learnerId)
         .map(
@@ -357,6 +385,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<void> saveCertificate(Certificate certificate) async {
     _check(certificate.learnerId);
+    await ensureFull();
     await _certificates.put(certificate.id, {
       'id': certificate.id,
       'learnerId': certificate.learnerId,
@@ -371,6 +400,7 @@ class HiveAppStore implements AppStore {
   @override
   Future<List<Certificate>> certificates(String learnerId) async {
     _check(learnerId);
+    await ensureFull();
     return _certificates.values
         .where((map) => map['learnerId'] == learnerId)
         .map(
@@ -443,6 +473,9 @@ Map<String, dynamic> _settingsToMap(DeviceSettings settings) => {
   'accountEmail': settings.accountEmail,
   'accountPasswordHash': settings.accountPasswordHash,
   'accountSalt': settings.accountSalt,
+  'accountProvider': settings.accountProvider,
+  'accountSubject': settings.accountSubject,
+  'accountName': settings.accountName,
   'signedIn': settings.signedIn,
   'subscriptionActive': settings.subscriptionActive,
   'themeMode': settings.themeMode,
@@ -467,6 +500,9 @@ DeviceSettings _settingsFromMap(Map map) => DeviceSettings(
   accountEmail: map['accountEmail'] as String?,
   accountPasswordHash: map['accountPasswordHash'] as String?,
   accountSalt: map['accountSalt'] as String?,
+  accountProvider: map['accountProvider'] as String?,
+  accountSubject: map['accountSubject'] as String?,
+  accountName: map['accountName'] as String?,
   signedIn: map['signedIn'] as bool? ?? false,
   subscriptionActive: map['subscriptionActive'] as bool? ?? false,
   themeMode: map['themeMode'] as String? ?? 'system',

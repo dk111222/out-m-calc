@@ -15,6 +15,7 @@ import 'package:stepmath/domain/engine.dart';
 import 'package:stepmath/domain/machines.dart';
 import 'package:stepmath/export/pdfs.dart';
 import 'package:stepmath/main.dart';
+import 'package:stepmath/pages/home_pages.dart';
 import 'package:stepmath/ui/avatars.dart';
 import 'package:stepmath/ui/kit.dart';
 
@@ -78,6 +79,10 @@ void main() {
         child: const StepMathApp(),
       ),
     );
+    await tester.pump();
+    // First Flutter frame after boot must already be home, not the loading page.
+    expect(find.byType(LoadingPage), findsNothing);
+    expect(find.textContaining('正在这台设备上打开练习'), findsNothing);
     await settle(tester);
   }
 
@@ -88,8 +93,10 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('家长或老师'));
     await settle(tester);
-    // Avatar chips must be visible on the add-learner form.
-    expect(find.byType(ChildAvatar), findsWidgets);
+    // Kid + animal rows both mount (horizontal strips, 12 each).
+    expect(find.text('孩子'), findsWidgets);
+    expect(find.text('动物'), findsOneWidget);
+    expect(find.byType(ChildAvatar), findsNWidgets(24));
     expect(find.byType(Image), findsWidgets);
     await tester.enterText(find.byType(TextField), 'Ava');
     await tester.tap(find.text('一年级'));
@@ -112,8 +119,9 @@ void main() {
     expect(find.text('首页'), findsOneWidget);
     await tester.tap(find.text('速算技巧'));
     await settle(tester);
-    expect(find.text('适合'), findsOneWidget);
-    expect(find.text('不适合'), findsOneWidget);
+    expect(find.textContaining('何时用'), findsOneWidget);
+    expect(find.textContaining('别用'), findsOneWidget);
+    expect(find.textContaining('怎么算'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('开始练习'),
       200,

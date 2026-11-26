@@ -26,17 +26,17 @@ Future<Uint8List> buildWorksheet({
       build: (context) => [
         pw.Text(trick.title, style: pw.TextStyle(font: strong, fontSize: 22)),
         pw.SizedBox(height: 8),
-        pw.Text('Use this when', style: pw.TextStyle(font: strong)),
+        pw.Text('When', style: pw.TextStyle(font: strong)),
         pw.Text(trick.appliesWhen),
         pw.SizedBox(height: 6),
-        pw.Text('Not for', style: pw.TextStyle(font: strong)),
+        pw.Text('Skip', style: pw.TextStyle(font: strong)),
         pw.Text(trick.notWhen),
         pw.SizedBox(height: 10),
-        pw.Text('Steps', style: pw.TextStyle(font: strong, fontSize: 16)),
+        pw.Text('How', style: pw.TextStyle(font: strong, fontSize: 16)),
         ...trick.steps.map(
           (step) => pw.Padding(
             padding: const pw.EdgeInsets.only(bottom: 4),
-            child: pw.Text('${step.number}. ${step.title}. ${step.body}'),
+            child: pw.Text('${step.number}  ${step.title}  ·  ${step.body}'),
           ),
         ),
         pw.SizedBox(height: 12),

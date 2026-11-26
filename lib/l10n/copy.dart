@@ -90,10 +90,12 @@ class Copy {
       pick('留空则使用“学员”加编号。', 'Leave this blank to use Learner and a number.');
   String get gradeWord => pick('年级', 'Grade');
   String get avatarWord => pick('头像', 'Picture');
+  String get kidAvatars => pick('孩子', 'Kids');
+  String get animalAvatars => pick('动物', 'Animals');
   String get save => pick('保存', 'Save');
   String get learners => pick('孩子', 'Learners');
   String get settings => pick('设置', 'Settings');
-  String get scanPaper => pick('拍照识题', 'Scan a paper');
+  String get scanPaper => pick('拍照批改', 'Photo check');
   String get addLearnerToStart => pick('先添加一个孩子。', 'Add a learner to start.');
   String get nothingAssigned => pick('今天还没有布置', 'Nothing assigned today');
   String get learnATrick => pick('学一个技巧', 'Learn a trick');
@@ -102,6 +104,8 @@ class Copy {
   String dayStreak(int count) => pick('$count 天连续', '$count day streak');
   String get assign => pick('布置', 'Assign');
   String get report => pick('报告', 'Report');
+  String get trainingStatus => pick('训练情况', 'Training');
+  String get learningStage => pick('学习阶段', 'Stage');
   String get trickLibrary => pick('技巧库', 'Trick library');
   String get addLearnerFirst => pick('请先添加孩子。', 'Add a learner first.');
   String get todayPractice => pick('今天的练习', 'Today\'s practice');
@@ -110,7 +114,8 @@ class Copy {
   String get continueLabel => pick('继续', 'Continue');
   String get mathTricks => pick('速算技巧', 'Math Tricks');
   String get facts => pick('口算', 'Facts');
-  String get wrongProblems => pick('错题', 'Wrong problems');
+  String get wrongProblems => pick('错题集', 'Mistake book');
+  String todayTask(String task) => pick('今日：$task', 'Today: $task');
   String get dailyPractice => pick('每日一练', 'Daily practice');
   String get tenProblems =>
       pick('按当前年级随机出十道题。', 'Ten random problems for this grade.');
@@ -124,10 +129,11 @@ class Copy {
   String get laterGradeTrick => pick('这个技巧留给更高年级。', 'This trick is for a later grade.');
   String get notReady => pick('这个技巧还不能练习。', 'This trick is not ready to practice yet.');
   String get missingTrick => pick('这台设备上没有这个技巧。', 'This trick is not on this device.');
-  String get useThisWhen => pick('适合', 'Use this when');
-  String get notFor => pick('不适合', 'Not for');
-  String get steps => pick('步骤', 'Steps');
+  String get useThisWhen => pick('何时用', 'When');
+  String get notFor => pick('别用', 'Skip');
+  String get steps => pick('怎么算', 'How');
   String get startPractice => pick('开始练习', 'Start practice');
+  String get trickRange => pick('范围', 'Range');
   String get backToToday => pick('返回首页', 'Back to home');
   String get submit => pick('提交', 'Submit');
   String get yourAnswer => pick('你的答案', 'Your answer');
@@ -180,6 +186,37 @@ class Copy {
   String get practiceSettings => pick('练习设置', 'Practice settings');
   String get privacyPolicy => pick('隐私政策', 'Privacy policy');
   String get deleteAll => pick('删除这台设备上的全部数据', 'Delete all data on this device');
+  String get deleteAllBody => pick(
+    '孩子、练习和家长密码会被清掉。之后应用会重新开始。',
+    'Learners, practice, and the parent code will be erased. The app then starts over.',
+  );
+  String get deleteAccount => pick('删除账号', 'Delete account');
+  String get deleteAccountBody => pick(
+    '这会删除本机上的家长账号、孩子、练习和家长密码。Google 或 Apple 账号本身还在，只是 StepMath 不再保存它。',
+    'This deletes the parent account, children, practice, and the parent code on this device. The Google or Apple account itself stays; StepMath no longer keeps it.',
+  );
+  String get deleteAccountCode =>
+      pick('输入家长密码以删除账号。', 'Enter the parent code to delete the account.');
+  String get signInWithGoogle => pick('使用 Google 登录', 'Sign in with Google');
+  String get signInWithApple => pick('通过 Apple 登录', 'Sign in with Apple');
+  String get signInUnavailable => pick(
+    '请在 Android 手机或 iPhone 上登录。',
+    'Sign in on an Android phone or an iPhone.',
+  );
+  String get signInFailed => pick('登录没有完成。', 'Sign-in did not finish.');
+  String get accountAlreadyOnDevice => pick(
+    '这台设备上已有账号。请先删除账号，再用另一个登录。',
+    'This device already has an account. Delete it before using another.',
+  );
+  String get notSignedIn => pick('尚未登录。', 'Not signed in.');
+  String signedInAs(String who) => pick('已登录：$who', 'Signed in as $who.');
+  String get googleAccount => pick('Google 账号', 'Google account');
+  String get appleAccount => pick('Apple 账号', 'Apple account');
+  String get parentAccount => pick('家长账号', 'Parent account');
+  String get wrongPracticeSignIn => pick(
+    '错题练习需要家长登录。Android 使用 Google，iPhone 使用 Apple。登录只保存在这台设备上。',
+    'Wrong-problem practice needs a parent sign-in. Android uses Google. iPhone uses Apple. The sign-in stays on this device.',
+  );
   String get parentCode => pick('家长密码', 'Parent code');
   String get takePhoto => pick('拍照', 'Take a photo');
   String get choosePhoto => pick('从相册选择', 'Choose a photo');

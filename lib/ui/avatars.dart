@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../app/theme.dart';
 import '../domain/core.dart';
+import '../l10n/copy.dart';
 
-/// Illustrated kid portraits for child profiles.
+/// Illustrated kid + animal portraits for child profiles.
 /// Asset files live at `assets/avatars/<id>.jpg`.
 String avatarAssetPath(String id) => 'assets/avatars/$id.jpg';
 
@@ -21,6 +22,18 @@ const _fallbackFills = <String, Color>{
   'noah': Color(0xFF5C7CFA),
   'piper': Color(0xFFB388FF),
   'leo': Color(0xFF38B2A8),
+  'lion': Color(0xFFFFC94A),
+  'seal': Color(0xFFA9D0E0),
+  'squirrel': Color(0xFFD4A574),
+  'zebra': Color(0xFFE8E4DC),
+  'owl': Color(0xFFC4A574),
+  'whale': Color(0xFF7EB6D9),
+  'giraffe': Color(0xFFE8B86D),
+  'peacock': Color(0xFF5BA88A),
+  'fox': Color(0xFFE8913A),
+  'panda': Color(0xFFD0D0D0),
+  'penguin': Color(0xFF9BB5C9),
+  'bunny': Color(0xFFE8D4E0),
 };
 
 Color _surfaceOf(BuildContext context) {
@@ -115,12 +128,10 @@ class AvatarPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent =
-        Theme.of(context).extension<AppColors>()?.accent ??
-        Theme.of(context).colorScheme.primary;
+    final t = Copy.of(context);
     final border = _borderOf(context);
     final surface = _surfaceOf(context);
-    // Four columns so all twelve portraits stay on the first screen.
+    // Two short horizontal rows keep kids + animals on the first screen.
     return Material(
       color: surface,
       elevation: 0,
@@ -129,36 +140,106 @@ class AvatarPicker extends StatelessWidget {
         side: BorderSide(color: border),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpace.s12),
-        child: GridView.count(
-          crossAxisCount: 4,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: AppSpace.s8,
-          crossAxisSpacing: AppSpace.s8,
+        padding: const EdgeInsets.symmetric(vertical: AppSpace.s12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final id in learnerAvatarIds)
+            _SectionLabel(t.kidAvatars),
+            const SizedBox(height: AppSpace.s8),
+            _AvatarRow(
+              ids: kidAvatarIds,
+              selected: selected,
+              onSelected: onSelected,
+            ),
+            const SizedBox(height: AppSpace.s16),
+            _SectionLabel(t.animalAvatars),
+            const SizedBox(height: AppSpace.s8),
+            _AvatarRow(
+              ids: animalAvatarIds,
+              selected: selected,
+              onSelected: onSelected,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s12),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _AvatarRow extends StatelessWidget {
+  const _AvatarRow({
+    required this.ids,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<String> ids;
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  static const _chip = 56.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent =
+        Theme.of(context).extension<AppColors>()?.accent ??
+        Theme.of(context).colorScheme.primary;
+    final border = _borderOf(context);
+    // Eager Row (not ListView.builder) so all 12 chips exist for tests and
+    // semantics; the parent page scrolls vertically if needed.
+    return SizedBox(
+      height: _chip + 8,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s12),
+        child: Row(
+          children: [
+            for (var i = 0; i < ids.length; i++) ...[
+              if (i > 0) const SizedBox(width: AppSpace.s8),
               Semantics(
                 button: true,
-                selected: id == selected,
-                label: id,
+                selected: ids[i] == selected,
+                label: ids[i],
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () => onSelected(id),
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => onSelected(ids[i]),
                   child: AnimatedContainer(
                     duration: motionFast,
-                    padding: const EdgeInsets.all(3),
+                    width: _chip,
+                    height: _chip,
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: id == selected ? accent : border,
-                        width: id == selected ? 3 : 1.5,
+                        color: ids[i] == selected ? accent : border,
+                        width: ids[i] == selected ? 3 : 1.5,
                       ),
                     ),
-                    child: Center(child: ChildAvatar(id: id, size: 56)),
+                    child: ChildAvatar(id: ids[i], size: _chip - 8),
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),
