@@ -174,9 +174,12 @@ class _SpeedRunPageState extends ConsumerState<SpeedRunPage>
         view.current ??
         (finished && view.items.isNotEmpty ? view.items.last : null);
     final t = Copy.of(context);
-    final roundTitle = isDailyPractice(view.config, view.grade)
-        ? t.dailyPractice
-        : t.speedDrill;
+    final daily = isDailyPractice(view.config, view.grade);
+    final roundTitle = daily ? t.dailyPractice : t.speedDrill;
+    final number = finished
+        ? view.config.limitValue
+        : (view.index + 1).clamp(1, view.config.limitValue);
+    final progress = daily ? '$number / ${view.config.limitValue}' : null;
     final next = !finished && view.index + 1 < view.items.length
         ? view.items[view.index + 1].prompt
         : null;

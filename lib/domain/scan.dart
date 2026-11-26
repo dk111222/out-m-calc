@@ -73,22 +73,93 @@ final _item = RegExp(
 );
 final _mark = RegExp(r'✗|✘|×|wrong|\bx\b', caseSensitive: false);
 
+class SheetPiece {
+  const SheetPiece(this.text, this.left, this.top, this.right, this.bottom);
+
+  final String text;
+  final double left;
+  final double top;
+  final double right;
+  final double bottom;
+}
+
+class GradedProblem {
+  const GradedProblem({
+    required this.fact,
+    required this.left,
+    required this.top,
+    required this.right,
+    required this.bottom,
+  });
+
+  final ScannedFact fact;
+  final double left;
+  final double top;
+  final double right;
+  final double bottom;
+
+  bool get correct => fact.written != null && fact.written == fact.computed;
+
+  bool get hasBox => right > left && bottom > top;
+}
+
+class _LineFact {
+  const _LineFact(this.fact, this.start, this.end);
+
+  final ScannedFact fact;
+  final int start;
+  final int end;
+}
+
 List<ScannedFact> parseWorksheet(String raw) {
   final facts = <ScannedFact>[];
   for (final line in raw.split(RegExp(r'[\r\n]+'))) {
-    final matches = _item.allMatches(line).toList();
-    for (var i = 0; i < matches.length; i++) {
-      final match = matches[i];
-      final operation = _operation(match.group(2)!);
-      if (operation == null) continue;
-      final left = int.parse(match.group(1)!);
-      final right = int.parse(match.group(3)!);
-      if (operation == 'subtraction' && left < right) continue;
-      if (operation == 'division' && (right == 0 || left % right != 0)) continue;
-      if (left > 999 || right > 999) continue;
-      final end = i + 1 < matches.length ? matches[i + 1].start : line.length;
-      final tail = line.substring(match.end, end);
-      facts.add(
+    facts.addAll(_factsOnLine(line).map((item) => item.fact));
+  }
+  return facts;
+}
+
+/// Places each problem on the photo using the recognizer's word boxes.
+List<GradedProblem> gradeSheet(
+  List<({String text, List<SheetPiece> pieces})> lines,
+) {
+  final graded = <GradedProblem>[];
+  for (final line in lines) {
+    final spans = _pieceSpans(line.text, line.pieces);
+    for (final item in _factsOnLine(line.text)) {
+      final box = _union(spans, item.start, item.end);
+      graded.add(
+        GradedProblem(
+          fact: item.fact,
+          left: box.$1,
+          top: box.$2,
+          right: box.$3,
+          bottom: box.$4,
+        ),
+      );
+    }
+  }
+  return graded;
+}
+
+List<_LineFact> _factsOnLine(String line) {
+  final facts = <_LineFact>[];
+  final matches = _item.allMatches(line).toList();
+  for (var i = 0; i < matches.length; i++) {
+    final match = matches[i];
+    final operation = _operation(match.group(2)!);
+    if (operation == null) continue;
+    final left = int.parse(match.group(1)!);
+    final right = int.parse(match.group(3)!);
+    if (operation == 'subtraction' && left < right) continue;
+    if (operation == 'division' && (right == 0 || left % right != 0)) {
+      continue;
+    }
+    if (left > 999 || right > 999) continue;
+    final end = i + 1 < matches.length ? matches[i + 1].start : line.length;
+    final tail = line.substring(match.end, end);
+    facts.add(
+      _LineFact(
         ScannedFact(
           left: left,
           right: right,
@@ -96,10 +167,50 @@ List<ScannedFact> parseWorksheet(String raw) {
           written: match.group(4),
           markedWrong: _mark.hasMatch(tail),
         ),
-      );
-    }
+        match.start,
+        match.end,
+      ),
+    );
   }
   return facts;
+}
+
+List<({int start, int end, SheetPiece piece})> _pieceSpans(
+  String text,
+  List<SheetPiece> pieces,
+) {
+  var cursor = 0;
+  final spans = <({int start, int end, SheetPiece piece})>[];
+  for (final piece in pieces) {
+    if (piece.text.isEmpty) continue;
+    final index = text.indexOf(piece.text, cursor);
+    if (index < 0) continue;
+    spans.add((start: index, end: index + piece.text.length, piece: piece));
+    cursor = index + piece.text.length;
+  }
+  return spans;
+}
+
+(double, double, double, double) _union(
+  List<({int start, int end, SheetPiece piece})> spans,
+  int start,
+  int end,
+) {
+  final hit = spans.where((span) => span.end > start && span.start < end);
+  final boxes = hit.isEmpty ? spans : hit;
+  if (boxes.isEmpty) return (0, 0, 0, 0);
+  var left = boxes.first.piece.left;
+  var top = boxes.first.piece.top;
+  var right = boxes.first.piece.right;
+  var bottom = boxes.first.piece.bottom;
+  for (final span in boxes.skip(1)) {
+    final piece = span.piece;
+    if (piece.left < left) left = piece.left;
+    if (piece.top < top) top = piece.top;
+    if (piece.right > right) right = piece.right;
+    if (piece.bottom > bottom) bottom = piece.bottom;
+  }
+  return (left, top, right, bottom);
 }
 
 String? _operation(String token) {

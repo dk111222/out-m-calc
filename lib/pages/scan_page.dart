@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,10 +25,16 @@ class ScanPage extends ConsumerStatefulWidget {
 
 class _ScanPageState extends ConsumerState<ScanPage> {
   final _picker = ImagePicker();
-  List<ScannedFact> _facts = const [];
+  String? _photoPath;
+  int _imageWidth = 0;
+  int _imageHeight = 0;
+  List<GradedProblem> _grades = const [];
   List<bool> _checked = const [];
   bool _busy = false;
   String? _error;
+
+  List<ScannedFact> get _facts =>
+      _grades.map((grade) => grade.fact).toList();
 
   Future<void> _pick(ImageSource source) async {
     setState(() {
@@ -39,14 +47,40 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         if (mounted) setState(() => _busy = false);
         return;
       }
-      final text = await _read(file.path);
-      final facts = parseWorksheet(text);
+      final recognized = await _read(file.path);
+      final bytes = await File(file.path).readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final width = image.width;
+      final height = image.height;
+      image.dispose();
+      final grades = gradeSheet([
+        for (final block in recognized.blocks)
+          for (final line in block.lines)
+            (
+              text: line.text,
+              pieces: [
+                for (final element in line.elements)
+                  SheetPiece(
+                    element.text,
+                    element.boundingBox.left,
+                    element.boundingBox.top,
+                    element.boundingBox.right,
+                    element.boundingBox.bottom,
+                  ),
+              ],
+            ),
+      ]);
       if (!mounted) return;
       setState(() {
-        _facts = facts;
-        _checked = facts.map((fact) => fact.countedWrong).toList();
+        _photoPath = file.path;
+        _imageWidth = width;
+        _imageHeight = height;
+        _grades = grades;
+        _checked = grades.map((grade) => grade.fact.countedWrong).toList();
         _busy = false;
-        _error = facts.isEmpty
+        _error = grades.isEmpty
             ? 'Nothing to read. Use a printed page with problems like 8 + 7.'
             : null;
       });
@@ -59,11 +93,10 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     }
   }
 
-  Future<String> _read(String path) async {
+  Future<RecognizedText> _read(String path) async {
     final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
     try {
-      final result = await recognizer.processImage(InputImage.fromFilePath(path));
-      return result.text;
+      return recognizer.processImage(InputImage.fromFilePath(path));
     } finally {
       await recognizer.close();
     }
@@ -148,8 +181,8 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         children: [
           Text(
             t.pick(
-              '拍一张印好的练习页。识别只在这台设备上进行。写错的答案会先勾上，你也可以改。然后按勾选的运算再练五题。',
-              'Photograph a printed page. Reading stays on this device. A wrong written answer is checked for you. Then practice five more like the ones you leave checked.',
+              '拍一张印好的练习页。识别只在这台设备上进行。照片上，做对的题打对号，做错的题用红色写出正确答案。写错的题会先勾上，你也可以改，再按勾选的运算练五题。',
+              'Photograph a printed page. Reading stays on this device. A right answer gets a check on the photo. A wrong answer shows the correct result in red. Then practice five more like the ones you leave checked.',
             ),
           ),
           const SizedBox(height: AppSpace.s16),
@@ -164,6 +197,17 @@ class _ScanPageState extends ConsumerState<ScanPage> {
             secondary: true,
             onPressed: _busy ? null : () => _pick(ImageSource.gallery),
           ),
+          if (_photoPath != null && _imageWidth > 0 && _imageHeight > 0) ...[
+            const SizedBox(height: AppSpace.s16),
+            _GradedPhoto(
+              path: _photoPath!,
+              imageWidth: _imageWidth,
+              imageHeight: _imageHeight,
+              marks: _grades,
+              right: AppColors.of(context).success,
+              wrong: AppColors.of(context).danger,
+            ),
+          ],
           if (_facts.isNotEmpty) ...[
             const SizedBox(height: AppSpace.s24),
             Text(
@@ -205,5 +249,158 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         ],
       ),
     );
+  }
+}
+
+class _GradedPhoto extends StatelessWidget {
+  const _GradedPhoto({
+    required this.path,
+    required this.imageWidth,
+    required this.imageHeight,
+    required this.marks,
+    required this.right,
+    required this.wrong,
+  });
+
+  final String path;
+  final int imageWidth;
+  final int imageHeight;
+  final List<GradedProblem> marks;
+  final Color right;
+  final Color wrong;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: AspectRatio(
+        aspectRatio: imageWidth / imageHeight,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.file(File(path), fit: BoxFit.fill, gaplessPlayback: true),
+            CustomPaint(
+              painter: _GradePainter(
+                imageWidth: imageWidth.toDouble(),
+                imageHeight: imageHeight.toDouble(),
+                marks: marks,
+                right: right,
+                wrong: wrong,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GradePainter extends CustomPainter {
+  _GradePainter({
+    required this.imageWidth,
+    required this.imageHeight,
+    required this.marks,
+    required this.right,
+    required this.wrong,
+  });
+
+  final double imageWidth;
+  final double imageHeight;
+  final List<GradedProblem> marks;
+  final Color right;
+  final Color wrong;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (imageWidth <= 0 || imageHeight <= 0) return;
+    final sx = size.width / imageWidth;
+    final sy = size.height / imageHeight;
+    for (final mark in marks) {
+      if (!mark.hasBox) continue;
+      final rect = Rect.fromLTRB(
+        mark.left * sx,
+        mark.top * sy,
+        mark.right * sx,
+        mark.bottom * sy,
+      );
+      if (mark.correct) {
+        _check(canvas, size, rect);
+      } else {
+        _answer(canvas, size, rect, mark.fact.computed);
+      }
+    }
+  }
+
+  void _check(Canvas canvas, Size size, Rect rect) {
+    final height = max(16.0, rect.height);
+    var x = rect.right + height * 0.15;
+    if (x + height > size.width - 4) x = max(4.0, size.width - height - 4);
+    final y = rect.center.dy;
+    final path = Path()
+      ..moveTo(x, y)
+      ..lineTo(x + height * 0.32, y + height * 0.30)
+      ..lineTo(x + height * 0.82, y - height * 0.32);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = Colors.white
+        ..strokeWidth = max(5, height * 0.28),
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = right
+        ..strokeWidth = max(2.5, height * 0.14),
+    );
+  }
+
+  void _answer(Canvas canvas, Size size, Rect rect, String answer) {
+    final font = max(14.0, rect.height * 0.85);
+    final painter = TextPainter(
+      text: TextSpan(
+        text: answer,
+        style: TextStyle(
+          color: wrong,
+          fontSize: font,
+          fontWeight: FontWeight.w700,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    var x = rect.right + 6;
+    if (x + painter.width > size.width - 4) {
+      x = max(4.0, size.width - painter.width - 4);
+    }
+    final y = rect.center.dy - painter.height / 2;
+    const pad = 3.0;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          x - pad,
+          y - pad,
+          painter.width + pad * 2,
+          painter.height + pad * 2,
+        ),
+        const Radius.circular(4),
+      ),
+      Paint()..color = const Color(0xF2FFFFFF),
+    );
+    painter.paint(canvas, Offset(x, y));
+  }
+
+  @override
+  bool shouldRepaint(covariant _GradePainter old) {
+    return old.marks != marks ||
+        old.imageWidth != imageWidth ||
+        old.imageHeight != imageHeight ||
+        old.right != right ||
+        old.wrong != wrong;
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -271,16 +272,12 @@ class Keypad extends StatelessWidget {
     required this.onKey,
     required this.onSubmit,
     this.enabled = true,
-    this.showSubmit = true,
-    this.showDelete = true,
     this.keyExtent,
   });
 
   final ValueChanged<String> onKey;
   final VoidCallback onSubmit;
   final bool enabled;
-  final bool showSubmit;
-  final bool showDelete;
   final double? keyExtent;
 
   @override
@@ -289,94 +286,138 @@ class Keypad extends StatelessWidget {
     final scale = MediaQuery.textScalerOf(context).scale(1);
     final keyHeight =
         keyExtent ?? math.max(AppSpace.minTarget, AppSpace.minTarget * scale);
-    Widget key(String label, String value, {String? semantics}) {
-      return Padding(
-        padding: const EdgeInsets.all(AppSpace.s4),
-        child: Material(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppSpace.rSm),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppSpace.rSm),
-            onTap: enabled
-                ? () {
-                    if (int.tryParse(value) != null) {
-                      HapticFeedback.selectionClick();
-                    }
-                    onKey(value);
-                  }
-                : null,
-            child: Semantics(
-              button: true,
-              enabled: enabled,
-              label: semantics ?? label,
-              child: SizedBox(
-                height: keyHeight,
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            color: value == 'delete'
-                                ? colors.textMuted
-                                : colors.text,
-                          ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+    Widget key(String label, String value) {
+      return _PressKey(
+        height: keyHeight,
+        color: colors.surface,
+        borderColor: colors.border,
+        enabled: enabled,
+        label: label,
+        onTap: () {
+          if (int.tryParse(value) != null) {
+            HapticFeedback.selectionClick();
+          }
+          onKey(value);
+        },
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(color: colors.text),
           ),
         ),
       );
     }
 
+    Widget confirm() {
+      final green = colors.success;
+      final onGreen =
+          ThemeData.estimateBrightnessForColor(green) == Brightness.dark
+          ? Colors.white
+          : colors.text;
+      return _PressKey(
+        height: keyHeight,
+        color: enabled ? green : colors.surface,
+        borderColor: enabled ? green : colors.border,
+        enabled: enabled,
+        label: Copy.of(context).submit,
+        onTap: onSubmit,
+        child: Icon(Icons.check, color: enabled ? onGreen : colors.textMuted),
+      );
+    }
+
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: AppSpace.keypadMax),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.sunken,
-          borderRadius: BorderRadius.circular(AppSpace.rMd),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpace.s8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final row in const [
-                ['1', '2', '3'],
-                ['4', '5', '6'],
-                ['7', '8', '9'],
-              ])
-                Row(
-                  children: [
-                    for (final digit in row) Expanded(child: key(digit, digit)),
-                  ],
-                ),
-              Row(
-                children: [
-                  Expanded(child: key('.', '.')),
-                  Expanded(child: key('0', '0')),
-                  Expanded(
-                    child: showDelete
-                        ? key(
-                            Copy.of(context).delete,
-                            'delete',
-                            semantics: Copy.of(context).delete,
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ],
-              ),
-              if (showSubmit) ...[
-                const SizedBox(height: AppSpace.s8),
-                AppButton(
-                  label: Copy.of(context).submit,
-                  onPressed: enabled ? onSubmit : null,
-                ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final row in const [
+            ['1', '2', '3'],
+            ['4', '5', '6'],
+            ['7', '8', '9'],
+          ])
+            Row(
+              children: [
+                for (final digit in row) Expanded(child: key(digit, digit)),
               ],
+            ),
+          Row(
+            children: [
+              Expanded(child: key('.', '.')),
+              Expanded(child: key('0', '0')),
+              Expanded(child: confirm()),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PressKey extends StatefulWidget {
+  const _PressKey({
+    required this.height,
+    required this.color,
+    required this.borderColor,
+    required this.onTap,
+    required this.child,
+    this.enabled = true,
+    this.label,
+  });
+
+  final double height;
+  final Color color;
+  final Color borderColor;
+  final VoidCallback onTap;
+  final Widget child;
+  final bool enabled;
+  final String? label;
+
+  @override
+  State<_PressKey> createState() => _PressKeyState();
+}
+
+class _PressKeyState extends State<_PressKey> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final radius = BorderRadius.circular(AppSpace.rSm);
+    final fill = _pressed
+        ? Color.alphaBlend(colors.text.withValues(alpha: 0.16), widget.color)
+        : widget.color;
+    return Padding(
+      padding: const EdgeInsets.all(AppSpace.s4),
+      child: Material(
+        color: fill,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(color: widget.borderColor),
+        ),
+        child: InkWell(
+          borderRadius: radius,
+          splashFactory: InkRipple.splashFactory,
+          highlightColor: colors.text.withValues(alpha: 0.08),
+          splashColor: colors.text.withValues(alpha: 0.12),
+          onHighlightChanged: widget.enabled
+              ? (pressed) {
+                  if (_pressed == pressed) return;
+                  setState(() => _pressed = pressed);
+                }
+              : null,
+          onTap: widget.enabled ? widget.onTap : null,
+          child: Semantics(
+            button: true,
+            enabled: widget.enabled,
+            label: widget.label,
+            child: SizedBox(
+              height: widget.height,
+              width: double.infinity,
+              child: Center(child: widget.child),
+            ),
           ),
         ),
       ),
@@ -401,6 +442,7 @@ class DrillBoard extends StatelessWidget {
     this.mark,
     this.detail,
     this.nextPrompt,
+    this.progress,
     this.keysEnabled = true,
     this.showAnswer = true,
     this.onReplace = _ignoreReplace,
@@ -420,6 +462,7 @@ class DrillBoard extends StatelessWidget {
   final String? mark;
   final Widget? detail;
   final String? nextPrompt;
+  final String? progress;
   final bool keysEnabled;
   final bool showAnswer;
   final ValueChanged<String> onKey;
@@ -528,6 +571,17 @@ class DrillBoard extends StatelessWidget {
                                             : null,
                                       ),
                                       const SizedBox(height: AppSpace.s12),
+                                      if (progress != null) ...[
+                                        Text(
+                                          progress!,
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(color: colors.textMuted),
+                                        ),
+                                        const SizedBox(height: AppSpace.s8),
+                                      ],
                                       SizedBox(
                                         height: equationHeight,
                                         child: Align(
@@ -592,14 +646,6 @@ class DrillBoard extends StatelessWidget {
                       onReplace: onReplace,
                       onSubmit: onSubmit,
                     ),
-                    const SizedBox(height: AppSpace.s8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: AppButton(
-                        label: t.submit,
-                        onPressed: keysEnabled ? onSubmit : null,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -622,7 +668,6 @@ class DrillBoard extends StatelessWidget {
     required double scale,
   }) {
     if (!height.isFinite) return natural;
-    final submit = math.max(AppSpace.minTarget, AppSpace.minTarget * scale);
     final used =
         AppSpace.s8 +
         56 +
@@ -633,9 +678,7 @@ class DrillBoard extends StatelessWidget {
         _nextHeight(scale) +
         AppSpace.s16 +
         AppSpace.minTarget +
-        AppSpace.s4 +
-        AppSpace.s8 +
-        submit;
+        AppSpace.s8;
     final fitted = (height - used - 48) / 4;
     if (!fitted.isFinite) return natural;
     return fitted.clamp(32.0, natural);
@@ -670,41 +713,56 @@ class AnswerEntry extends StatefulWidget {
 }
 
 class _AnswerEntryState extends State<AnswerEntry> {
+  int _clearTick = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(warmHandwriting().then((_) {}, onError: (Object _) {}));
+  }
+
+  void _clear() {
+    widget.onReplace('');
+    if (!answerByHandwriting) return;
+    setState(() => _clearTick++);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = Copy.of(context);
     final colors = AppColors.of(context);
     final keyExtent = widget.keyExtent ?? AppSpace.minTarget;
     final handwriting = answerByHandwriting;
-    Widget mode(String label, bool selected, VoidCallback onTap) {
-      return Expanded(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpace.s4),
-          child: Material(
-            color: selected ? colors.accent : colors.surface,
+    ButtonStyle pressStyle(Color ink) {
+      return ButtonStyle(
+        splashFactory: InkRipple.splashFactory,
+        overlayColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.pressed)) {
+            return ink.withValues(alpha: 0.18);
+          }
+          return Colors.transparent;
+        }),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpace.rSm),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppSpace.rSm),
-              onTap: onTap,
-              child: Semantics(
-                button: true,
-                selected: selected,
-                label: label,
-                child: SizedBox(
-                  height: AppSpace.minTarget - AppSpace.s8,
-                  child: Center(
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: selected ? colors.onAccent : colors.text,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
+      );
+    }
+
+    Widget modeButton({
+      required IconData icon,
+      required String tooltip,
+      required bool selected,
+      required VoidCallback onTap,
+    }) {
+      final ink = selected ? colors.accent : colors.textMuted;
+      return IconButton(
+        tooltip: tooltip,
+        isSelected: selected,
+        style: pressStyle(ink),
+        onPressed: onTap,
+        icon: Icon(icon, color: ink),
       );
     }
 
@@ -716,37 +774,52 @@ class _AnswerEntryState extends State<AnswerEntry> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: colors.sunken,
-                borderRadius: BorderRadius.circular(AppSpace.rMd),
-              ),
-              child: Row(
-                children: [
-                  mode(t.numbers, !handwriting, () {
-                    setState(() => answerByHandwriting = false);
-                  }),
-                  mode(t.handwriting, handwriting, () {
+            Row(
+              children: [
+                modeButton(
+                  icon: handwriting ? Icons.onetwothree_outlined : Icons.onetwothree,
+                  tooltip: t.numbers,
+                  selected: !handwriting,
+                  onTap: () => setState(() => answerByHandwriting = false),
+                ),
+                modeButton(
+                  icon: handwriting ? Icons.draw : Icons.draw_outlined,
+                  tooltip: t.handwriting,
+                  selected: handwriting,
+                  onTap: () {
                     setState(() => answerByHandwriting = true);
-                  }),
-                ],
-              ),
+                    unawaited(
+                      warmHandwriting().then((_) {}, onError: (Object _) {}),
+                    );
+                  },
+                ),
+                const Spacer(),
+                IconButton(
+                  tooltip: t.clearWriting,
+                  style: pressStyle(colors.danger),
+                  onPressed: widget.enabled ? _clear : null,
+                  icon: Icon(
+                    Icons.backspace_outlined,
+                    color: widget.enabled ? colors.danger : colors.textMuted,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpace.s4),
+            const SizedBox(height: AppSpace.s8),
             if (handwriting)
               HandwritingPad(
                 prompt: widget.prompt,
                 enabled: widget.enabled,
-                height: keyExtent * 4 + 48,
+                height: keyExtent * 4 + AppSpace.s8 * 4,
+                clearTick: _clearTick,
                 onReplace: widget.onReplace,
+                onSubmit: widget.onSubmit,
               )
             else
               Keypad(
                 enabled: widget.enabled,
                 onKey: widget.onKey,
                 onSubmit: widget.onSubmit,
-                showSubmit: false,
-                showDelete: true,
                 keyExtent: keyExtent,
               ),
           ],

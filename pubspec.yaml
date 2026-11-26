@@ -50,7 +50,6 @@ dependencies:
   google_mlkit_text_recognition: ^1.0.3
   google_sign_in: ^6.2.2
   image_picker: ^1.2.4
-  google_mlkit_digital_ink_recognition: ^1.0.3
   sign_in_with_apple: ^6.1.4
 
 dev_dependencies:
@@ -77,6 +76,7 @@ flutter:
 
   assets:
     - assets/tricks/catalog.json
+    - assets/models/digits.f32
     - assets/audio/
     - assets/fonts/
     - assets/avatars/sprout.jpg

@@ -463,6 +463,7 @@ class ChildHomePage extends ConsumerWidget {
           const SizedBox(height: AppSpace.s16),
           _DailyPracticeCard(
             tally: app.todayDaily,
+            stars: app.todayDailyStars,
             onPressed: () => _startDaily(context, ref, learner.grade),
           ),
           const SizedBox(height: AppSpace.s16),
@@ -717,9 +718,14 @@ class _LearnerHomeAction extends StatelessWidget {
 }
 
 class _DailyPracticeCard extends StatelessWidget {
-  const _DailyPracticeCard({required this.tally, required this.onPressed});
+  const _DailyPracticeCard({
+    required this.tally,
+    required this.stars,
+    required this.onPressed,
+  });
 
   final DailyPracticeTally tally;
+  final int stars;
   final VoidCallback onPressed;
 
   @override
@@ -753,7 +759,7 @@ class _DailyPracticeCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: colors.textMuted),
+                    _DailyStars(stars: stars),
                   ],
                 ),
                 const SizedBox(height: AppSpace.s12),
@@ -765,12 +771,14 @@ class _DailyPracticeCard extends StatelessWidget {
                         label: t.problemCount,
                       ),
                     ),
+                    const _DailyDash(),
                     Expanded(
                       child: _DailyFigure(
                         value: tally.accuracyLabel,
                         label: t.accuracy,
                       ),
                     ),
+                    const _DailyDash(),
                     Expanded(
                       child: _DailyFigure(
                         value: clockLabel(tally.durationMs),
@@ -785,6 +793,76 @@ class _DailyPracticeCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _DailyStars extends StatelessWidget {
+  const _DailyStars({required this.stars});
+
+  final int stars;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final earned = stars.clamp(0, 3);
+    return Semantics(
+      container: true,
+      label: '$earned',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < 3; i++)
+            Icon(
+              i < earned ? Icons.star_rounded : Icons.star_border_rounded,
+              size: 20,
+              color: i < earned ? colors.warning : colors.textMuted,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DailyDash extends StatelessWidget {
+  const _DailyDash();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 8,
+      height: 40,
+      child: CustomPaint(
+        painter: _DailyDashPainter(AppColors.of(context).textMuted),
+      ),
+    );
+  }
+}
+
+class _DailyDashPainter extends CustomPainter {
+  const _DailyDashPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1
+      ..strokeCap = StrokeCap.round;
+    const dash = 3.0;
+    const gap = 3.0;
+    final x = size.width / 2;
+    var y = 0.0;
+    while (y < size.height) {
+      final end = y + dash > size.height ? size.height : y + dash;
+      canvas.drawLine(Offset(x, y), Offset(x, end), paint);
+      y += dash + gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DailyDashPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }
 

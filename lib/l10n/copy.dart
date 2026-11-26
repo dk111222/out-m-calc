@@ -124,7 +124,7 @@ class Copy {
   String todayTask(String task) => pick('今日：$task', 'Today: $task');
   String get dailyPractice => pick('每日一练', 'Daily practice');
   String get tenProblems =>
-      pick('按当前年级随机出十道题。', 'Ten random problems for this grade.');
+      pick('按当前年级随机出二十道题。', 'Twenty random problems for this grade.');
   String get problemCount => pick('题数', 'Problems');
   String get accuracy => pick('正确率', 'Accuracy');
   String get practiceTime => pick('练习时长', 'Time');
@@ -152,12 +152,14 @@ class Copy {
   String get delete => pick('删除', 'Delete');
   String get numbers => pick('数字', 'Numbers');
   String get handwriting => pick('手写', 'Handwriting');
+  String get numbersMark => '123';
+  String get handwritingMark => pick('写', 'Write');
   String get clearWriting => pick('清除', 'Clear');
   String get writeAnswer => pick('在这里写答案', 'Write the answer here');
   String get handwritingPreparing => pick('正在准备手写。', 'Preparing handwriting.');
   String get handwritingNeedsDownload => pick(
-    '手写识别要先下载一次，之后就留在这台设备上。',
-    'Handwriting downloads once, then stays on this device.',
+    '手写识别没有准备好。',
+    'Handwriting is not ready.',
   );
   String get handwritingUnclear =>
       pick('没看清，再写一次。', 'Could not read that. Write it again.');
@@ -227,7 +229,7 @@ class Copy {
   String get notSignedInTitle => pick('未登录', 'Not signed in');
   String get signIn => pick('登录', 'Sign in');
   String get signOut => pick('退出登录', 'Sign out');
-  String get chooseSignIn => pick('选择登录方式', 'Choose how to sign in');
+  String get chooseSignIn => pick('登录方式', 'Sign-in method');
   String get localGuest => pick('本地游客', 'Local guest');
   String get signInWithGuest => pick('本地游客', 'Continue as a local guest');
   String get googleOnAndroid => pick('用于 Android 手机', 'For Android phones');

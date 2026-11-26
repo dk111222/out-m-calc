@@ -15,6 +15,7 @@ import 'package:stepmath/data/hive_store.dart';
 import 'package:stepmath/domain/catalog.dart';
 import 'package:stepmath/domain/scan.dart';
 import 'package:stepmath/domain/core.dart';
+import 'package:stepmath/domain/digit_ink.dart';
 import 'package:stepmath/domain/engine.dart';
 import 'package:stepmath/domain/machines.dart';
 
@@ -55,6 +56,12 @@ void main() {
     expect(sameNumber('8', '8.00'), isTrue);
     expect(sameNumber('', '8'), isFalse);
     expect(sameNumber('6.33', '6.3'), isFalse);
+    expect(sameNumber('1/2', '0.5'), isTrue);
+    expect(sameNumber('-1/2', '-0.5'), isTrue);
+    expect(sameNumber('-3', '-3.0'), isTrue);
+    expect(legalDraft('1/2'), isTrue);
+    expect(legalDraft('-12.5'), isTrue);
+    expect(legalDraft('1/2/3'), isFalse);
   });
 
   test('keypad rejects a second dot, a sign, and a ninth character', () {
@@ -69,11 +76,76 @@ void main() {
 
   test('handwriting reads a number and replaces the draft', () {
     expect(readHandAnswer('36'), '36');
+    expect(readHandAnswer('8'), '8');
     expect(readHandAnswer('1O'), '10');
     expect(readHandAnswer('S'), '5');
     expect(readHandAnswer('6.5'), '6.5');
     expect(readHandAnswer('hello'), '');
+    expect(readHandAnswer('-12'), '-12');
+    expect(readHandAnswer('−3.5'), '-3.5');
+    expect(readHandAnswer('3/10'), '3/10');
+    expect(readHandAnswer('-1/2'), '-1/2');
+    expect(pickInkAnswer(['-1/2']), '-1/2');
     expect(pickInkAnswer(['hello', '12']), '12');
+    List<InkPoint> stroke(double x0, double y0, double x1, double y1) {
+      return [InkPoint(x0, y0), InkPoint(x1, y1)];
+    }
+
+    expect(
+      segmentInk([
+        stroke(8, 40, 40, 41),
+        stroke(58, 10, 60, 72),
+        stroke(100, 12, 102, 70),
+      ]).map((glyph) => glyph.kind),
+      [InkKind.minus, InkKind.digit, InkKind.digit],
+    );
+    expect(
+      segmentInk([
+        stroke(10, 8, 12, 70),
+        [InkPoint(30, 62), InkPoint(33, 65)],
+        stroke(48, 8, 50, 70),
+      ]).map((glyph) => glyph.kind),
+      [InkKind.digit, InkKind.dot, InkKind.digit],
+    );
+    expect(
+      segmentInk([
+        stroke(10, 8, 14, 72),
+        stroke(24, 8, 52, 74),
+        stroke(66, 8, 70, 72),
+      ]).map((glyph) => glyph.kind),
+      [InkKind.digit, InkKind.slash, InkKind.digit],
+    );
+    expect(
+      segmentInk([
+        stroke(30, 6, 34, 26),
+        stroke(16, 40, 54, 42),
+        stroke(30, 56, 34, 80),
+      ]).map((glyph) => glyph.kind),
+      [InkKind.digit, InkKind.slash, InkKind.digit],
+    );
+    expect(
+      segmentInk([
+        stroke(40, 8, 42, 78),
+        stroke(12, 40, 50, 42),
+        stroke(14, 40, 40, 10),
+      ]),
+      hasLength(1),
+    );
+    final net = DigitNet.fromBytes(
+      File('assets/models/digits.f32').readAsBytesSync(),
+    );
+    final zero = [
+      for (var i = 0; i <= 40; i++)
+        InkPoint(
+          50 + 32 * cos(2 * pi * i / 40),
+          50 + 42 * sin(2 * pi * i / 40),
+        ),
+    ];
+    expect(recognizeInk([zero], net), '0');
+    expect(
+      recognizeInk([stroke(50, 8, 50, 92), stroke(34, 22, 50, 8)], net),
+      '1',
+    );
     expect(pickInkAnswer(['.']), isNull);
     final view = PracticeView.start(
       learnerId: 'a',
@@ -187,7 +259,7 @@ void main() {
       expect(speedDefault(grade).operation, 'mixed');
       final config = dailyPractice(grade);
       final items = buildSpeedQueue(config, grade, Random(1));
-      expect(items, hasLength(10));
+      expect(items, hasLength(20));
       expect(items.map((item) => item.prompt).toSet().length, greaterThan(1));
       expect(isDailyPractice(config, grade), isTrue);
     }
@@ -207,7 +279,7 @@ void main() {
         digitMax: daily.digitMax,
         limitMode: 'count',
         limitValue: daily.limitValue,
-        correctCount: 8,
+        correctCount: 16,
         durationMs: 40000,
         createdAt: today.toUtc(),
       ),
@@ -255,9 +327,38 @@ void main() {
       today: todayKey,
     );
     expect(finished.answered, daily.limitValue);
-    expect(finished.correct, 8);
+    expect(finished.correct, 16);
     expect(finished.durationMs, 40000);
     expect(finished.accuracyLabel, '80%');
+    expect(dailyRoundStars(correct: 20, asked: 20), 3);
+    expect(dailyRoundStars(correct: 19, asked: 20), 2);
+    expect(dailyRoundStars(correct: 16, asked: 20), 2);
+    expect(dailyRoundStars(correct: 12, asked: 20), 1);
+    expect(dailyRoundStars(correct: 11, asked: 20), 0);
+    expect(dailyRoundStars(correct: 0, asked: 0), 0);
+    expect(bestDailyStars(rounds: rounds, grade: grade, today: todayKey), 2);
+    expect(
+      bestDailyStars(
+        rounds: [
+          rounds.first,
+          SpeedRound(
+            id: 'perfect',
+            learnerId: 'learner',
+            operation: daily.operation,
+            digitMin: daily.digitMin,
+            digitMax: daily.digitMax,
+            limitMode: 'count',
+            limitValue: daily.limitValue,
+            correctCount: 20,
+            durationMs: 30000,
+            createdAt: today.toUtc(),
+          ),
+        ],
+        grade: grade,
+        today: todayKey,
+      ),
+      3,
+    );
 
     final withOpen = tallyDailyPractice(
       rounds: rounds,
@@ -268,7 +369,7 @@ void main() {
       openDurationMs: 20000,
     );
     expect(withOpen.answered, daily.limitValue + 5);
-    expect(withOpen.correct, 12);
+    expect(withOpen.correct, 20);
     expect(withOpen.durationMs, 60000);
     expect(withOpen.accuracyLabel, '80%');
 
@@ -459,17 +560,19 @@ void main() {
     final zero = tester.getCenter(
       find.descendant(of: find.byType(Keypad), matching: find.text('0')),
     );
-    final delete = tester.getCenter(find.text('删除'));
-    expect(delete.dx, greaterThan(zero.dx));
-    expect((delete.dy - zero.dy).abs(), lessThan(24));
-    expect(find.text('回退'), findsNothing);
-    final submit = tester.getRect(find.widgetWithText(FilledButton, '提交'));
-    final keypad = tester.getRect(find.byType(Keypad));
-    expect(submit.width, 358);
-    expect(submit.left, keypad.left);
-    expect(submit.right, keypad.right);
-    expect(find.text('数字'), findsOneWidget);
-    expect(find.text('手写'), findsOneWidget);
+    final submit = tester.getCenter(
+      find.descendant(
+        of: find.byType(Keypad),
+        matching: find.byIcon(Icons.check),
+      ),
+    );
+    expect(submit.dx, greaterThan(zero.dx));
+    expect((submit.dy - zero.dy).abs(), lessThan(24));
+    expect(find.text('删除'), findsNothing);
+    expect(find.widgetWithText(FilledButton, '提交'), findsNothing);
+    expect(find.byIcon(Icons.onetwothree), findsOneWidget);
+    expect(find.byIcon(Icons.draw_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.backspace_outlined), findsOneWidget);
   });
 
   testWidgets('training can switch between numbers and handwriting', (
@@ -495,12 +598,19 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('手写'));
+    await tester.tap(find.byIcon(Icons.draw_outlined));
     await tester.pump();
     expect(find.byType(Keypad), findsNothing);
     expect(find.byType(HandwritingPad), findsOneWidget);
-    expect(find.text('清除'), findsOneWidget);
-    await tester.tap(find.text('数字'));
+    expect(find.byIcon(Icons.backspace_outlined), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(HandwritingPad),
+        matching: find.byIcon(Icons.check),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.byIcon(Icons.onetwothree_outlined));
     await tester.pump();
     expect(find.byType(Keypad), findsOneWidget);
     expect(find.byType(HandwritingPad), findsNothing);
@@ -537,12 +647,12 @@ void main() {
     expect(find.textContaining('6 + 6'), findsNothing);
     final current = tester.getRect(find.text('8 + 7')).top;
     final next = tester.getRect(find.textContaining('9 + 8')).top;
-    final submit = tester.getRect(find.widgetWithText(FilledButton, '提交')).top;
+    final keypad = tester.getRect(find.byType(Keypad)).top;
     await show(previous: '6 + 6');
     expect(find.textContaining('6 + 6'), findsOneWidget);
     expect(tester.getRect(find.text('8 + 7')).top, current);
     expect(tester.getRect(find.textContaining('9 + 8')).top, next);
-    expect(tester.getRect(find.widgetWithText(FilledButton, '提交')).top, submit);
+    expect(tester.getRect(find.byType(Keypad)).top, keypad);
     expect(tester.takeException(), isNull);
   });
 
@@ -777,27 +887,39 @@ void main() {
     await directory.delete(recursive: true);
   });
 
-  testWidgets('sign-in offers Google, Apple, a local guest, and the policies', (
-    tester,
-  ) async {
+  testWidgets('sign-in shows only the login for this phone', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          theme: buildTheme(Brightness.light),
-          home: const SignInPage(),
+    Future<void> show(TargetPlatform platform) {
+      return tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: buildTheme(Brightness.light).copyWith(platform: platform),
+            themeAnimationDuration: Duration.zero,
+            home: const SignInPage(),
+          ),
         ),
-      ),
-    );
-    expect(find.text('选择登录方式'), findsOneWidget);
+      );
+    }
+
+    await show(TargetPlatform.android);
+    final title = tester.widget<Text>(find.text('登录方式'));
+    expect(title.textAlign, TextAlign.center);
     expect(find.text('使用 Google 登录'), findsOneWidget);
     expect(find.text('用于 Android 手机'), findsOneWidget);
-    expect(find.text('通过 Apple 登录'), findsOneWidget);
-    expect(find.text('用于 iPhone'), findsOneWidget);
+    expect(find.text('通过 Apple 登录'), findsNothing);
+    expect(find.text('用于 iPhone'), findsNothing);
     expect(find.text('本地游客'), findsOneWidget);
     expect(find.text('用户政策'), findsOneWidget);
     expect(find.text('隐私协议'), findsOneWidget);
+
+    await show(TargetPlatform.iOS);
+    expect(find.text('登录方式'), findsOneWidget);
+    expect(find.text('使用 Google 登录'), findsNothing);
+    expect(find.text('用于 Android 手机'), findsNothing);
+    expect(find.text('通过 Apple 登录'), findsOneWidget);
+    expect(find.text('用于 iPhone'), findsOneWidget);
+    expect(find.text('本地游客'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -879,6 +1001,35 @@ void main() {
       expect(tally.focus, 'addition');
       final drill = targetedProblems(facts, rng: Random(1));
       expect(drill, hasLength(5));
+      final graded = gradeSheet([
+        (
+          text: '8 + 7 = 15',
+          pieces: [
+            const SheetPiece('8', 0, 0, 10, 20),
+            const SheetPiece('+', 14, 0, 24, 20),
+            const SheetPiece('7', 28, 0, 38, 20),
+            const SheetPiece('=', 42, 0, 52, 20),
+            const SheetPiece('15', 56, 0, 80, 20),
+          ],
+        ),
+        (
+          text: '6 × 4 = 22',
+          pieces: [
+            const SheetPiece('6', 0, 40, 10, 60),
+            const SheetPiece('×', 14, 40, 28, 60),
+            const SheetPiece('4', 32, 40, 42, 60),
+            const SheetPiece('=', 46, 40, 56, 60),
+            const SheetPiece('22', 60, 40, 84, 60),
+          ],
+        ),
+      ]);
+      expect(graded, hasLength(2));
+      expect(graded[0].correct, isTrue);
+      expect(graded[0].right, 80);
+      expect(graded[1].correct, isFalse);
+      expect(graded[1].fact.computed, '24');
+      expect(graded[1].left, 0);
+      expect(graded[1].bottom, 60);
       expect(drill.every((problem) => problem.prompt.contains('+')), isTrue);
     },
   );

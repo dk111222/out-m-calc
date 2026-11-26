@@ -143,17 +143,30 @@ String formatNum(num value) {
   return fixed;
 }
 
+double? _parseAmount(String raw) {
+  final text = raw.trim();
+  final fraction = RegExp(r'^(-?)(\d+)/(\d+)$').firstMatch(text);
+  if (fraction != null) {
+    final denominator = int.parse(fraction.group(3)!);
+    if (denominator == 0) return null;
+    final value = int.parse(fraction.group(2)!) / denominator;
+    return fraction.group(1) == '-' ? -value : value;
+  }
+  return double.tryParse(text);
+}
+
 bool sameNumber(String user, String expected) {
-  final left = double.tryParse(user.trim());
-  final right = double.tryParse(expected.trim());
+  final left = _parseAmount(user);
+  final right = _parseAmount(expected);
   if (left == null || right == null) return false;
   return (left - right).abs() < 0.001;
 }
 
-/// A draft the keypad could have produced: at most 8 characters, one dot.
+/// At most 8 characters: digits, one decimal, or one fraction, with an optional minus.
 bool legalDraft(String value) {
   if (value.length > 8) return false;
-  return RegExp(r'^\d*\.?\d*$').hasMatch(value);
+  if (RegExp(r'^-?\d*\.?\d*$').hasMatch(value)) return true;
+  return RegExp(r'^-?\d+/\d+$').hasMatch(value);
 }
 
 /// Reads one recognition candidate as a numeric draft.
@@ -161,32 +174,35 @@ bool legalDraft(String value) {
 /// A whole word is rejected. A single lookalike letter, or a short mix of
 /// digits and lookalikes such as "1O", becomes a number.
 String readHandAnswer(String raw) {
-  final compact = raw.replaceAll(RegExp(r'\s+'), '');
+  final compact = raw
+      .replaceAll(RegExp(r'\s+'), '')
+      .replaceAll('−', '-')
+      .replaceAll('–', '-')
+      .replaceAll('／', '/')
+      .replaceAll('\\', '/');
   if (compact.isEmpty) return '';
-  if (RegExp(r'^\d+(\.\d+)?$').hasMatch(compact)) {
-    return compact.length <= 8 ? compact : compact.substring(0, 8);
-  }
+  const single = {
+    'O': '0',
+    'o': '0',
+    'Q': '0',
+    'D': '0',
+    'I': '1',
+    'l': '1',
+    '|': '1',
+    'i': '1',
+    'Z': '2',
+    'z': '2',
+    'S': '5',
+    's': '5',
+    'b': '6',
+    'G': '6',
+    'T': '7',
+    'B': '8',
+    'g': '9',
+    'q': '9',
+  };
   if (compact.length == 1) {
-    const single = {
-      'O': '0',
-      'o': '0',
-      'Q': '0',
-      'D': '0',
-      'I': '1',
-      'l': '1',
-      '|': '1',
-      'i': '1',
-      'Z': '2',
-      'z': '2',
-      'S': '5',
-      's': '5',
-      'b': '6',
-      'G': '6',
-      'T': '7',
-      'B': '8',
-      'g': '9',
-      'q': '9',
-    };
+    if (RegExp(r'^\d$').hasMatch(compact)) return compact;
     return single[compact] ?? '';
   }
   const lookalikes = {
@@ -201,20 +217,42 @@ String readHandAnswer(String raw) {
   };
   final buffer = StringBuffer();
   var dotted = false;
+  var slashed = false;
   for (final ch in compact.split('')) {
     final mapped = lookalikes[ch] ?? ch;
-    final digit = RegExp(r'^\d$').hasMatch(mapped);
-    if (!digit && mapped != '.') return '';
+    if (mapped == '-') {
+      if (buffer.isNotEmpty) return '';
+      buffer.write('-');
+      continue;
+    }
+    if (mapped == '/') {
+      if (slashed || dotted || buffer.isEmpty || buffer.toString() == '-') {
+        return '';
+      }
+      slashed = true;
+      buffer.write('/');
+      continue;
+    }
     if (mapped == '.') {
-      if (dotted) return '';
+      if (dotted || slashed) return '';
       dotted = true;
-      if (buffer.isEmpty) buffer.write('0');
+      if (buffer.isEmpty || buffer.toString() == '-') buffer.write('0');
+    } else if (!RegExp(r'^\d$').hasMatch(mapped)) {
+      return '';
     }
     if (buffer.length >= 8) break;
     buffer.write(mapped);
   }
   final text = buffer.toString();
-  if (text.isEmpty || text == '0.') return '';
+  if (text.isEmpty ||
+      text == '-' ||
+      text == '.' ||
+      text == '-.' ||
+      text == '0.' ||
+      text == '-0.' ||
+      text.endsWith('/')) {
+    return '';
+  }
   return text;
 }
 
@@ -532,7 +570,7 @@ class FactDrill {
 }
 
 SpeedConfig dailyPractice(String grade) {
-  return speedDefault(grade).copyWith(limitMode: 'count', limitValue: 10);
+  return speedDefault(grade).copyWith(limitMode: 'count', limitValue: 20);
 }
 
 bool isDailyPractice(SpeedConfig config, String grade) {
@@ -605,6 +643,46 @@ DailyPracticeTally tallyDailyPractice({
     correct: correct,
     durationMs: durationMs,
   );
+}
+
+/// Stars for one finished daily round of [asked] problems.
+///
+/// Every answer right is 3. At least 80% is 2. At least 60% is 1.
+/// A short or weaker round is 0.
+int dailyRoundStars({required int correct, required int asked}) {
+  if (asked <= 0) return 0;
+  final earned = correct < 0 ? 0 : (correct > asked ? asked : correct);
+  if (earned == asked) return 3;
+  if (earned * 100 >= asked * 80) return 2;
+  if (earned * 100 >= asked * 60) return 1;
+  return 0;
+}
+
+/// Best star rating among today's finished daily rounds.
+int bestDailyStars({
+  required Iterable<SpeedRound> rounds,
+  required String grade,
+  required String today,
+}) {
+  var best = 0;
+  for (final round in rounds) {
+    if (formatYmd(round.createdAt.toLocal()) != today) continue;
+    if (round.limitMode != 'count') continue;
+    final config = SpeedConfig(
+      operation: round.operation,
+      digitMin: round.digitMin,
+      digitMax: round.digitMax,
+      limitMode: round.limitMode,
+      limitValue: round.limitValue,
+    );
+    if (!isDailyPractice(config, grade)) continue;
+    final stars = dailyRoundStars(
+      correct: round.correctCount,
+      asked: round.limitValue,
+    );
+    if (stars > best) best = stars;
+  }
+  return best;
 }
 
 /// Today's unfinished daily speed round, or null when the snapshot is something else.

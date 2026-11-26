@@ -1,17 +1,41 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart'
-    as ml;
+import 'package:flutter/services.dart';
 
 import '../app/theme.dart';
-import '../domain/core.dart';
+import '../domain/digit_ink.dart';
 import '../l10n/copy.dart';
 
 /// Remembered for this process, so the next problem stays on the chosen mode.
 bool answerByHandwriting = false;
 
-const _inkLanguage = 'en';
+DigitNet? _net;
+Future<void>? _opening;
+
+Future<void> _openReader() {
+  final pending = _opening;
+  if (pending != null) return pending;
+  final run = _createReader();
+  _opening = run;
+  return run;
+}
+
+Future<void> _createReader() async {
+  try {
+    if (_net != null) return;
+    final data = await rootBundle.load('assets/models/digits.f32');
+    _net = DigitNet.fromBytes(
+      data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+    );
+  } catch (_) {
+    _opening = null;
+    rethrow;
+  }
+}
+
+/// Load the bundled digit model when the calculation page opens.
+Future<void> warmHandwriting() => _openReader();
 
 class HandwritingPad extends StatefulWidget {
   const HandwritingPad({
@@ -20,28 +44,30 @@ class HandwritingPad extends StatefulWidget {
     required this.enabled,
     required this.height,
     required this.onReplace,
+    required this.onSubmit,
+    this.clearTick = 0,
   });
 
   final String prompt;
   final bool enabled;
   final double height;
   final ValueChanged<String> onReplace;
+  final VoidCallback onSubmit;
+  final int clearTick;
 
   @override
   State<HandwritingPad> createState() => _HandwritingPadState();
 }
 
 class _InkPoint {
-  const _InkPoint(this.offset, this.t);
+  const _InkPoint(this.offset);
 
   final Offset offset;
-  final int t;
 }
 
 class _HandwritingPadState extends State<HandwritingPad> {
   final _canvasKey = GlobalKey();
   final _strokes = <List<_InkPoint>>[];
-  ml.DigitalInkRecognizer? _reader;
   Timer? _timer;
   int _generation = 0;
   bool _preparing = true;
@@ -57,7 +83,8 @@ class _HandwritingPadState extends State<HandwritingPad> {
   @override
   void didUpdateWidget(HandwritingPad oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.prompt != widget.prompt) {
+    if (oldWidget.prompt != widget.prompt ||
+        oldWidget.clearTick != widget.clearTick) {
       _timer?.cancel();
       _generation++;
       _strokes.clear();
@@ -69,7 +96,6 @@ class _HandwritingPadState extends State<HandwritingPad> {
   void dispose() {
     _timer?.cancel();
     _generation++;
-    _reader?.close();
     super.dispose();
   }
 
@@ -79,16 +105,7 @@ class _HandwritingPadState extends State<HandwritingPad> {
       _failed = false;
     });
     try {
-      final manager = ml.DigitalInkRecognizerModelManager();
-      final ready = await manager.isModelDownloaded(_inkLanguage);
-      if (!ready) {
-        final downloaded = await manager.downloadModel(
-          _inkLanguage,
-          isWifiRequired: false,
-        );
-        if (!downloaded) throw StateError('model');
-      }
-      _reader ??= ml.DigitalInkRecognizer(languageCode: _inkLanguage);
+      await _openReader();
       if (!mounted) return;
       setState(() => _preparing = false);
       if (_strokes.isNotEmpty) _schedule();
@@ -107,39 +124,24 @@ class _HandwritingPadState extends State<HandwritingPad> {
   }
 
   Future<void> _recognize() async {
-    final reader = _reader;
-    if (reader == null || _strokes.isEmpty) return;
+    if (_strokes.isEmpty) return;
     final generation = _generation;
-    final ink = ml.Ink()
-      ..strokes = [
-        for (final stroke in _strokes)
-          if (stroke.isNotEmpty)
-            ml.Stroke()
-              ..points = [
-                for (final point in _pointsFor(stroke))
-                  ml.StrokePoint(
-                    x: point.offset.dx,
-                    y: point.offset.dy,
-                    t: point.t,
-                  ),
-              ],
-      ];
-    if (ink.strokes.isEmpty) return;
+    final strokes = [
+      for (final stroke in _strokes)
+        if (stroke.isNotEmpty)
+          [
+            for (final point in stroke)
+              InkPoint(point.offset.dx, point.offset.dy),
+          ],
+    ];
+    if (strokes.isEmpty) return;
     try {
-      final size = _canvasKey.currentContext?.size;
-      final context = size == null
-          ? null
-          : ml.DigitalInkRecognitionContext(
-              writingArea: ml.WritingArea(
-                width: size.width,
-                height: size.height,
-              ),
-            );
-      final candidates = await reader.recognize(ink, context: context);
+      await _openReader();
       if (!mounted || generation != _generation) return;
-      final ranked = [...candidates]
-        ..sort((a, b) => a.score.compareTo(b.score));
-      final answer = pickInkAnswer(ranked.map((candidate) => candidate.text));
+      final net = _net;
+      if (net == null) return;
+      final answer = recognizeInk(strokes, net);
+      if (!mounted || generation != _generation) return;
       if (answer == null) {
         setState(() => _unclear = true);
         return;
@@ -152,46 +154,34 @@ class _HandwritingPadState extends State<HandwritingPad> {
     }
   }
 
-  List<_InkPoint> _pointsFor(List<_InkPoint> stroke) {
-    if (stroke.length > 1) return stroke;
-    final point = stroke.first;
-    return [point, _InkPoint(point.offset, point.t + 1)];
-  }
-
-  void _clear() {
-    _timer?.cancel();
-    _generation++;
-    setState(() {
-      _strokes.clear();
-      _unclear = false;
-    });
-    widget.onReplace('');
-  }
-
   void _start(Offset position) {
     if (!widget.enabled) return;
     _generation++;
     _timer?.cancel();
     setState(() {
       _unclear = false;
-      _strokes.add([
-        _InkPoint(position, DateTime.now().millisecondsSinceEpoch),
-      ]);
+      _strokes.add([_InkPoint(position)]);
     });
   }
 
   void _move(Offset position) {
     if (!widget.enabled || _strokes.isEmpty) return;
     setState(() {
-      _strokes.last.add(
-        _InkPoint(position, DateTime.now().millisecondsSinceEpoch),
-      );
+      _strokes.last.add(_InkPoint(position));
     });
   }
 
   void _end() {
     if (!widget.enabled || _strokes.isEmpty) return;
-    if (_reader != null) _schedule();
+    _schedule();
+  }
+
+  Future<void> _confirm() async {
+    if (!widget.enabled) return;
+    _timer?.cancel();
+    if (_strokes.isNotEmpty) await _recognize();
+    if (!mounted) return;
+    widget.onSubmit();
   }
 
   @override
@@ -207,87 +197,115 @@ class _HandwritingPadState extends State<HandwritingPad> {
         : _strokes.isEmpty
         ? t.writeAnswer
         : null;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.sunken,
-        borderRadius: BorderRadius.circular(AppSpace.rMd),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpace.s8),
-        child: SizedBox(
-          height: widget.height - AppSpace.s16,
-          child: Column(
-            children: [
-              Expanded(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(AppSpace.rSm),
-                    border: Border.all(color: colors.border),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppSpace.rSm),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        GestureDetector(
-                          key: _canvasKey,
-                          behavior: HitTestBehavior.opaque,
-                          onPanStart: (details) =>
-                              _start(details.localPosition),
-                          onPanUpdate: (details) =>
-                              _move(details.localPosition),
-                          onPanEnd: (_) => _end(),
-                          child: CustomPaint(
-                            painter: _InkPainter([
-                              for (final stroke in _strokes)
-                                [for (final point in stroke) point.offset],
-                            ], colors.text),
+    return SizedBox(
+      height: widget.height,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: colors.border),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    GestureDetector(
+                      key: _canvasKey,
+                      behavior: HitTestBehavior.opaque,
+                      onPanStart: (details) => _start(details.localPosition),
+                      onPanUpdate: (details) => _move(details.localPosition),
+                      onPanEnd: (_) => _end(),
+                      child: CustomPaint(
+                        painter: _InkPainter([
+                          for (final stroke in _strokes)
+                            [for (final point in stroke) point.offset],
+                        ], colors.text),
+                      ),
+                    ),
+                    if (note != null)
+                      IgnorePointer(
+                        ignoring: !_failed,
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpace.s16),
+                            child: _failed
+                                ? TextButton(
+                                    onPressed: _prepare,
+                                    child: Text(
+                                      note,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )
+                                : Text(
+                                    note,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(color: colors.textMuted),
+                                  ),
                           ),
                         ),
-                        if (note != null)
-                          IgnorePointer(
-                            ignoring: !_failed,
-                            child: Align(
-                              alignment: Alignment.center,
-                              child: Padding(
-                                padding: const EdgeInsets.all(AppSpace.s16),
-                                child: _failed
-                                    ? TextButton(
-                                        onPressed: _prepare,
-                                        child: Text(
-                                          note,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      )
-                                    : Text(
-                                        note,
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(color: colors.textMuted),
-                                      ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppSpace.s8),
-              SizedBox(
-                height: AppSpace.minTarget,
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: widget.enabled && _strokes.isNotEmpty
-                      ? _clear
-                      : null,
-                  child: Text(t.clearWriting),
-                ),
-              ),
-            ],
+            ),
+          ),
+          Positioned(
+            right: AppSpace.s8,
+            bottom: AppSpace.s8,
+            child: _ConfirmButton(
+              label: t.submit,
+              enabled: widget.enabled,
+              onPressed: _confirm,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConfirmButton extends StatelessWidget {
+  const _ConfirmButton({
+    required this.label,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: Material(
+        color: colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpace.rSm),
+          side: BorderSide(color: colors.border),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppSpace.rSm),
+          onTap: enabled ? onPressed : null,
+          child: SizedBox(
+            width: AppSpace.minTarget,
+            height: AppSpace.minTarget,
+            child: Icon(
+              Icons.check,
+              color: enabled ? colors.accent : colors.textMuted,
+            ),
           ),
         ),
       ),

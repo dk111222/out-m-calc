@@ -703,7 +703,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     final android = platform == TargetPlatform.android;
     final apple = platform == TargetPlatform.iOS;
     return PageFrame(
-      title: t.signIn,
+      title: t.chooseSignIn,
       leading: IconButton(
         tooltip: t.back,
         onPressed: () => context.go('/prefs'),
@@ -712,36 +712,42 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(t.chooseSignIn, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpace.s16),
-          AppButton(
-            label: t.signInWithGoogle,
-            busy: _busy == 'google',
-            onPressed: android && _busy == null
-                ? () => _provider('google')
-                : null,
-          ),
-          const SizedBox(height: AppSpace.s8),
           Text(
-            t.googleOnAndroid,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.of(context).textMuted,
-            ),
+            t.chooseSignIn,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpace.s16),
-          AppButton(
-            label: t.signInWithApple,
-            busy: _busy == 'apple',
-            onPressed: apple && _busy == null ? () => _provider('apple') : null,
-          ),
-          const SizedBox(height: AppSpace.s8),
-          Text(
-            t.appleOnIphone,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.of(context).textMuted,
+          if (android) ...[
+            AppButton(
+              label: t.signInWithGoogle,
+              busy: _busy == 'google',
+              onPressed: _busy == null ? () => _provider('google') : null,
             ),
-          ),
-          const SizedBox(height: AppSpace.s16),
+            const SizedBox(height: AppSpace.s8),
+            Text(
+              t.googleOnAndroid,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.of(context).textMuted,
+              ),
+            ),
+            const SizedBox(height: AppSpace.s16),
+          ],
+          if (apple) ...[
+            AppButton(
+              label: t.signInWithApple,
+              busy: _busy == 'apple',
+              onPressed: _busy == null ? () => _provider('apple') : null,
+            ),
+            const SizedBox(height: AppSpace.s8),
+            Text(
+              t.appleOnIphone,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.of(context).textMuted,
+              ),
+            ),
+            const SizedBox(height: AppSpace.s16),
+          ],
           AppButton(
             label: t.signInWithGuest,
             secondary: true,

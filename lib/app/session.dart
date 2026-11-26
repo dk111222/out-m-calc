@@ -42,6 +42,7 @@ class AppController extends ChangeNotifier {
   List<Learner> learners = [];
   SessionSnapshot? snapshot;
   DailyPracticeTally _finishedDaily = const DailyPracticeTally();
+  int _dailyStars = 0;
   String? _finishedDailyLearnerId;
   String _finishedDailyOn = '';
   String? banner;
@@ -70,6 +71,18 @@ class AppController extends ChangeNotifier {
     final open = openDailyPractice(snapshot, learner.grade, today);
     if (open == null) return finished;
     return finished.add(open);
+  }
+
+  /// Best star rating among today's finished daily rounds for the active learner.
+  int get todayDailyStars {
+    final learner = active;
+    final today = clock.today;
+    if (learner == null ||
+        _finishedDailyLearnerId != learner.id ||
+        _finishedDailyOn != today) {
+      return 0;
+    }
+    return _dailyStars;
   }
 
   bool get errorTrainingOpen => errorTrainingAllowed(
@@ -219,12 +232,18 @@ class AppController extends ChangeNotifier {
     final learner = active;
     if (learner == null) {
       _finishedDaily = const DailyPracticeTally();
+      _dailyStars = 0;
       _finishedDailyLearnerId = null;
       _finishedDailyOn = today;
       return;
     }
     final rounds = await store.speeds(learner.id);
     _finishedDaily = tallyDailyPractice(
+      rounds: rounds,
+      grade: learner.grade,
+      today: today,
+    );
+    _dailyStars = bestDailyStars(
       rounds: rounds,
       grade: learner.grade,
       today: today,
@@ -520,6 +539,7 @@ class AppController extends ChangeNotifier {
     learners = [];
     snapshot = null;
     _finishedDaily = const DailyPracticeTally();
+    _dailyStars = 0;
     _finishedDailyLearnerId = null;
     _finishedDailyOn = '';
     activeLearnerId = null;
