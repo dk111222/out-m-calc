@@ -1,6 +1,8 @@
 import 'package:go_router/go_router.dart';
 
 import '../pages/extra_pages.dart';
+import '../pages/me_page.dart';
+import '../pages/sign_in_page.dart';
 import '../pages/scan_page.dart';
 import '../pages/home_pages.dart';
 import '../pages/learn_pages.dart';
@@ -38,6 +40,13 @@ GoRouter buildRouter(AppController app) {
         builder: (_, state) =>
             LearnerFormPage(guest: state.uri.queryParameters['guest'] == '1'),
       ),
+      GoRoute(
+        path: '/learner/edit/:id',
+        builder: (_, state) => LearnerFormPage(
+          guest: false,
+          learnerId: state.pathParameters['id'],
+        ),
+      ),
       GoRoute(path: '/adult', builder: (_, _) => const AdultHomePage()),
       GoRoute(path: '/child', pageBuilder: (_, _) => _tabs(index: 0)),
       GoRoute(
@@ -70,6 +79,13 @@ GoRouter buildRouter(AppController app) {
       GoRoute(path: '/review', builder: (_, _) => const ReviewPage()),
       GoRoute(path: '/scan', builder: (_, _) => const ScanPage()),
       GoRoute(path: '/sign-in', builder: (_, _) => const SignInPage()),
+      GoRoute(path: '/account', builder: (_, _) => const AccountSettingsPage()),
+      GoRoute(
+        path: '/notifications',
+        builder: (_, _) => const NotificationSettingsPage(),
+      ),
+      GoRoute(path: '/about', builder: (_, _) => const AboutPage()),
+      GoRoute(path: '/family', builder: (_, _) => const FamilyReportPage()),
       GoRoute(path: '/terms', builder: (_, _) => const TermsPage()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
       GoRoute(

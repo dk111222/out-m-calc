@@ -73,9 +73,10 @@ class StartPage extends ConsumerWidget {
 }
 
 class LearnerFormPage extends ConsumerStatefulWidget {
-  const LearnerFormPage({super.key, required this.guest});
+  const LearnerFormPage({super.key, required this.guest, this.learnerId});
 
   final bool guest;
+  final String? learnerId;
 
   @override
   ConsumerState<LearnerFormPage> createState() => _LearnerFormPageState();
@@ -93,8 +94,12 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController();
-    if (widget.guest) _grade = '1';
+    final editing = widget.learnerId == null
+        ? null
+        : ref.read(appProvider).learnerById(widget.learnerId!);
+    _name = TextEditingController(text: editing?.displayName ?? '');
+    _grade = editing?.grade ?? (widget.guest ? '1' : null);
+    _avatar = editing?.avatar;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       precacheLearnerAvatars(context);
@@ -136,8 +141,9 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
         ),
       );
     }
+    final editing = widget.learnerId != null;
     return PageFrame(
-      title: widget.guest ? t.guest : t.addLearner,
+      title: editing ? t.editLearner : (widget.guest ? t.guest : t.addLearner),
       banner: app.banner,
       leading: IconButton(
         tooltip: t.back,
@@ -173,12 +179,19 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
                         _busy = true;
                         _error = null;
                       });
-                      final error = await app.createLearner(
-                        name: _name.text,
-                        grade: _grade!,
-                        avatar: avatar,
-                        guest: widget.guest,
-                      );
+                      final error = widget.learnerId == null
+                          ? await app.createLearner(
+                              name: _name.text,
+                              grade: _grade!,
+                              avatar: avatar,
+                              guest: widget.guest,
+                            )
+                          : await app.updateLearner(
+                              id: widget.learnerId!,
+                              name: _name.text,
+                              grade: _grade!,
+                              avatar: avatar,
+                            );
                       if (!mounted) return;
                       if (error != null) {
                         setState(() {
@@ -188,7 +201,7 @@ class _LearnerFormPageState extends ConsumerState<LearnerFormPage> {
                         return;
                       }
                       if (!context.mounted) return;
-                      if (widget.guest) {
+                      if (widget.guest && widget.learnerId == null) {
                         await app.enterChild(app.activeLearnerId!);
                         if (!context.mounted) return;
                         context.go('/child');

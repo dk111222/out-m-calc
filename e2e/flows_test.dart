@@ -57,11 +57,11 @@ void main() {
   }
 
   Future<void> signInOnMe(WidgetTester tester) async {
+    if (find.text('Play as Guest').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Play as Guest'));
+      await settle(tester);
+    }
     await tester.tap(find.text('我的'));
-    await settle(tester);
-    await tester.tap(find.text('登录'));
-    await settle(tester);
-    await tester.tap(find.text('本地游客'));
     await settle(tester);
   }
 
@@ -89,7 +89,8 @@ void main() {
       ),
     );
     await tester.pump();
-    // First Flutter frame after boot must already be home, not the loading page.
+    // A signed-out open is the login page. A signed-in open is home.
+    // Neither wait is the loading page.
     expect(find.byType(LoadingPage), findsNothing);
     expect(find.textContaining('正在这台设备上打开练习'), findsNothing);
     await settle(tester);
@@ -173,18 +174,19 @@ void main() {
   ) async {
     final app = await boot();
     await show(tester, app);
+    expect(find.text('Play as Guest'), findsOneWidget);
+    expect(find.text('首页'), findsNothing);
+    await tester.tap(find.text('Play as Guest'));
+    await settle(tester);
     await tester.tap(find.text('我的'));
     await settle(tester);
-    expect(find.text('先试用'), findsNothing);
-    expect(find.text('添加孩子'), findsNothing);
-    expect(find.text('登录后才能添加孩子。'), findsOneWidget);
-    expect(find.text('用户政策'), findsOneWidget);
-    expect(find.text('隐私协议'), findsOneWidget);
-
-    await tester.tap(find.text('登录'));
-    await settle(tester);
-    await tester.tap(find.text('本地游客'));
-    await settle(tester);
+    expect(find.text('本地游客'), findsNothing);
+    expect(find.text('游客'), findsNWidgets(2));
+    expect(find.text('孩子管理'), findsOneWidget);
+    expect(find.text('添加孩子'), findsOneWidget);
+    expect(find.text('查看报告'), findsOneWidget);
+    expect(find.text('退出登录'), findsOneWidget);
+    expect(find.text('隐私政策'), findsOneWidget);
     await tester.tap(find.text('添加孩子'));
     await tester.pump(const Duration(milliseconds: 300));
     final save = tester.widget<FilledButton>(
@@ -215,6 +217,7 @@ void main() {
 
   testWidgets('F01-N1 a child cannot open settings or wipe', (tester) async {
     final app = await boot();
+    await app.signInAsGuest();
     await app.createLearner(name: 'Ava', grade: '1');
     await app.enterChild(app.learners.single.id);
     await show(tester, app);
@@ -227,6 +230,7 @@ void main() {
 
   testWidgets('F03-H1 pause hides the speed problem', (tester) async {
     final app = await boot();
+    await app.signInAsGuest();
     await app.createLearner(name: 'Ava', grade: '3');
     await app.enterChild(app.learners.single.id);
     await show(tester, app);
@@ -273,6 +277,7 @@ void main() {
     tester,
   ) async {
     final app = await boot();
+    await app.signInAsGuest();
     await app.createLearner(name: 'Ava', grade: '3');
     await app.enterChild(app.learners.single.id);
     await show(tester, app);
@@ -396,6 +401,7 @@ void main() {
     tester,
   ) async {
     final app = await boot();
+    await app.signInAsGuest();
     await app.createLearner(name: 'Ava', grade: '1');
     await app.enterChild(app.learners.single.id);
     await show(tester, app);

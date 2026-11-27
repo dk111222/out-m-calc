@@ -35,6 +35,12 @@ class _TricksPageState extends ConsumerState<TricksPage> {
     _load();
   }
 
+  @override
+  void didUpdateWidget(TricksPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.learnerId != widget.learnerId) _load();
+  }
+
   Future<void> _load() async {
     final app = ref.read(appProvider);
     final id = widget.learnerId ?? app.activeLearnerId;
@@ -61,6 +67,10 @@ class _TricksPageState extends ConsumerState<TricksPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(appProvider, (previous, next) {
+      if (widget.learnerId != null) return;
+      if (previous?.activeLearnerId != next.activeLearnerId) _load();
+    });
     final app = ref.watch(appProvider);
     final learner = app.learnerById(widget.learnerId ?? app.activeLearnerId);
     final tricks = learner == null

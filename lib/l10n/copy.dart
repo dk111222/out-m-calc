@@ -85,6 +85,7 @@ class Copy {
   String get guest => pick('访客', 'Guest');
   String get learnerStem => pick('学员', 'Learner');
   String get addLearner => pick('添加孩子', 'Add a learner');
+  String get editLearner => pick('编辑孩子', 'Edit child');
   String get signInToAddLearner =>
       pick('登录后才能添加孩子。', 'Sign in to add a learner.');
   String get back => pick('返回', 'Back');
@@ -155,12 +156,13 @@ class Copy {
   String get numbersMark => '123';
   String get handwritingMark => pick('写', 'Write');
   String get clearWriting => pick('清除', 'Clear');
-  String get writeAnswer => pick('在这里写答案', 'Write the answer here');
-  String get handwritingPreparing => pick('正在准备手写。', 'Preparing handwriting.');
-  String get handwritingNeedsDownload => pick(
-    '手写识别没有准备好。',
-    'Handwriting is not ready.',
+  String get writeAnswer => pick(
+    '在这里写整数、负数、小数或分数',
+    'Write an integer, a negative, a decimal, or a fraction',
   );
+  String get handwritingPreparing => pick('正在准备手写。', 'Preparing handwriting.');
+  String get handwritingNeedsDownload =>
+      pick('手写识别没有准备好。', 'Handwriting is not ready.');
   String get handwritingUnclear =>
       pick('没看清，再写一次。', 'Could not read that. Write it again.');
   String get undo => pick('回退', 'Undo');
@@ -229,6 +231,55 @@ class Copy {
   String get notSignedInTitle => pick('未登录', 'Not signed in');
   String get signIn => pick('登录', 'Sign in');
   String get signOut => pick('退出登录', 'Sign out');
+  String get signOutBody => pick(
+    '退出后可以再次登录。练习会留在这台设备上。',
+    'You can sign in again. Practice stays on this device.',
+  );
+  String get childrenSection => pick('孩子管理', 'Children');
+  String get noChildrenYet => pick('还没有孩子。', 'No children yet.');
+  String get familyReport => pick('查看报告', 'View report');
+  String get familyReportTitle => pick('孩子们汇总报告', 'Children\'s summary');
+  String get accountSettings => pick('账号设置', 'Account');
+  String get notificationSettings => pick('通知设置', 'Notifications');
+  String get aboutUs => pick('关于我们', 'About');
+  String get editAvatar => pick('编辑头像', 'Edit photo');
+  String get cropAvatar => pick('裁剪头像', 'Crop photo');
+  String get previewAvatar => pick('预览', 'Preview');
+  String get notificationBody => pick(
+    '这些开关只影响这台设备上的声音。应用不发送推送通知。',
+    'These switches only change sounds on this device. The app does not send push alerts.',
+  );
+  String get aboutBody => pick(
+    'StepMath 帮孩子在这台设备上练习速算。账号、孩子和练习都留在本机。',
+    'StepMath helps a child practice mental math on this device. The account, children, and practice stay on this device.',
+  );
+  String loginMethod(String? provider) {
+    switch (provider) {
+      case 'google':
+        return pick('Google登录', 'Google');
+      case 'apple':
+        return pick('Apple登录', 'Apple');
+      case 'guest':
+        return pick('游客', 'Guest');
+      default:
+        return parentAccount;
+    }
+  }
+
+  String learnerLimitMessage(String? provider) {
+    if (provider == 'guest') {
+      return pick(
+        '游客账号最多添加1名孩子，请使用Apple/Google登录解锁更多名额',
+        'A guest account can add one child. Sign in with Apple or Google to add more.',
+      );
+    }
+    return pick(
+      '已达到孩子数量上限（最多3名）',
+      'This account can add up to 3 children.',
+    );
+  }
+  String get closeAccount => pick('注销账户', 'Delete account');
+  String get signedInLabel => pick('已登录', 'Signed in');
   String get chooseSignIn => pick('登录方式', 'Sign-in method');
   String get localGuest => pick('本地游客', 'Local guest');
   String get signInWithGuest => pick('本地游客', 'Continue as a local guest');
@@ -249,6 +300,13 @@ class Copy {
   String get parentCode => pick('家长密码', 'Parent code');
   String get takePhoto => pick('拍照', 'Take a photo');
   String get choosePhoto => pick('从相册选择', 'Choose a photo');
+  String get confirmRegion => pick('确认', 'Confirm');
+  String get retakePhoto => pick('重拍', 'Retake');
+  String get wrongAnalysis => pick('错题分析', 'Wrong-problem analysis');
+  String get noWrongsOnPage =>
+      pick('这页没有错题。', 'No wrong problems on this page.');
+  String get correctAnswerLabel => pick('正确答案', 'Correct answer');
+  String get howToSolve => pick('解法', 'How');
   String get practiceFive => pick('再练 5 题', 'Practice 5 more');
   String get home => pick('首页', 'Home');
   String get practice => pick('练习', 'Practice');

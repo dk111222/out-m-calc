@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app/theme.dart';
 import '../domain/digit_ink.dart';
+import '../domain/stroke_preprocessor.dart';
 import '../l10n/copy.dart';
 
 /// Remembered for this process, so the next problem stays on the chosen mode.
@@ -60,9 +62,10 @@ class HandwritingPad extends StatefulWidget {
 }
 
 class _InkPoint {
-  const _InkPoint(this.offset);
+  const _InkPoint(this.offset, this.timestamp);
 
   final Offset offset;
+  final int timestamp;
 }
 
 class _HandwritingPadState extends State<HandwritingPad> {
@@ -70,6 +73,7 @@ class _HandwritingPadState extends State<HandwritingPad> {
   final _strokes = <List<_InkPoint>>[];
   Timer? _timer;
   int _generation = 0;
+  int _lastStamp = 0;
   bool _preparing = true;
   bool _failed = false;
   bool _unclear = false;
@@ -123,18 +127,35 @@ class _HandwritingPadState extends State<HandwritingPad> {
     _timer = Timer(const Duration(milliseconds: 450), _recognize);
   }
 
+  int _stamp() {
+    final now = DateTime.now().microsecondsSinceEpoch;
+    final stamp = now > _lastStamp ? now : _lastStamp + 1;
+    _lastStamp = stamp;
+    return stamp;
+  }
+
   Future<void> _recognize() async {
     if (_strokes.isEmpty) return;
     final generation = _generation;
-    final strokes = [
+    final rawStrokes = [
       for (final stroke in _strokes)
         if (stroke.isNotEmpty)
           [
             for (final point in stroke)
-              InkPoint(point.offset.dx, point.offset.dy),
+              StrokePoint(point.offset.dx, point.offset.dy, point.timestamp),
           ],
     ];
-    if (strokes.isEmpty) return;
+    // Specks never reach the reader. The pad still paints the raw ink.
+    final processed = StrokePreprocessor.process(rawStrokes);
+    if (processed.isEmpty) {
+      if (!mounted || generation != _generation) return;
+      setState(() => _unclear = true);
+      return;
+    }
+    final strokes = [
+      for (final stroke in processed)
+        [for (final point in stroke) InkPoint(point.x, point.y)],
+    ];
     try {
       await _openReader();
       if (!mounted || generation != _generation) return;
@@ -160,14 +181,14 @@ class _HandwritingPadState extends State<HandwritingPad> {
     _timer?.cancel();
     setState(() {
       _unclear = false;
-      _strokes.add([_InkPoint(position)]);
+      _strokes.add([_InkPoint(position, _stamp())]);
     });
   }
 
   void _move(Offset position) {
     if (!widget.enabled || _strokes.isEmpty) return;
     setState(() {
-      _strokes.last.add(_InkPoint(position));
+      _strokes.last.add(_InkPoint(position, _stamp()));
     });
   }
 
@@ -213,12 +234,23 @@ class _HandwritingPadState extends State<HandwritingPad> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    GestureDetector(
+                    RawGestureDetector(
                       key: _canvasKey,
                       behavior: HitTestBehavior.opaque,
-                      onPanStart: (details) => _start(details.localPosition),
-                      onPanUpdate: (details) => _move(details.localPosition),
-                      onPanEnd: (_) => _end(),
+                      gestures: {
+                        _InkPan: GestureRecognizerFactoryWithHandlers<_InkPan>(
+                          _InkPan.new,
+                          (pan) {
+                            pan.onStart = (details) {
+                              _start(details.localPosition);
+                            };
+                            pan.onUpdate = (details) {
+                              _move(details.localPosition);
+                            };
+                            pan.onEnd = (_) => _end();
+                          },
+                        ),
+                      },
                       child: CustomPaint(
                         painter: _InkPainter([
                           for (final stroke in _strokes)
@@ -310,6 +342,16 @@ class _ConfirmButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Accepts the stroke on the first pixel so a scrolling page cannot
+/// swallow the start of the digit.
+class _InkPan extends PanGestureRecognizer {
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    super.addAllowedPointer(event);
+    resolve(GestureDisposition.accepted);
   }
 }
 

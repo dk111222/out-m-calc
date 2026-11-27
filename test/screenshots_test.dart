@@ -45,11 +45,9 @@ void main() {
     await _settle(tester);
     await _shoot(tester, 'P01');
 
+    await tester.tap(find.text('Play as Guest'));
+    await _settle(tester);
     await tester.tap(find.text('我的'));
-    await _settle(tester);
-    await tester.tap(find.text('登录'));
-    await _settle(tester);
-    await tester.tap(find.text('本地游客'));
     await _settle(tester);
     await tester.tap(find.text('添加孩子'));
     await _settle(tester);

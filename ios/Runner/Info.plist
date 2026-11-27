@@ -48,9 +48,9 @@
 		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>StepMath reads a printed math page on this device. The photo is not uploaded.</string>
+	<string>StepMath uses the camera for a math page or a profile photo. The photo stays on this device.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>StepMath reads a printed math page from your photos on this device. The photo is not uploaded.</string>
+	<string>StepMath uses a photo for a math page or a profile picture. The photo stays on this device.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

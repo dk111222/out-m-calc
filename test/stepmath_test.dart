@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stepmath/app/session.dart';
-import 'package:stepmath/pages/extra_pages.dart';
+import 'package:stepmath/pages/sign_in_page.dart';
 import 'package:stepmath/app/theme.dart';
 import 'package:stepmath/ui/handwriting.dart';
 import 'package:stepmath/ui/kit.dart';
@@ -131,6 +131,16 @@ void main() {
       ]),
       hasLength(1),
     );
+    expect(
+      segmentInk([
+        stroke(12, 8, 16, 80),
+        stroke(36, 12, 70, 14),
+        stroke(70, 14, 72, 70),
+        stroke(72, 70, 34, 74),
+        stroke(34, 74, 32, 16),
+      ]).where((glyph) => glyph.kind == InkKind.digit),
+      hasLength(2),
+    );
     final net = DigitNet.fromBytes(
       File('assets/models/digits.f32').readAsBytesSync(),
     );
@@ -145,6 +155,75 @@ void main() {
     expect(
       recognizeInk([stroke(50, 8, 50, 92), stroke(34, 22, 50, 8)], net),
       '1',
+    );
+    final one = [stroke(50, 8, 50, 92), stroke(34, 22, 50, 8)];
+    expect(recognizeInk([stroke(2, 48, 32, 49), ...one], net), '-1');
+    expect(
+      recognizeInk([
+        ...one,
+        [InkPoint(78, 78), InkPoint(82, 82)],
+        [for (final point in zero) InkPoint(point.x + 70, point.y)],
+      ], net),
+      '1.0',
+    );
+    expect(
+      recognizeInk([
+        zero,
+        stroke(96, 12, 128, 88),
+        ...one.map(
+          (stroke) => [
+            for (final point in stroke) InkPoint(point.x + 110, point.y),
+          ],
+        ),
+      ], net),
+      '0/1',
+    );
+    expect(
+      decodeInk([
+        stroke(8, 40, 40, 41),
+        stroke(58, 10, 60, 72),
+        stroke(100, 12, 102, 70),
+      ], (_) => const DigitScore(1, 0.95)),
+      '-11',
+    );
+    expect(
+      decodeInk([
+        stroke(10, 8, 12, 70),
+        [InkPoint(30, 62), InkPoint(33, 65)],
+        stroke(48, 8, 50, 70),
+      ], (_) => const DigitScore(1, 0.95)),
+      '1.1',
+    );
+    expect(
+      decodeInk([
+        stroke(10, 8, 14, 72),
+        stroke(24, 8, 52, 74),
+        stroke(66, 8, 70, 72),
+      ], (_) => const DigitScore(1, 0.95)),
+      '1/1',
+    );
+    expect(
+      decodeInk([
+        stroke(30, 6, 34, 26),
+        stroke(16, 40, 54, 42),
+        stroke(30, 56, 34, 80),
+      ], (_) => const DigitScore(1, 0.95)),
+      '1/1',
+    );
+    expect(
+      decodeInk([
+        stroke(40, 8, 42, 78),
+        stroke(12, 40, 50, 42),
+        stroke(14, 40, 40, 10),
+      ], (_) => const DigitScore(4, 0.8)),
+      '4',
+    );
+    expect(
+      decodeInk([
+        [InkPoint(20, 62), InkPoint(23, 65)],
+        stroke(48, 8, 50, 70),
+      ], (_) => const DigitScore(5, 0.9)),
+      '0.5',
     );
     expect(pickInkAnswer(['.']), isNull);
     final view = PracticeView.start(
@@ -792,6 +871,10 @@ void main() {
     started.stop();
     expect(app.ready, isTrue);
     expect(app.bootError, isNull);
+    expect(app.openLocation(), '/sign-in');
+    expect(app.redirect('/child'), '/sign-in');
+    expect(app.redirect('/sign-in'), isNull);
+    expect(await app.signInAsGuest(), isNull);
     expect(app.openLocation(), '/child');
     expect(started.elapsedMilliseconds, lessThan(3000));
     await store.ensureFull();
@@ -887,7 +970,7 @@ void main() {
     await directory.delete(recursive: true);
   });
 
-  testWidgets('sign-in shows only the login for this phone', (tester) async {
+  testWidgets('sign-in offers Google, Apple, and guest', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     Future<void> show(TargetPlatform platform) {
@@ -903,23 +986,23 @@ void main() {
     }
 
     await show(TargetPlatform.android);
-    final title = tester.widget<Text>(find.text('登录方式'));
-    expect(title.textAlign, TextAlign.center);
-    expect(find.text('使用 Google 登录'), findsOneWidget);
-    expect(find.text('用于 Android 手机'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 300));
+    final headline = tester.widget<Text>(find.text("Let's practice math!"));
+    expect(headline.textAlign, TextAlign.center);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Continue with Apple'), findsOneWidget);
+    expect(find.text('Play as Guest'), findsOneWidget);
+    expect(find.text('Privacy Policy'), findsOneWidget);
+    expect(find.text('Terms of Service'), findsOneWidget);
+    expect(find.text('使用 Google 登录'), findsNothing);
     expect(find.text('通过 Apple 登录'), findsNothing);
-    expect(find.text('用于 iPhone'), findsNothing);
-    expect(find.text('本地游客'), findsOneWidget);
-    expect(find.text('用户政策'), findsOneWidget);
-    expect(find.text('隐私协议'), findsOneWidget);
 
     await show(TargetPlatform.iOS);
-    expect(find.text('登录方式'), findsOneWidget);
-    expect(find.text('使用 Google 登录'), findsNothing);
-    expect(find.text('用于 Android 手机'), findsNothing);
-    expect(find.text('通过 Apple 登录'), findsOneWidget);
-    expect(find.text('用于 iPhone'), findsOneWidget);
-    expect(find.text('本地游客'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text("Let's practice math!"), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Continue with Apple'), findsOneWidget);
+    expect(find.text('Play as Guest'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -963,6 +1046,71 @@ void main() {
       await directory.delete(recursive: true);
     },
   );
+
+  test('a guest keeps one child and Google keeps three', () async {
+    final directory = await Directory.systemTemp.createTemp('stepmath-cap');
+    final store = HiveAppStore();
+    await store.init(path: directory.path);
+    final catalog = Catalog.parse(
+      File('assets/tricks/catalog.json').readAsStringSync(),
+    );
+    final guest = AppController(store: store, catalog: catalog);
+    await guest.boot();
+    expect(await guest.signInAsGuest(), isNull);
+    expect(await guest.createLearner(name: 'Ava', grade: '1'), isNull);
+    expect(await guest.createLearner(name: 'Ben', grade: '1'), isNotNull);
+    expect(guest.learners, hasLength(1));
+    await store.close();
+    await directory.delete(recursive: true);
+
+    final other = await Directory.systemTemp.createTemp('stepmath-cap-google');
+    final googleStore = HiveAppStore();
+    await googleStore.init(path: other.path);
+    final google = AppController(store: googleStore, catalog: catalog);
+    await google.boot();
+    expect(
+      await google.signInWithIdentity(
+        provider: 'google',
+        subject: 'google-1',
+        name: 'Ada',
+      ),
+      isNull,
+    );
+    for (final name in ['Ava', 'Ben', 'Cleo']) {
+      expect(await google.createLearner(name: name, grade: '1'), isNull);
+    }
+    expect(await google.createLearner(name: 'Dee', grade: '1'), isNotNull);
+    expect(google.learners, hasLength(3));
+    final ava = google.learners.firstWhere(
+      (learner) => learner.displayName == 'Ava',
+    );
+    await google.enterChild(ava.id);
+    expect(
+      await google.updateLearner(
+        id: ava.id,
+        name: 'Ava B',
+        grade: '3',
+        avatar: 'fox',
+      ),
+      isNull,
+    );
+    expect(google.learnerById(ava.id)?.displayName, 'Ava B');
+    expect(google.learnerById(ava.id)?.grade, '3');
+    expect(google.learnerById(ava.id)?.avatar, 'fox');
+    expect(google.activeLearnerId, ava.id);
+    final ben = google.learners.firstWhere(
+      (learner) => learner.displayName == 'Ben',
+    );
+    expect(
+      await google.updateLearner(id: ben.id, name: 'Ben B', grade: '2'),
+      isNull,
+    );
+    expect(google.learnerById(ben.id)?.displayName, 'Ben B');
+    expect(google.activeLearnerId, ava.id);
+    expect(google.redirect('/learner/edit/${ben.id}'), isNull);
+    await googleStore.close();
+    await other.delete(recursive: true);
+  });
 
   test('a guest session can add a learner without a parent code', () async {
     final directory = await Directory.systemTemp.createTemp('stepmath-guest');

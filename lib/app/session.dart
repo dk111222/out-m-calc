@@ -94,10 +94,16 @@ class AppController extends ChangeNotifier {
     store.setSession(childMode: childMode, learnerId: activeLearnerId);
   }
 
-  String openLocation() {
-    if (!ready || bootError != null) return '/loading';
+  /// The practice home for someone who is already signed in.
+  String homeLocation() {
     if (learners.isEmpty || childMode) return '/child';
     return '/adult';
+  }
+
+  String openLocation() {
+    if (!ready || bootError != null) return '/loading';
+    if (!settings.signedIn) return '/sign-in';
+    return homeLocation();
   }
 
   bool _routeOpen(String loc, List<String> prefixes) {
@@ -112,6 +118,10 @@ class AppController extends ChangeNotifier {
     if (!ready || bootError != null) {
       return loc == '/loading' ? null : '/loading';
     }
+    if (!settings.signedIn) {
+      const account = ['/sign-in', '/terms', '/settings/privacy'];
+      return account.contains(loc) ? null : '/sign-in';
+    }
     const childOk = [
       '/child',
       '/tricks',
@@ -123,9 +133,23 @@ class AppController extends ChangeNotifier {
       '/report',
       '/export',
       '/learner/new',
+      '/learner/edit',
+      '/account',
+      '/notifications',
+      '/about',
+      '/family',
     ];
     if (learners.isEmpty) {
-      const open = ['/child', '/prefs', '/learner/new', '/settings'];
+      const open = [
+        '/child',
+        '/prefs',
+        '/learner/new',
+        '/settings',
+        '/account',
+        '/notifications',
+        '/about',
+        '/family',
+      ];
       return _routeOpen(loc, open) ? null : '/child';
     }
     if (childMode) {
@@ -271,7 +295,13 @@ class AppController extends ChangeNotifier {
   }) async {
     grade = canonicalGrade(grade);
     if (!grades.contains(grade)) return copy.chooseGrade;
-    if (learners.isNotEmpty && !settings.extraLearnersUnlocked) {
+    final provider = settings.accountProvider;
+    final capped =
+        provider == 'guest' || provider == 'google' || provider == 'apple';
+    if (capped && learners.length >= learnerCapFor(settings)) {
+      return copy.learnerLimitMessage(provider);
+    }
+    if (!capped && learners.isNotEmpty && !settings.extraLearnersUnlocked) {
       return copy.anotherLearner;
     }
     final trimmed = name.trim();
@@ -323,6 +353,55 @@ class AppController extends ChangeNotifier {
     }
   }
 
+  /// Updates a child's name, picture, and grade. Other progress stays.
+  Future<String?> updateLearner({
+    required String id,
+    required String name,
+    required String grade,
+    String? avatar,
+  }) async {
+    final current = learnerById(id);
+    if (current == null) return copy.couldNotSave;
+    grade = canonicalGrade(grade);
+    if (!grades.contains(grade)) return copy.chooseGrade;
+    final trimmed = name.trim();
+    final display = trimmed.isEmpty
+        ? current.displayName
+        : trimmed.substring(0, min(60, trimmed.length));
+    final next = current.copyWith(
+      displayName: display,
+      grade: grade,
+      avatar: avatarIdFor(avatar ?? current.avatar, id),
+      updatedAt: clock.now().toUtc(),
+    );
+    final wasChild = childMode;
+    final previousId = activeLearnerId;
+    if (wasChild) {
+      store.setSession(childMode: false, learnerId: null);
+    }
+    try {
+      await store.saveLearner(next);
+      _replace(next);
+      if (wasChild) {
+        store.setSession(childMode: true, learnerId: previousId);
+      }
+      if (previousId == id) {
+        await refreshSnapshot();
+        await _refreshFinishedDaily();
+      }
+      banner = null;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      if (wasChild) {
+        store.setSession(childMode: true, learnerId: previousId);
+      }
+      banner = copy.couldNotSave;
+      notifyListeners();
+      return banner;
+    }
+  }
+
   Future<void> enterChild(String id) async {
     activeLearnerId = id;
     childMode = true;
@@ -340,6 +419,38 @@ class AppController extends ChangeNotifier {
       banner = copy.couldNotSave;
     }
     notifyListeners();
+  }
+
+  /// Last 7 days for every child. The store allows one child id while a
+  /// child session is open, so this reads as the parent and then restores it.
+  Future<List<({String id, String name, WeeklyReport report})>>
+  familyReports() async {
+    final wasChild = childMode;
+    final previous = activeLearnerId;
+    if (wasChild) {
+      store.setSession(childMode: false, learnerId: null);
+    }
+    try {
+      final rows = <({String id, String name, WeeklyReport report})>[];
+      for (final learner in learners) {
+        final attempts = await store.attempts(learner.id);
+        final rounds = await store.speeds(learner.id);
+        final mastery = await store.masteries(learner.id);
+        rows.add((
+          id: learner.id,
+          name: learner.displayName,
+          report: buildWeeklyReport(
+            today: clock.today,
+            attempts: attempts,
+            rounds: rounds,
+            mastery: mastery,
+          ),
+        ));
+      }
+      return rows;
+    } finally {
+      store.setSession(childMode: wasChild, learnerId: previous);
+    }
   }
 
   Future<bool> submitPin(String pin, {String? again}) async {

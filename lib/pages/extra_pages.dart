@@ -16,9 +16,9 @@ import '../l10n/trick_zh.dart';
 import '../domain/engine.dart';
 import '../export/pdfs.dart';
 import '../ui/avatars.dart';
+import 'me_page.dart';
 import '../ui/gates.dart';
 import '../ui/kit.dart';
-import 'home_pages.dart';
 
 bool _hasAccount(DeviceSettings settings) =>
     settings.accountSubject != null || settings.accountEmail != null;
@@ -321,13 +321,7 @@ class SettingsPage extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (child) ...[
-            const AccountHomeCard(),
-            const SizedBox(height: AppSpace.s16),
-            const LearnerHub(),
-            const SizedBox(height: AppSpace.s16),
-            const MeSettingsCard(),
-          ],
+          if (child) const MePage(),
           if (!child) ...[
             Text(
               t.languageWord,
@@ -577,6 +571,24 @@ class MeSettingsCard extends ConsumerWidget {
               trailing: Icon(Icons.chevron_right, color: colors.textMuted),
               onTap: () => context.go('/settings/privacy?from=me'),
             ),
+            if (settings.signedIn) ...[
+              ListTile(
+                title: Text(t.signOut),
+                onTap: () async {
+                  final provider = settings.accountProvider;
+                  await endProviderSession(provider);
+                  await app.signOut();
+                  if (context.mounted) context.go('/sign-in');
+                },
+              ),
+              ListTile(
+                title: Text(
+                  t.closeAccount,
+                  style: TextStyle(color: colors.danger),
+                ),
+                onTap: () => closeParentAccount(context, app, settings),
+              ),
+            ],
           ],
         ),
       ),
@@ -598,6 +610,7 @@ class AccountHomeCard extends ConsumerWidget {
     final title = signedIn
         ? parentAccountName(settings, t)
         : t.notSignedInTitle;
+    final detail = signedIn ? _signedInLine(settings, t) : t.tapToSignIn;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -623,7 +636,7 @@ class AccountHomeCard extends ConsumerWidget {
                       Text(title, style: theme.textTheme.titleMedium),
                       const SizedBox(height: AppSpace.s4),
                       Text(
-                        signedIn ? _providerLine(settings, t) : t.tapToSignIn,
+                        detail,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: colors.textMuted,
                         ),
@@ -631,15 +644,7 @@ class AccountHomeCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (signedIn)
-                  TextButton(
-                    onPressed: () async {
-                      await endProviderSession(settings.accountProvider);
-                      await app.signOut();
-                    },
-                    child: Text(t.signOut),
-                  )
-                else ...[
+                if (!signedIn) ...[
                   Text(
                     t.signIn,
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -657,17 +662,16 @@ class AccountHomeCard extends ConsumerWidget {
     );
   }
 
-  String _providerLine(DeviceSettings settings, Copy t) {
-    switch (settings.accountProvider) {
-      case 'google':
-        return t.googleAccount;
-      case 'apple':
-        return t.appleAccount;
-      case 'guest':
-        return t.guestStaysHere;
-      default:
-        return t.parentAccount;
-    }
+  String _signedInLine(DeviceSettings settings, Copy t) {
+    final who = parentAccountName(settings, t);
+    final provider = switch (settings.accountProvider) {
+      'google' => t.googleAccount,
+      'apple' => t.appleAccount,
+      'guest' => t.localGuest,
+      _ => t.parentAccount,
+    };
+    if (who == provider) return t.signedInLabel;
+    return '${t.signedInLabel} · $provider';
   }
 }
 
@@ -682,166 +686,6 @@ class _DefaultAvatar extends StatelessWidget {
       backgroundColor: colors.sunken,
       child: Icon(Icons.person, size: 32, color: colors.textMuted),
     );
-  }
-}
-
-class SignInPage extends ConsumerStatefulWidget {
-  const SignInPage({super.key});
-
-  @override
-  ConsumerState<SignInPage> createState() => _SignInPageState();
-}
-
-class _SignInPageState extends ConsumerState<SignInPage> {
-  String? _error;
-  String? _busy;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Copy.of(context);
-    final platform = Theme.of(context).platform;
-    final android = platform == TargetPlatform.android;
-    final apple = platform == TargetPlatform.iOS;
-    return PageFrame(
-      title: t.chooseSignIn,
-      leading: IconButton(
-        tooltip: t.back,
-        onPressed: () => context.go('/prefs'),
-        icon: const Icon(Icons.arrow_back),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            t.chooseSignIn,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: AppSpace.s16),
-          if (android) ...[
-            AppButton(
-              label: t.signInWithGoogle,
-              busy: _busy == 'google',
-              onPressed: _busy == null ? () => _provider('google') : null,
-            ),
-            const SizedBox(height: AppSpace.s8),
-            Text(
-              t.googleOnAndroid,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.of(context).textMuted,
-              ),
-            ),
-            const SizedBox(height: AppSpace.s16),
-          ],
-          if (apple) ...[
-            AppButton(
-              label: t.signInWithApple,
-              busy: _busy == 'apple',
-              onPressed: _busy == null ? () => _provider('apple') : null,
-            ),
-            const SizedBox(height: AppSpace.s8),
-            Text(
-              t.appleOnIphone,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.of(context).textMuted,
-              ),
-            ),
-            const SizedBox(height: AppSpace.s16),
-          ],
-          AppButton(
-            label: t.signInWithGuest,
-            secondary: true,
-            busy: _busy == 'guest',
-            onPressed: _busy == null ? _guest : null,
-          ),
-          const SizedBox(height: AppSpace.s8),
-          Text(
-            t.guestStaysHere,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.of(context).textMuted,
-            ),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: AppSpace.s16),
-            Text(
-              _error!,
-              style: TextStyle(color: AppColors.of(context).danger),
-            ),
-          ],
-          const SizedBox(height: AppSpace.s32),
-          Row(
-            children: [
-              TextButton(
-                onPressed: () => context.go('/terms?from=sign-in'),
-                child: Text(t.userPolicy),
-              ),
-              TextButton(
-                onPressed: () => context.go('/settings/privacy?from=sign-in'),
-                child: Text(t.privacyAgreement),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _provider(String provider) async {
-    final app = ref.read(appProvider);
-    final t = Copy.of(context);
-    setState(() {
-      _busy = provider;
-      _error = null;
-    });
-    try {
-      final identity = provider == 'google'
-          ? await signInWithGoogle()
-          : await signInWithApple();
-      if (!mounted) return;
-      if (identity == null) {
-        setState(() => _busy = null);
-        return;
-      }
-      final error = await app.signInWithIdentity(
-        provider: identity.provider,
-        subject: identity.subject,
-        email: identity.email,
-        name: identity.name,
-      );
-      if (!mounted) return;
-      if (error != null) {
-        setState(() {
-          _busy = null;
-          _error = error;
-        });
-        return;
-      }
-      context.go('/prefs');
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _busy = null;
-        _error = t.signInFailed;
-      });
-    }
-  }
-
-  Future<void> _guest() async {
-    final app = ref.read(appProvider);
-    setState(() {
-      _busy = 'guest';
-      _error = null;
-    });
-    final error = await app.signInAsGuest();
-    if (!mounted) return;
-    if (error != null) {
-      setState(() {
-        _busy = null;
-        _error = error;
-      });
-      return;
-    }
-    context.go('/prefs');
   }
 }
 
@@ -1011,12 +855,14 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     final learner = app.learnerById(widget.learnerId);
     final report = _report;
     final t = Copy.of(context);
+    final fromMe =
+        GoRouterState.of(context).uri.queryParameters['from'] == 'me';
     return PageFrame(
       title: t.pick('最近 7 天', 'Last 7 days'),
       banner: _error,
       leading: IconButton(
         tooltip: t.back,
-        onPressed: () => context.go('/adult'),
+        onPressed: () => context.go(fromMe ? '/prefs' : '/adult'),
         icon: const Icon(Icons.arrow_back),
       ),
       body: _loading || report == null

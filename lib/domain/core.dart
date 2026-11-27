@@ -1147,6 +1147,7 @@ class DeviceSettings {
     required this.accountProvider,
     required this.accountSubject,
     required this.accountName,
+    this.accountAvatarPath,
     required this.signedIn,
     required this.subscriptionActive,
     required this.themeMode,
@@ -1173,6 +1174,9 @@ class DeviceSettings {
   final String? accountProvider;
   final String? accountSubject;
   final String? accountName;
+
+  /// A parent photo saved on this device. Null uses the plain avatar.
+  final String? accountAvatarPath;
   final bool signedIn;
   final bool subscriptionActive;
   final String themeMode;
@@ -1241,6 +1245,8 @@ class DeviceSettings {
     String? accountProvider,
     String? accountSubject,
     String? accountName,
+    String? accountAvatarPath,
+    bool clearAvatar = false,
     bool clearPassword = false,
     bool? signedIn,
     bool? subscriptionActive,
@@ -1274,6 +1280,9 @@ class DeviceSettings {
       accountProvider: accountProvider ?? this.accountProvider,
       accountSubject: accountSubject ?? this.accountSubject,
       accountName: accountName ?? this.accountName,
+      accountAvatarPath: clearAvatar
+          ? null
+          : (accountAvatarPath ?? this.accountAvatarPath),
       signedIn: signedIn ?? this.signedIn,
       subscriptionActive: subscriptionActive ?? this.subscriptionActive,
       themeMode: themeMode ?? this.themeMode,
@@ -1289,6 +1298,22 @@ class DeviceSettings {
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
+  }
+}
+
+/// How many children this sign-in may keep.
+///
+/// Guest is one. Google and Apple are three. The Me page watches the
+/// result through `appProvider`, the Riverpod handle for [AppController].
+int learnerCapFor(DeviceSettings settings) {
+  switch (settings.accountProvider) {
+    case 'guest':
+      return 1;
+    case 'google':
+    case 'apple':
+      return 3;
+    default:
+      return settings.extraLearnersUnlocked ? 24 : 1;
   }
 }
 
